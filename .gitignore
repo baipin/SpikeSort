@@ -5,7 +5,6 @@
 
 # Ignore example data folder
 .test_data/
-results/
 .ipynb_checkpoints/
 
 # Ignore hidden temporary files
