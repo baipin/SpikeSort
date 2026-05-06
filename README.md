@@ -9,6 +9,8 @@ conda
 ```
 conda create --name kilosort python=3.11
 conda activate kilosort
+```
+```
 python -m pip install kilosort[gui]
 ```
 Uninstall CPU, use GPU only:
