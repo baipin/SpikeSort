@@ -23,6 +23,7 @@ Install Jupter in this environment:
 ```
 conda install jupyter
 ```
+## Execution
 To run kilosort, use this code:
 ```
 conda activate kilosort
