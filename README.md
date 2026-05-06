@@ -13,7 +13,7 @@ conda activate kilosort
 ```
 python -m pip install kilosort[gui]
 ```
-Uninstall CPU, use GPU only: (Optional)
+Uninstall CPU version of PyTorch, use GPU version only: (Optional)
 ```
 pip uninstall torch
 pip3 install torch --index-url https://download.pytorch.org/whl/cu118
