@@ -1,11 +1,12 @@
-# 忽略所有二进制数据文件
+# Ignore data file.
 *.bin
 *.dat
 *.npy
 
-# 忽略 Kilosort 的测试数据文件夹
+# Ignore example data folder
 .test_data/
 results/
+.ipynb_checkpoints/
 
-# 忽略隐藏的临时文件
+# Ignore hidden temporary files
 .kilosort/
