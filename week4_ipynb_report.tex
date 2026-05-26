@@ -1,0 +1,148 @@
+﻿\documentclass[11pt]{article}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{longtable}
+\sisetup{round-mode=places,round-precision=4}
+
+\title{Technical Report on \texttt{4.ipynb}:\\Strict Fixed-Baseline-Template Sorting on Compressed-Reconstructed Data}
+\author{}
+\date{May 26, 2026}
+
+\begin{document}
+\maketitle
+
+\section{Objective}
+This report explains what \texttt{4.ipynb} does and analyzes its results. The notebook evaluates how well spike sorting can be performed on compressed/reconstructed data when using \emph{fixed templates} learned from baseline (uncompressed) data. A key design choice is that baseline spike times are \textbf{not} used for candidate generation during strict sorting; baseline data is used only for evaluation alignment.
+
+\section{Data and Inputs}
+The notebook uses:
+\begin{itemize}
+  \item Baseline Kilosort outputs from \texttt{F:/academic/.test\_data/kilosort4}: templates, ops, spike times, and spike clusters.
+  \item Reconstructed compressed binary data (float32), primarily \texttt{whitened\_recon\_ratio\_0.10.bin} with fallback to \texttt{0.20} if missing.
+  \item Channel overlap handling: baseline templates may differ from reconstructed channel count; the code uses shared channels (typically 383).
+\end{itemize}
+
+\section{Methodology in the Notebook}
+\subsection{Baseline template loading and preprocessing}
+The notebook loads baseline templates of shape \texttt{(267, 61, 383)} and baseline spike labels. Reconstructed data is memory-mapped and reshaped to samples $\times$ channels (reported as \texttt{(1,350,000, 383)}).
+
+\subsection{Fixed-template matching setup}
+Kilosort template-matching tensors are prepared:
+\begin{itemize}
+  \item Waveform PCA basis \texttt{wPCA} from baseline \texttt{ops}.
+  \item Projected template tensor $U$ via Einstein summation.
+  \item Matching structure \texttt{ctc} from \texttt{ks\_tm.prepare\_matching}.
+\end{itemize}
+
+\subsection{Strict full-timeline sorting (no baseline anchoring)}
+The notebook processes the entire reconstructed recording in windows (\texttt{win=12000}) with overlap (\texttt{2*nt}) to stabilize edge behavior. For each window:
+\begin{itemize}
+  \item Run \texttt{ks\_tm.run\_matching} on channel-overlap data.
+  \item Convert local detections to absolute times.
+  \item Keep detections only in center region to avoid duplicates across overlaps.
+\end{itemize}
+Then concatenate and globally sort all detections by time.
+
+Observed output in the notebook:
+\begin{itemize}
+  \item Strict sorted spikes: \textbf{123,348}
+  \item Unique predicted templates: \textbf{265}
+\end{itemize}
+
+\subsection{Evaluation against baseline}
+The notebook evaluates strict-sort detections against baseline using nearest-neighbor time matching within $\pm 12$ samples.
+
+Reported for the strict run (ratio 0.10 section):
+\begin{itemize}
+  \item Matched to baseline within $\pm 12$: \textbf{121,700 / 123,348} (\textbf{98.66\%})
+  \item Label agreement on matched spikes: \textbf{12.55\%}
+\end{itemize}
+
+Interpretation: temporal alignment to nearest baseline events is high, but cluster-ID agreement is low under strict fixed-template transfer.
+
+\subsection{Cluster-level summary export}
+The notebook computes per-baseline-cluster:
+\begin{itemize}
+  \item \texttt{n\_ref}
+  \item \texttt{n\_matched\_from\_test}
+  \item \texttt{same\_label\_rate}
+  \item \texttt{recall\_from\_test\_side}
+\end{itemize}
+and exports to \texttt{week4\_fixed\_template\_cluster\_summary.csv}.
+
+This reveals substantial heterogeneity across clusters: some clusters have strong temporal recall but weak label consistency, suggesting template confusion or unstable identity transfer after compression/reconstruction.
+
+\subsection{Multi-ratio comparison (0.10, 0.20, 0.30, 0.50, 0.70)}
+If a ratio-specific reconstructed bin is missing, the notebook rebuilds it by:
+\begin{enumerate}
+  \item DCT per channel,
+  \item keeping first $n\_\text{keep}=\lfloor n\_\text{samples}\cdot\text{ratio}\rfloor$ coefficients,
+  \item IDCT reconstruction,
+  \item writing \texttt{whitened\_recon\_ratio\_X.bin}.
+\end{enumerate}
+
+The notebook includes Windows file-lock-safe replacement logic (releasing active memmaps and retrying \texttt{os.replace}) to avoid \texttt{PermissionError: WinError 32} during overwrite.
+
+For each ratio, events are evaluated at baseline times (same-event protocol), producing:
+\begin{table}[h!]
+\centering
+\begin{tabular}{lrrrrr}
+\toprule
+Ratio & $n_{\text{base}}$ & $n_{\text{det}}$ & Det. Rate & Cls. Acc. (detected) & Overall Same-Event Acc. \\
+\midrule
+0.10 & 137378 & 15848 & 0.1154 & 0.2383 & 0.0275 \\
+0.20 & 137378 & 15570 & 0.1133 & 0.2357 & 0.0267 \\
+0.30 & 137378 & 15583 & 0.1134 & 0.2333 & 0.0265 \\
+0.50 & 137378 & 15896 & 0.1157 & 0.2331 & 0.0270 \\
+0.70 & 137378 & 15938 & 0.1160 & 0.2339 & 0.0271 \\
+\bottomrule
+\end{tabular}
+\caption{Multi-ratio fixed-template same-event evaluation (from \texttt{week4\_fixed\_template\_ratio\_compare.csv}).}
+\end{table}
+
+\section{Result Analysis}
+\subsection{Main findings}
+\begin{enumerate}
+  \item \textbf{Detection rate is low and stable across ratios.} Around 11.3\%--11.6\% baseline events are detected in same-event evaluation.
+  \item \textbf{Classification accuracy on detected events is modest.} Around 23.3\%--23.8\%.
+  \item \textbf{Overall same-event accuracy is very low.} Around 2.65\%--2.75\%.
+  \item \textbf{Compression ratio has weak impact in this range.} Performance differences among 0.10--0.70 are small relative to absolute error.
+\end{enumerate}
+
+\subsection{Why strict timeline matching and same-event scores differ}
+The strict full-timeline run reported high nearest-baseline temporal matching (98.66\%), but same-event evaluation at baseline times gives low detection/label scores. These two evaluations answer different questions:
+\begin{itemize}
+  \item \textbf{Strict timeline nearest-neighbor match}: ``Can detected spikes be temporally mapped to some nearby baseline event?''
+  \item \textbf{Same-event baseline-time protocol}: ``At each baseline event, does reconstructed-data matching detect and classify the same event correctly?''
+\end{itemize}
+The second criterion is stricter and exposes identity-transfer weakness.
+
+\subsection{Implications}
+The current fixed-template transfer appears robust for producing many plausible detections in time, but weak for preserving exact cluster identity under reconstruction perturbations. This suggests:
+\begin{itemize}
+  \item template mismatch after compression/reconstruction,
+  \item insufficient discriminability with fixed baseline templates,
+  \item possible sensitivity to thresholding / overlap resolution / channel harmonization.
+\end{itemize}
+
+\section{Limitations and Next Steps}
+\begin{enumerate}
+  \item Refit or adapt templates on reconstructed data (domain adaptation) rather than pure fixed-template transfer.
+  \item Add confusion-matrix analysis between baseline and predicted template IDs to quantify systematic remapping.
+  \item Tune tolerance, matching thresholds, and windowing for sensitivity/specificity trade-offs.
+  \item Evaluate precision-recall style metrics under one-to-one event assignment constraints.
+  \item Test whether channel-standardization strategy (383 vs broader mappings) materially changes identity accuracy.
+\end{enumerate}
+
+\section{Produced Files by the Notebook}
+\begin{itemize}
+  \item \texttt{week4\_kilosort\_function\_fixed\_template\_results.npy}
+  \item \texttt{week4\_fixed\_template\_cluster\_summary.csv}
+  \item \texttt{week4\_fixed\_template\_ratio\_compare.csv}
+  \item ratio-specific reconstructed bins \texttt{whitened\_recon\_ratio\_*.bin}
+\end{itemize}
+
+\end{document}
