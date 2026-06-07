@@ -27,7 +27,7 @@ The notebook uses:
 
 \section{Methodology in the Notebook}
 \subsection{Baseline template loading and preprocessing}
-The notebook loads baseline templates of shape \texttt{(267, 61, 383)} and baseline spike labels. Reconstructed data is memory-mapped and reshaped to samples $\times$ channels (reported as \texttt{(1,350,000, 383)}).
+The notebook loads baseline templates of shape \texttt{(267, 61, 383)} and baseline spike labels. The compressed/reconstructed inputs are derived from the upstream preprocessed signal saved in \texttt{whitened\_data.npy}, where the signal has already undergone \textbf{CAR, bandpass filtering, and spatial whitening} in that order. Reconstructed data is then memory-mapped and reshaped to samples $\times$ channels (reported as \texttt{(1,350,000, 383)}).
 
 \subsection{Fixed-template matching setup}
 Kilosort template-matching tensors are prepared:
@@ -78,7 +78,7 @@ This reveals substantial heterogeneity across clusters: some clusters have stron
 \subsection{Multi-ratio comparison (0.10, 0.20, 0.30, 0.50, 0.70)}
 If a ratio-specific reconstructed bin is missing, the notebook rebuilds it by:
 \begin{enumerate}
-  \item DCT per channel,
+  \item DCT per channel on the upstream CAR-corrected, bandpass-filtered, and whitened signal,
   \item keeping first $n\_\text{keep}=\lfloor n\_\text{samples}\cdot\text{ratio}\rfloor$ coefficients,
   \item IDCT reconstruction,
   \item writing \texttt{whitened\_recon\_ratio\_X.bin}.
