@@ -83,7 +83,6 @@ class CompressionRatioRecommender:
         ops_path,
         probe_name: Optional[str] = None,
     ) -> Dict[str, object]:
-        ratio_eval_df = []
         probe_name = probe_name or Path(templates_path).parent.name
         probe_feature_df = self.predictor_model.predict_probe_accuracy_from_files(
             templates_path=templates_path,
