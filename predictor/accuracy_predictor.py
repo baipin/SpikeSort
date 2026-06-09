@@ -11,6 +11,7 @@ import pandas as pd
 DEFAULT_RATIOS: Tuple[float, ...] = (0.10, 0.20, 0.30, 0.50, 0.70)
 DEFAULT_FEATURE_COLUMNS: Tuple[str, ...] = (
     "compression_ratio",
+    "compression_ratio_sq",
     "baseline_spikes",
     "firing_rate_hz",
     "template_ptp_mean",
@@ -168,6 +169,7 @@ def build_ratio_feature_frame(
 ) -> pd.DataFrame:
     frame = base_feature_df.copy()
     frame["compression_ratio"] = float(ratio)
+    frame["compression_ratio_sq"] = float(ratio) ** 2
     if target_df is not None:
         merged = frame.merge(
             target_df[["neuron_id", "binned_count_accuracy", "sensitivity", "compressed_spikes"]],
@@ -295,8 +297,7 @@ class AccuracyPredictorModel:
         return out
 
     def predict_probe_accuracy(self, probe_feature_df: pd.DataFrame, ratio: float) -> Dict[str, object]:
-        frame = probe_feature_df.copy()
-        frame["compression_ratio"] = float(ratio)
+        frame = build_ratio_feature_frame(probe_feature_df, ratio=float(ratio))
         pred = self.predict_dataframe(frame)
         return {
             "ratio": float(ratio),
