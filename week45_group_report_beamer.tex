@@ -1,0 +1,426 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usetheme{Madrid}
+\usecolortheme{default}
+
+\usepackage[UTF8]{ctex}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{graphicx}
+
+\title{Week 4--5 进度报告}
+\subtitle{固定模板压缩排序与单神经元准确率分析}
+\author{}
+\date{2026-06-16}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{一些修补}
+  \begin{itemize}
+    \item 在阅读论文的过程中，发现了预处理\alert{同样包括CAR过程（Remove mean across time and median across channels），并且CAR应当在其他预处理操作之前进行}，在之前的处理中遗漏了CAR操作。因此对之前的数据和操作都重新编写并运行了。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{两周工作的整体逻辑}
+  \begin{block}{Week 4}
+    用 baseline 数据上已经学好的模板，直接去匹配压缩-重建后的数据，评估压缩后排序效果。
+  \end{block}
+  \begin{block}{Week 5}
+    在固定压缩率下，把 Week 4 的总体评估下钻到 neuron 级别，得到每个神经元的敏感性与准确率；再进一步训练预测器与压缩率推荐器。
+  \end{block}
+  \begin{block}{核心思想}
+    不再重新执行 Kilosort 的漂移校正、模板学习、聚类与合并；而是\alert{复用 baseline 模板与已有缓存}，只做 fixed-template matching 和计数统计。
+  \end{block}
+\end{frame}
+
+\begin{frame}{输入与已有产物}
+  \begin{itemize}
+    \item baseline Kilosort 输出：\texttt{templates.npy}, \texttt{ops.npy}, \texttt{spike\_times.npy}, \texttt{spike\_clusters.npy}
+    \item 上游预处理结果：\texttt{whitened\_data.npy}
+    \item Week 4 缓存：
+    \begin{itemize}
+      \item \texttt{week4\_kilosort\_function\_fixed\_template\_results.npy}
+      \item \texttt{week4\_ratio\_*.npy}
+      \item \texttt{week4\_fixed\_template\_ratio\_compare.csv}
+    \end{itemize}
+    \item Week 5 缓存：
+    \begin{itemize}
+      \item \texttt{week5\_neuron\_sensitivity\_ratio\_*.npy/csv}
+      \item \texttt{predictor/week5\_accuracy\_predictor\_*}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Week 4: 要回答的问题}
+  \begin{enumerate}
+    \item baseline 上学到的模板，能否直接迁移到压缩重建数据？
+    \item 如果不使用 baseline spike time 做候选锚定，只做严格的全时间轴匹配，效果如何？
+    \item 在不同压缩率下，排序性能如何变化？
+    \item 若 event-by-event 指标不稳定，是否能用更稳健的 binned spike-count accuracy 替代？
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Week 4 Cell 0--4: 载入数据并构造固定模板匹配器}
+  \begin{itemize}
+    \item Cell 0: 说明 notebook 主题是 ``strict fixed-baseline-template sorting''。
+    \item Cell 1: 导入 \texttt{numpy/pandas/torch/matplotlib/pathlib} 等依赖。
+    \item Cell 2: 读取 baseline 模板与 spike labels；把压缩重建 \texttt{bin} 映射成 \texttt{(samples, channels)}。
+    \item Cell 3: 解释 383 vs 385 通道问题，只保留 baseline 与重建数据的共享通道。
+    \item Cell 4: 从 baseline \texttt{ops} 中取出 \texttt{wPCA}，构造
+    \[
+      U = \texttt{einsum}(\text{template}, \text{wPCA}),
+    \]
+    并调用 \texttt{ks\_tm.prepare\_matching} 得到匹配所需张量 \texttt{ctc}。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Week 4 Cell 5--6: 严格全时间轴 fixed-template sorting}
+  \begin{itemize}
+    \item Cell 5 首先尝试读取缓存 \texttt{week4\_kilosort\_function\_fixed\_template\_results.npy}。
+    \item 若缓存不可用，按窗口遍历整个压缩数据时间轴：
+    \begin{itemize}
+      \item 每个窗口带 overlap，避免边界重复或漏检；
+      \item 对当前窗口调用 \texttt{ks\_tm.run\_matching}；
+      \item 只保留窗口中心区域检测结果；
+      \item 最后把全局时间排序。
+    \end{itemize}
+    \item Cell 6 把结果保存回缓存，便于后续 notebook 直接复用。
+  \end{itemize}
+  \begin{block}{说明}
+    这里不是重跑完整 Kilosort，而是只使用 Kilosort 的 \textbf{template matching 函数}；不重新学习模板，不重新聚类。
+  \end{block}
+\end{frame}
+
+\begin{frame}{Week 4 Cell 8--10: 严格排序结果的第一层评估}
+  \begin{itemize}
+    \item Cell 8: 以 $\pm 12$ samples 为容差，把压缩数据上的检测结果映射到最近 baseline spike，计算
+    \begin{itemize}
+      \item 时间匹配覆盖率
+      \item 匹配后标签一致率
+    \end{itemize}
+    \item Cell 9: 按 baseline cluster 汇总，导出每个 cluster 的
+    \texttt{n\_ref}, \texttt{n\_matched\_from\_test}, \texttt{same\_label\_rate}。
+    \item Cell 10: 画出预测模板 ID 直方图、时间分布，并导出 CSV。
+  \end{itemize}
+  \begin{block}{这一步的含义}
+    它回答的是“压缩后数据里检测到的 spike，是否\textbf{在时间上}靠近 baseline spike”，但还不是最终 neuron accuracy 定义。
+  \end{block}
+\end{frame}
+
+\begin{frame}{Week 4 Cell 11--13: 多压缩率与重建函数}
+  \begin{itemize}
+    \item Cell 11: 提出多压缩率比较，测试 0.10/0.20/0.30/0.50/0.70。
+    \item Cell 12: 若某个重建 \texttt{bin} 缺失，则从 \texttt{whitened\_data.npy} 出发：
+    \begin{enumerate}
+      \item 对每个通道做 DCT；
+      \item 保留前 \texttt{keep\_ratio} 比例系数；
+      \item 做 IDCT 重建；
+      \item 写回 \texttt{whitened\_recon\_ratio\_*.bin}。
+    \end{enumerate}
+    \item Cell 13: 封装三类关键函数：
+    \begin{itemize}
+      \item baseline 时间点分类：\texttt{classify\_at\_baseline\_times}
+      \item 全时间轴排序：\texttt{sort\_full\_timeline\_with\_fixed\_templates}
+      \item binned accuracy 计算：\texttt{eval\_binned\_count\_accuracy}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Week 4 Cell 14--15: 最终指标改成 binned spike-count accuracy}
+  \begin{block}{为什么不用 event-by-event 作为最终指标？}
+    压缩后模板匹配容易出现时间抖动、局部过检或漏检。若只要求“同一时刻同一标签完全一致”，指标会过于苛刻，不能稳定反映神经元放电模式是否保留。
+  \end{block}
+  \begin{block}{最终定义}
+    把时间轴按固定 bin 分箱（本项目中为 1 秒），对每个 neuron、每个时间 bin 比较 baseline 与压缩结果中的 spike 数。
+  \end{block}
+  \[
+    \text{matched}_{u,b}=\max\left(n^{\text{ref}}_{u,b}-\left|n^{\text{test}}_{u,b}-n^{\text{ref}}_{u,b}\right|,\,0\right)
+  \]
+  \[
+    \text{accuracy}_{u}=\frac{\sum_b \text{matched}_{u,b}}{\sum_b n^{\text{ref}}_{u,b}}
+  \]
+\end{frame}
+
+\begin{frame}{如何理解每个 neuron 的准确率}
+  \begin{itemize}
+    \item 对于某个 neuron $u$，baseline 在第 $b$ 个时间 bin 内有 $n^{\text{ref}}_{u,b}$ 个 spike。
+    \item 压缩数据固定模板匹配后，在同一 neuron ID、同一 bin 内得到 $n^{\text{test}}_{u,b}$ 个 spike。
+    \item 两者差值越小，说明该 neuron 的放电计数模式越被保留。
+    \item 若某 bin baseline 为 50、压缩后为 55，则该 bin 贡献
+    \[
+      50-|55-50|=45
+    \]
+    个 matched spikes，该 bin 的局部准确率是 $45/50$。
+  \end{itemize}
+  \begin{alertblock}{解释}
+    这个准确率衡量的是“该 neuron 的时间分箱发放强度是否保真”，而不是“每个 spike 是否逐一一一对应”。
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}{不重跑 Kilosort 时，如何算出每个 neuron 的准确率}
+  \begin{enumerate}
+    \item 从 baseline Kilosort 结果读取 \texttt{templates}, \texttt{spike\_times}, \texttt{spike\_clusters}, \texttt{ops}。
+    \item 用 baseline 模板和 \texttt{wPCA} 构造固定模板匹配器 \texttt{U, ctc}。
+    \item 对压缩重建 \texttt{bin} 只执行 \texttt{ks\_tm.run\_matching}，得到压缩数据的
+    \[
+      (st^{\text{test}}, clu^{\text{test}})
+    \]
+    \item 不做新的漂移校正、模板学习、聚类合并，因此\alert{没有重跑完整 Kilosort pipeline}。
+    \item 将 baseline 与压缩结果都按 neuron ID 和 1 秒时间 bin 计数。
+    \item 对每个 neuron 分别计算
+    \[
+      \text{accuracy}_{u}=
+      \frac{\sum_b \max(n^{\text{ref}}_{u,b}-|n^{\text{test}}_{u,b}-n^{\text{ref}}_{u,b}|,0)}
+           {\sum_b n^{\text{ref}}_{u,b}}
+    \]
+    \item 把所有 neuron 的结果保存到 \texttt{week5\_neuron\_sensitivity\_ratio\_*.npy}，以后直接读缓存即可。
+  \end{enumerate}
+\end{frame}
+\begin{frame}{不重跑 Kilosort 时，如何算出每个 neuron 的准确率}
+\begin{alertblock}{解释}
+即：
+  \begin{enumerate}
+    \item 1. 固定 baseline 上已经得到的 neuron/template 身份
+    \item 2. 看压缩重建后的数据，在这些固定身份下还能保留多少放电模式
+  \end{enumerate}
+
+  所以这里没有“重新学模板、重新聚类”，而是在尝试回答这样的问题：
+  “如果我拿 baseline 已经学好的模板，去压缩数据上做匹配，这些 neuron 的放电计数还像不像 baseline？
+\end{alertblock}
+\end{frame}
+
+\begin{frame}{Week 4 多压缩率总体结果}
+  \small
+  \begin{tabular}{lrrrr}
+    \toprule
+    Ratio & Detection & Classif. & Binned Micro & Binned Macro \\
+    \midrule
+    0.10 & 11.54\% & 23.83\% & 57.66\% & 54.56\% \\
+    0.20 & 11.33\% & 23.57\% & 74.19\% & 66.00\% \\
+    0.30 & 11.34\% & 23.33\% & 75.20\% & 66.97\% \\
+    0.50 & 11.57\% & 23.31\% & 75.01\% & 66.76\% \\
+    0.70 & 11.60\% & 23.39\% & 74.99\% & 66.74\% \\
+    \bottomrule
+  \end{tabular}
+  \vspace{0.6em}
+  \begin{itemize}
+    \item event-level detection/classification 很低，说明固定模板直接迁移的 spike 级判别并不理想。
+    \item 但 binned count accuracy 明显更高，说明对群体放电计数模式的保留比 event-level identity 更稳定。
+    \item 在测试范围内，0.30 左右是比较平衡的压缩率，因此 Week 5 选 0.30 作为默认分析比率。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Week 5: 要回答的问题}
+  \begin{enumerate}
+    \item 在固定压缩率下，哪些 neuron 更敏感，哪些更稳健？
+    \item 能否把总体 binned accuracy 细化为每个 neuron 的准确率与敏感性？
+    \item 能否进一步从 baseline 的 probe/neuron 特征预测未来压缩后的准确率？
+    \item 能否据此自动推荐一个合适的压缩率？
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Week 5 Cell 0--4: 跨 notebook 复用已有产物}
+  \begin{itemize}
+    \item Cell 0: 说明 Week 5 的主题是 fixed compression ratio 下的 neuron sensitivity。
+    \item Cell 1: 导入依赖。
+    \item Cell 2: 强调本 notebook 的定位是复用 earlier notebooks 的中间结果。
+    \item Cell 3: 载入 baseline cache、compression cache、week4 strict cache，以及 baseline Kilosort 原始输出。
+    \item Cell 4: 枚举可用的 Week 4 ratio caches，形成 cache overview。
+  \end{itemize}
+  \begin{block}{结论}
+    Week 5 的起点不是原始排序，而是\alert{Week 4 已经生成好的缓存与 baseline 结果}。
+  \end{block}
+\end{frame}
+
+\begin{frame}{Week 5 Cell 5--10: 单压缩率 neuron sensitivity}
+  \begin{itemize}
+    \item Cell 5: 给出分析目标与指标定义。
+    \item Cell 6: 默认选择 \texttt{analysis\_ratio = 0.30}。
+    \item Cell 7: 定义
+    \begin{itemize}
+      \item \texttt{sort\_full\_timeline\_with\_fixed\_templates}
+      \item \texttt{per\_neuron\_binned\_accuracy}
+    \end{itemize}
+    \item Cell 8: 与 Week 4 完全一致地构造固定模板匹配对象。
+    \item Cell 9: 优先读取 \texttt{week5\_neuron\_sensitivity\_ratio\_0.30.npy}；若缓存不存在才重新生成 neuron table。
+    \item Cell 10: 只保留 \texttt{baseline\_spikes > 0} 的 neuron，按准确率排序。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Week 5: 每个 neuron 的表是怎么来的}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{itemize}
+        \item 每个 neuron 最终得到一行记录，字段包括：
+        \begin{itemize}
+          \item \texttt{neuron\_id}
+          \item \texttt{baseline\_spikes}
+          \item \texttt{compressed\_spikes}
+          \item \texttt{matched\_spikes\_after\_binning}
+          \item \texttt{binned\_count\_accuracy}
+          \item \texttt{sensitivity = 1 - accuracy}
+        \end{itemize}
+        \item 这些值全部来自 baseline spike train 与 fixed-template matching 输出的逐 bin 计数比较。
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \[
+        \text{sensitivity}_u = 1 - \text{accuracy}_u
+      \]
+      \vspace{0.5em}
+      \begin{block}{解释}
+        准确率越低，说明该 neuron 在压缩后越容易失真；敏感性越高。
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Week 5 在 ratio=0.30 的 neuron 级结果}
+  \begin{itemize}
+    \item 活跃 neuron 数：267
+    \item mean binned neuron accuracy：66.97\%
+    \item median binned neuron accuracy：71.12\%
+    \item 最敏感 neuron：ID 246
+    \begin{itemize}
+      \item baseline spikes = 106
+      \item compressed spikes = 548
+      \item matched spikes after binning = 0
+      \item accuracy = 0, sensitivity = 1
+    \end{itemize}
+    \item 最稳健 neuron：ID 6
+    \begin{itemize}
+      \item baseline spikes = 1079
+      \item compressed spikes = 1078
+      \item matched spikes after binning = 1078
+      \item accuracy = 99.91\%
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Week 5 Cell 11--13: 解释、可视化、导出}
+  \begin{itemize}
+    \item Cell 11: 文字解释准确率与敏感性的含义。
+    \item Cell 12: 三幅图
+    \begin{itemize}
+      \item neuron accuracy 分布直方图
+      \item baseline spike count vs accuracy 散点图
+      \item 最敏感 15 个 neurons 柱状图
+    \end{itemize}
+    \item Cell 13: 导出 \texttt{week5\_neuron\_sensitivity\_ratio\_0.30.csv}。
+  \end{itemize}
+  \begin{block}{这里的实质输出}
+    从这一刻开始，``每个 neuron 的准确率'' 已经被缓存成结构化表格，可直接复用，无需再跑匹配。
+  \end{block}
+\end{frame}
+
+\begin{frame}{Week 5 Cell 14--18: 从分析走向预测器}
+  \begin{itemize}
+    \item Cell 14: 提出 accuracy predictor 的目标。
+    \item Cell 15: 从 baseline 提取 neuron 特征，形成 predictor feature table。
+    \item Cell 16: 对多个 ratio 组装训练集；若 \texttt{week5\_neuron\_sensitivity\_ratio\_*.npy} 已存在则直接读取。
+    \item Cell 17: 训练 ridge-style predictor，并做 leave-one-ratio-out 验证。
+    \item Cell 18: 给出按文件接口调用 predictor 的示例。
+  \end{itemize}
+  \begin{block}{要点}
+    predictor 的监督信号，正是前面得到的 per-neuron \texttt{binned\_count\_accuracy}。
+  \end{block}
+\end{frame}
+
+\begin{frame}{Week 5 Cell 19--22: 文档化接口与压缩率推荐}
+  \begin{itemize}
+    \item Cell 19: 给出 \texttt{predictor/accuracy\_predictor.py} 的调用说明。
+    \item Cell 20: 说明压缩率推荐器 \texttt{ratio\_recommender/best\_ratio\_recommender.py} 的新规则。
+    \item Cell 21: 对单个 probe 输出推荐的 \texttt{keep\_ratio}、对应预测准确率、是否满足门槛。
+    \item Cell 22: 对多个 probe 批量输出一整组 \texttt{keep\_ratio} 向量结果。
+  \end{itemize}
+  \begin{block}{方法学闭环}
+    Week 4 先定义并计算可解释的 neuron accuracy，Week 5 再把它变成可复用的预测与决策工具。
+  \end{block}
+\end{frame}
+
+\begin{frame}{Week 5 新的压缩率推荐逻辑}
+  \begin{block}{旧逻辑}
+    用
+    \[
+      \text{predicted\_accuracy} - \lambda \cdot \text{keep\_ratio}
+    \]
+    的惩罚得分做最大化。（已经弃用）
+  \end{block}
+  \begin{block}{新逻辑}
+    先设定一个最小可接受准确率门槛 \texttt{min\_accuracy\_threshold}，然后：
+    \begin{enumerate}
+      \item 在给定区间内预测每个 \texttt{keep\_ratio} 的 probe 平均准确率；
+      \item 保留所有满足
+      \[
+        \text{predicted\_probe\_accuracy\_mean} \ge \text{threshold}
+      \]
+      的 ratio；
+      \item 在这些可行解里选择\alert{最小的 \texttt{keep\_ratio}}；
+      \item 若整个区间都不满足门槛，则回退到预测准确率最高的 ratio。
+    \end{enumerate}
+  \end{block}
+\end{frame}
+
+\begin{frame}{新的推荐器输出形式}
+  \begin{itemize}
+    \item 单 probe 输出字段为：
+    \begin{itemize}
+      \item \texttt{recommended\_keep\_ratio}
+      \item \texttt{recommended\_predicted\_probe\_accuracy\_mean}
+      \item \texttt{threshold\_feasible}
+      \item \texttt{selection\_rule}
+    \end{itemize}
+    \item 多 probe 批量接口直接输出
+    \[
+      [r_1, r_2, \dots, r_n]
+    \]
+    形式的 \texttt{keep\_ratio} 向量结果。
+    \item 在代码实现中，这个批量结果表对应
+    \texttt{keep\_ratio\_vector\_table}。
+  \end{itemize}
+  \begin{alertblock}{解释}
+    这个变化让推荐器从“折中打分”变成“先保证准确率底线，再尽量压缩”。
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}{总览}
+  \small
+  \begin{tabular}{>{\raggedright\arraybackslash}p{0.14\textwidth} >{\raggedright\arraybackslash}p{0.78\textwidth}}
+    \toprule
+    笔记本区段 & 已覆盖内容 \\
+    \midrule
+    4.ipynb 0--4 & 目标、依赖、baseline 读取、通道对齐、模板匹配器构建 \\
+    4.ipynb 5--10 & 全时间轴 strict matching、缓存保存、时间邻近评估、cluster 汇总、可视化导出 \\
+    4.ipynb 11--15 & 多 ratio 重建、函数封装、binned accuracy 定义、最终批量评估 \\
+    5.ipynb 0--4 & 跨 notebook 数据导入、cache overview \\
+    5.ipynb 5--13 & ratio 选择、per-neuron accuracy、缓存复用、排序、图表、CSV 导出 \\
+    5.ipynb 14--22 & predictor、训练集、模型训练、文件接口、threshold-based ratio recommender、keep\_ratio 向量输出 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{本次汇报最关键的技术信息}
+  \begin{enumerate}
+    \item 单个 neuron 的准确率不是来自重新聚类，而是来自\alert{固定模板匹配后的时间分箱计数比较}。
+    \item Week 5 计算 neuron accuracy 时，优先直接读取 \texttt{week5\_neuron\_sensitivity\_ratio\_*.npy}，因此通常\alert{连 matching 都不用重跑}。
+    \item 如果缓存失效，最多只需重做 fixed-template matching；仍然不需要完整 Kilosort。
+    \item binned count accuracy 比 spike-by-spike 完全一致率更适合衡量压缩后神经元放电模式是否被保留。
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{结论}
+  \begin{itemize}
+    \item Week 4 建立了 baseline 模板迁移到压缩重建数据的评估框架。
+    \item Week 5 把总体评估拆解为每个 neuron 的准确率与敏感性。
+    \item 最核心的方法创新是：\alert{利用 baseline 模板 + 固定模板匹配 + binned counting，在不重跑完整 Kilosort 的情况下，得到每个 neuron 的准确率。}
+    \item 在现有结果中，ratio=0.30 兼顾压缩与保真，且 neuron 间差异显著，适合作为 predictor 与 threshold-based keep\_ratio 推荐的训练支点。
+  \end{itemize}
+\end{frame}
+
+\end{document}
