@@ -20,6 +20,16 @@
   \titlepage
 \end{frame}
 
+
+\begin{frame}{Code Reference}
+  \begin{itemize}
+    \item https://github.com/baipin/SpikeSort/blob/main/4.ipynb
+    \item https://github.com/baipin/SpikeSort/blob/main/5.ipynb
+    \item https://github.com/baipin/SpikeSort/tree/main/predictor
+    \item https://github.com/baipin/SpikeSort/tree/main/ratio\_recommender
+  \end{itemize}
+\end{frame}
+
 \begin{frame}{一些修补}
   \begin{itemize}
     \item 在阅读论文的过程中，发现了预处理\alert{同样包括CAR过程（Remove mean across time and median across channels），并且CAR应当在其他预处理操作之前进行}，在之前的处理中遗漏了CAR操作。因此对之前的数据和操作都重新编写并运行了。
@@ -422,5 +432,6 @@
     \item 在现有结果中，ratio=0.30 兼顾压缩与保真，且 neuron 间差异显著，适合作为 predictor 与 threshold-based keep\_ratio 推荐的训练支点。
   \end{itemize}
 \end{frame}
+
 
 \end{document}
