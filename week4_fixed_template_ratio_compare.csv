@@ -1,7 +1,7 @@
-ratio,n_baseline_events,n_detected_events,detection_rate_on_baseline_events,classification_accuracy_on_detected_events,binned_count_accuracy_micro,binned_count_accuracy_macro,matched_spikes_after_binning,baseline_spikes_for_binning,bin_size_seconds
-0.10,137378,14950,0.10882382914294865,0.22749163879598663,0.5645758874953596,0.5531661241183595,77562,137381,1.0
-0.20,137378,16373,0.11918211067274236,0.24491540951566604,0.7743210487622014,0.7333034012441693,106377,137381,1.0
-0.30,137378,16489,0.1200264962366609,0.25186487961671417,0.8231633195274456,0.7555274726695039,113087,137381,1.0
-0.50,137378,16975,0.1235641805820437,0.2511340206185567,0.8237674787634389,0.7542999468308539,113170,137381,1.0
-0.70,137378,17253,0.12558779426108985,0.2507969628470411,0.8238839431944738,0.7543314148613295,113186,137381,1.0
-1.00,137378,16962,0.12346955116539766,0.2523287348190072,0.8237310836287405,0.7541644870582545,113165,137381,1.0
+ratio,n_baseline_events,n_detected_events,detection_rate_on_baseline_events,classification_accuracy_on_detected_events,binned_count_accuracy_micro,binned_count_accuracy_macro,matched_spikes_after_binning,baseline_spikes_for_binning,bin_size_seconds,int16_bin,source_float32_bin,int16_meta
+0.10,137378,14946,0.10879471239936525,0.227151077211294,0.5645686084684199,0.5440233793493885,77561,137381,1.0,F:\academic\whitened_recon_ratio_0.10_int16.bin,F:\academic\whitened_recon_ratio_0.10.bin,F:\academic\whitened_recon_ratio_0.10_int16_meta.npy
+0.20,137378,16362,0.11910203962788801,0.24508006356191175,0.7743356068160808,0.7169074679940934,106379,137381,1.0,F:\academic\whitened_recon_ratio_0.20_int16.bin,F:\academic\whitened_recon_ratio_0.20.bin,F:\academic\whitened_recon_ratio_0.20_int16_meta.npy
+0.30,137378,16448,0.11972804961493107,0.2519455252918288,0.8231633195274456,0.734768734046907,113087,137381,1.0,F:\academic\whitened_recon_ratio_0.30_int16.bin,F:\academic\whitened_recon_ratio_0.30.bin,F:\academic\whitened_recon_ratio_0.30_int16_meta.npy
+0.50,137378,16935,0.12327301314620973,0.2510776498376144,0.8237456416826199,0.7345041995298687,113167,137381,1.0,F:\academic\whitened_recon_ratio_0.50_int16.bin,F:\academic\whitened_recon_ratio_0.50.bin,F:\academic\whitened_recon_ratio_0.50_int16_meta.npy
+0.70,137378,17246,0.1255368399598189,0.2508407746723878,0.8238766641675341,0.7344439619629346,113185,137381,1.0,F:\academic\whitened_recon_ratio_0.70_int16.bin,F:\academic\whitened_recon_ratio_0.70.bin,F:\academic\whitened_recon_ratio_0.70_int16_meta.npy
+1.00,137378,17049,0.12410284033833656,0.2515690069798815,0.8237238046018008,0.7342764105358452,113164,137381,1.0,F:\academic\whitened_recon_ratio_1.00_int16.bin,F:\academic\whitened_recon_ratio_1.00.bin,F:\academic\whitened_recon_ratio_1.00_int16_meta.npy
