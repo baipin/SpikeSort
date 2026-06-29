@@ -1,5 +1,8 @@
 # Ignore data file.
 *.bin
+*.cbin
+*.ch
+*.meta
 *.dat
 *.npy
 

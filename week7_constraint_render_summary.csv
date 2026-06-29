@@ -1,0 +1,7 @@
+dct_window_label,bin_size_samples,bin_size_seconds,baseline_mode,constraint_mode,target_accuracy,selected_ratio,feasible,selection_ratio_for_neurons,most_sensitive_neuron_id,most_robust_neuron_id,curve_csv
+full_timeline,15000,0.5,legacy,mean_bin,0.95,1.0,False,0.3,250,194,G:\academic\week7_selected_neuron_curves_full_timeline_15000sampbin_legacy_mean_bin.csv
+full_timeline,15000,0.5,legacy,all_neuron,0.95,0.3,False,0.3,250,194,G:\academic\week7_selected_neuron_curves_full_timeline_15000sampbin_legacy_all_neuron.csv
+full_timeline,30000,1.0,ratio1baseline,mean_bin,0.95,0.3,True,0.3,162,176,G:\academic\week7_selected_neuron_curves_full_timeline_30000sampbin_ratio1baseline_mean_bin.csv
+full_timeline,30000,1.0,ratio1baseline,all_neuron,0.95,0.7,True,0.7,22,94,G:\academic\week7_selected_neuron_curves_full_timeline_30000sampbin_ratio1baseline_all_neuron.csv
+windowed_600_samples,30000,1.0,ratio1baseline,mean_bin,0.95,0.3,True,0.3,162,135,G:\academic\week7_selected_neuron_curves_windowed_600_samples_30000sampbin_ratio1baseline_mean_bin.csv
+windowed_600_samples,30000,1.0,ratio1baseline,all_neuron,0.95,0.7,True,0.7,22,94,G:\academic\week7_selected_neuron_curves_windowed_600_samples_30000sampbin_ratio1baseline_all_neuron.csv

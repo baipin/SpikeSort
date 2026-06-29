@@ -1,0 +1,20 @@
+\frametitle{变化 3: DCT 不再只支持整段信号长度}
+\small
+  \begin{block}{上一次 meeting 之前的逻辑}
+    对每个通道做一次整段 DCT，只保留前若干项：
+    \begin{verbatim}
+for ch in range(n_chan):
+    c = dct(whitened_data[:, ch].astype(np.float32, copy=False),
+            norm='ortho')
+    coeff_mm[:, ch] = c[:n_keep].astype('float32', copy=False)
+    \end{verbatim}
+  \end{block}
+  \begin{itemize}
+    \item 之前的隐含假设：window 就是整段信号长度
+    \item 现在已经把 \texttt{window} 做成显式参数
+    \item 这样可以模拟真实传输场景下，数据被切成较短时间块后再压缩/发送
+    \item 当前一个关键新配置是：
+    \[
+      \text{bin} = 20\text{ ms}, \quad \text{window} = 20\text{ ms}
+    \]
+  \end{itemize}

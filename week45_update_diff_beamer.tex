@@ -1,0 +1,307 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usetheme{Madrid}
+\usecolortheme{default}
+
+\usepackage[UTF8]{ctex}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{graphicx}
+
+\title{Week 4--5 Update}
+\subtitle{与上一次 week45 LaTeX PPT 相比的主要变化}
+\author{}
+\date{2026-06-24}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{本次汇报只讲什么变了}
+  \begin{itemize}
+    \item 预处理不再手写，改为直接调用 Kilosort 现成函数
+    \item 主评估链路加入了 \alert{float32 $\rightarrow$ int16} 量化
+    \item DCT 从“整段信号一个窗口”扩展为“可配置 window”
+    \item 正确率定义进一步固定为 \alert{baseline template matching + binned spike count comparison}
+    \item bin 大小的选择开始和论文设置对齐
+    \item IBL / Kilosort2.5 数据接入被正式提上日程
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{变化 1: 预处理与量化链路更新}
+  \begin{block}{相比上一次 PPT}
+    上一次汇报里，更多是在说明 fixed-template matching 与 binned accuracy 思路；这一次已经把前处理链路改成更接近真实系统部署的版本。
+  \end{block}
+  \begin{itemize}
+    \item 预处理步骤改为直接调用 Kilosort 的函数，而不是自己重写同类步骤
+    \item 重建后的 \texttt{bin} 不再只停留在 \texttt{float32}，而是补上了 \texttt{int16} 量化与元数据保存
+    \item 当前主路径是：
+    \[
+      \text{whitened data} \rightarrow \text{DCT coeffs} \rightarrow \text{recon float32} \rightarrow \text{int16 transport format}
+    \]
+    \item 这样做的动机是：\alert{16 bit 量化更接近真实传输约束}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{变化 2: keep\_ratio=1.00 的基线表现已更新}
+  \small
+  \begin{table}
+    \centering
+    \begin{tabular}{lcc}
+      \toprule
+      Setting & Binned Micro & Binned Macro \\
+      \midrule
+      bin = 1 s, keep\_ratio = 1.00 & 82.37\% & 73.43\% \\
+      bin = 500 ms, keep\_ratio = 1.00 & 81.55\% & 74.46\% \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \vspace{0.4em}
+  \begin{block}{指标解释}
+    \[
+      \text{micro}=\frac{\text{total\_matched\_spikes}}{\text{total\_baseline\_spikes}}
+    \]
+    \[
+      \text{macro}=\frac{1}{N}\sum_{u=1}^{N}\text{accuracy}_{u}
+    \]
+    其中 macro 是先算每个神经元的匹配率，再对神经元做平均。
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]{变化 3: DCT 不再只支持整段信号长度}
+  \small
+  \begin{block}{上一次 meeting 之前的逻辑}
+    对每个通道做一次整段 DCT，只保留前若干项：
+    \begin{verbatim}
+for ch in range(n_chan):
+    c = dct(whitened_data[:, ch].astype(np.float32, copy=False),
+            norm='ortho')
+    coeff_mm[:, ch] = c[:n_keep].astype('float32', copy=False)
+    \end{verbatim}
+  \end{block}
+  \begin{itemize}
+    \item 之前的隐含假设：window 就是整段信号长度
+    \item 现在已经把 \texttt{window} 做成显式参数
+    \item 这样可以模拟真实传输场景下，数据被切成较短时间块后再压缩/发送
+    \item 当前一个关键新配置是：
+    \[
+      \text{bin} = 20\text{ ms}, \quad \text{window} = 20\text{ ms}
+    \]
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{变化 4: 20 ms window / 20 ms bin 的结果已经落地}
+  \small
+  \begin{table}
+    \centering
+    \begin{tabular}{ccc}
+      \toprule
+      keep\_ratio & Binned Micro & Binned Macro \\
+      \midrule
+      0.10 & 50.74\% & 52.88\% \\
+      0.20 & 75.11\% & 77.04\% \\
+      0.30 & 80.92\% & 81.15\% \\
+      0.50 & 81.33\% & 81.53\% \\
+      0.70 & 81.32\% & 81.52\% \\
+      1.00 & 81.33\% & 81.52\% \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \vspace{0.4em}
+  \begin{itemize}
+    \item 这里的 20 ms 对应采样率 30 kHz 下的 600 samples
+    \item 从结果上看，\texttt{keep\_ratio=0.30} 之后已经接近平台区
+    \item 和 1 s / 500 ms 相比，短 bin 下 macro 明显更高，说明短时局部 spike-count 结构更容易被保留
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{变化 5: 正确率判断逻辑已经进一步固定}
+  \small
+  \begin{enumerate}
+    \item 从完整跑过 Kilosort 的 baseline 输出中取出：
+    \begin{itemize}
+      \item templates
+      \item wPCA
+      \item ops 中 template matching 需要的参数
+    \end{itemize}
+    \item 把这些对象作为 \texttt{template\_matching} 的输入
+    \item 对压缩后的数据做 fixed-template matching
+    \item 再按照给定的 time bin，比较：
+    \[
+      n^{\text{baseline}}_{u,b} \quad \text{vs.} \quad n^{\text{compressed}}_{u,b}
+    \]
+    \item 最终正确率衡量的是：\alert{压缩后单个神经元在每个 bin 中的放电次数与 baseline 的差异}
+  \end{enumerate}
+
+  \begin{block}{和上次 PPT 的区别}
+    上次更偏“思路说明”；这次已经把 template source、matching path、以及按 bin 统计的 evaluation path 明确固化到 notebook/workflow 里。
+  \end{block}
+\end{frame}
+
+\begin{frame}{变化 6: bin size 的选择开始参考论文}
+  \small
+  \begin{itemize}
+    \item 查阅指定论文后，发现 bin 往往选得很短，主要集中在 \alert{20--80 ms}
+    \item 其中 \alert{20 ms} 是最常见的选择之一
+    \item 这支持了当前把 \texttt{bin = 20 ms, window = 20 ms} 作为重点实验配置的做法
+    \item 同时，也看到在某些离线分析场景中会使用很长的 bin，例如：
+    \begin{itemize}
+      \item 800 ms
+      \item 更长时间尺度的热图 / 汇总分析
+    \end{itemize}
+    \item 因此现在的理解是：
+    \begin{itemize}
+      \item 短 bin 更适合和文献中的神经编码/传输分析对齐
+      \item 长 bin 更适合做稳定的离线可视化和整体统计
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{变化 7: baseline 定义也在继续收紧}
+  \small
+  \begin{itemize}
+    \item 除了拿原始 Kilosort baseline 作为参考，现在还加入了一个额外控制：
+    \item 用 \texttt{keep\_ratio = 1.00} 的 fixed-template rerun 结果本身作为 baseline
+    \item 在 \texttt{window = 20 ms, bin = 20 ms} 下，对这个新 baseline 的比较结果是：
+    \begin{itemize}
+      \item 0.30 $\rightarrow$ 97.00\% / 97.00\%
+      \item 0.50 $\rightarrow$ 99.34\% / 99.35\%
+      \item 0.70 $\rightarrow$ 99.72\% / 99.74\%
+      \item 1.00 $\rightarrow$ 100\% / 100\%
+    \end{itemize}
+    \item 这说明原来的 82\% 左右并不全是压缩误差，还混合了
+    \begin{itemize}
+      \item 原始 Kilosort baseline
+      \item 与 fixed-template rerun 之间的方法差
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{变化 8: IBL 数据接入的准备情况}
+  \begin{itemize}
+    \item \url{internationalbrainlab.org} 的数据是基于 Kilosort 2.5 的
+    \item 因此不能直接无缝套进当前基于现有输出结构的工作流
+    \item 预计需要补一层格式或字段转换，至少要处理：
+    \begin{itemize}
+      \item output naming
+      \item template / spike / ops 结构差异
+      \item 和当前 notebook 输入约定之间的映射
+    \end{itemize}
+    \item 目前硬件层面已经完成一步准备：\alert{移动硬盘已经买回来了}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Details of IBL Datasets}
+  \small
+  \begin{block}{根据 IBL 官方文档，和当前项目最相关的部分}
+    IBL 的标准组织方式是 ONE + ALF。分析时通常读取的是 \texttt{alf} 目录下的处理后结果，而不是直接从原始 \texttt{bin} 开始。
+  \end{block}
+  \begin{itemize}
+    \item 一个 session 下面通常有：
+    \begin{itemize}
+      \item \texttt{alf/}：处理后的行为、视频、轮子、spike sorting 等结果
+      \item \texttt{raw\_ephys\_data/probeXX/}：原始 AP / LF 电生理数据
+    \end{itemize}
+    \item spike sorting 相关结果一般在 probe 目录下，例如：
+    \begin{itemize}
+      \item \texttt{alf/probe00/pykilosort/}
+      \item 或者旧版本直接在 \texttt{alf/probe00/} 下
+    \end{itemize}
+    \item 最常用的对象是：
+    \begin{itemize}
+      \item \texttt{spikes}
+      \item \texttt{clusters}
+      \item \texttt{channels}
+    \end{itemize}
+    \item 这些对象由 IBL 的 \texttt{SpikeSortingLoader} 统一读取，而不是直接按我们当前 notebook 的 \texttt{templates.npy / ops.npy / spike\_times.npy} 形式暴露
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Baseline Template Projection}
+  \small
+  \begin{itemize}
+    \item 图中每个点对应一个 baseline template，经 L2 归一化后再投影到 2D template-shape space
+    \item 颜色表示该 template 的 peak power，即最大绝对振幅 $\max |\text{template}|$
+    \item 这张图已经按修正后的 notebook 逻辑重新导出，可直接作为当前版本的诊断图
+  \end{itemize}
+
+  \vspace{0.3em}
+  \begin{center}
+    \includegraphics[width=0.86\linewidth]{week5_baseline_template_projection_peak_power.png}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Why IBL Is Not Plug-and-Play for Current Workflow}
+  \small
+  \begin{itemize}
+    \item IBL 官方文档说明：
+    \begin{itemize}
+      \item \texttt{pykilosort} 是默认读取版本
+      \item \texttt{Kilosort 2.5} 覆盖了\alert{大多数 2021 年 8 月之前}采集的数据
+    \end{itemize}
+    \item 当一个 probe 同时有多套 spike sorting 结果时：
+    \begin{itemize}
+      \item 默认版本通常放在 \texttt{alf/probeXX/pykilosort}
+      \item 较老的 KS2.5 结果可能直接放在 \texttt{alf/probeXX/}
+    \end{itemize}
+    \item 这和当前 workflow 的假设并不一致：
+    \begin{itemize}
+      \item 我们现在默认本地直接有 \texttt{templates.npy}, \texttt{ops.npy}, \texttt{spike\_times.npy}, \texttt{spike\_clusters.npy}
+      \item 而 IBL 更强调通过 loader 和 collection 去解析不同 sorter / revision
+    \end{itemize}
+    \item 因此接入 IBL 时至少要补一层转换：
+    \begin{itemize}
+      \item collection 选择
+      \item spikes / clusters / channels 到当前 notebook 输入格式的映射
+      \item histology / channel location 元数据与本地 channel 假设的对齐
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{What This Means for the Next Step}
+  \small
+  \begin{enumerate}
+    \item 先用 IBL loader 稳定读出某个 probe 的 \texttt{spikes}, \texttt{clusters}, \texttt{channels}
+    \item 明确该 probe 使用的是：
+    \begin{itemize}
+      \item \texttt{pykilosort}
+      \item 还是 \texttt{Kilosort 2.5}
+    \end{itemize}
+    \item 再把这些对象转换成当前固定模板匹配链路所需的 baseline 输入
+    \item 最后才把压缩、量化、template matching、binned accuracy 这一整条链路套进去
+  \end{enumerate}
+
+  \begin{block}{本页信息来源}
+    IBL 官方文档：
+    \begin{itemize}
+      \item ONE Quick Start
+      \item Get to know the datasets and folder structure
+      \item Loading SpikeSorting Data
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{总结}
+  \begin{itemize}
+    \item 这次相对上一次 week45 PPT，最大的变化不是“新模型”，而是\alert{工作流更接近真实系统实现}
+    \item 预处理改成直接调 Kilosort，量化补到 int16，DCT 改成支持 window
+    \item bin / window = 20 ms 的实验已经跑通，并且结果开始和论文常见设置对齐
+    \item 准确率定义现在更清楚地区分了：
+    \begin{itemize}
+      \item 相对原始 Kilosort baseline 的误差
+      \item 相对 fixed-template rerun baseline 的纯压缩误差
+    \end{itemize}
+    \item 下一步重点会转向：
+    \begin{itemize}
+      \item 更系统地扫短 bin / 短 window 配置
+      \item IBL / Kilosort2.5 数据适配
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\end{document}

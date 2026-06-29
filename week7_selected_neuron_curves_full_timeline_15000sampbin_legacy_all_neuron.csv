@@ -1,0 +1,5 @@
+neuron_id,baseline_spikes,compressed_spikes,matched_spikes_after_binning,binned_count_accuracy,sensitivity,ratio,baseline_mode,pipeline_version,cache_path,neuron_type,constraint_mode,dct_window_label,bin_size_samples,bin_size_seconds
+194,1199,446,444,0.3703085904920767,0.6296914095079233,0.1,legacy,int16_main_v3,G:\academic\week5_neuron_sensitivity_ratio_0.10_full_15000sampbin.npy,most robust,all_neuron,full_timeline,15000,0.5
+250,73,499,3,0.0410958904109589,0.9589041095890412,0.1,legacy,int16_main_v3,G:\academic\week5_neuron_sensitivity_ratio_0.10_full_15000sampbin.npy,most sensitive,all_neuron,full_timeline,15000,0.5
+194,1199,1199,1199,1.0,0.0,0.3,legacy,int16_main_v3,G:\academic\week5_neuron_sensitivity_ratio_0.30_full_15000sampbin.npy,most robust,all_neuron,full_timeline,15000,0.5
+250,73,603,2,0.0273972602739726,0.9726027397260274,0.3,legacy,int16_main_v3,G:\academic\week5_neuron_sensitivity_ratio_0.30_full_15000sampbin.npy,most sensitive,all_neuron,full_timeline,15000,0.5

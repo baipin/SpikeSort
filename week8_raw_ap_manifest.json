@@ -1,0 +1,53 @@
+{
+  "eid": "e5c75b62-6871-4135-b3d0-f6464c2d90c0",
+  "probe": "probe00",
+  "cache_dir": "G:\\academic\\ONE",
+  "downloaded_paths": [
+    "G:\\academic\\ONE\\cortexlab\\Subjects\\KS043\\2020-12-07\\001\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec0.ap.cbin",
+    "G:\\academic\\ONE\\cortexlab\\Subjects\\KS043\\2020-12-07\\001\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec0.ap.ch",
+    "G:\\academic\\ONE\\cortexlab\\Subjects\\KS043\\2020-12-07\\001\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec0.ap.meta"
+  ],
+  "download_records": [
+    {
+      "path": "G:\\academic\\ONE\\cortexlab\\Subjects\\KS043\\2020-12-07\\001\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec0.ap.cbin",
+      "status": "complete",
+      "size": 35529098643,
+      "expected_size": 35529098643,
+      "rel_path": "raw_ephys_data/probe00/_spikeglx_ephysData_g0_t0.imec0.ap.cbin",
+      "action": "skipped_complete"
+    },
+    {
+      "path": "G:\\academic\\ONE\\cortexlab\\Subjects\\KS043\\2020-12-07\\001\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec0.ap.ch",
+      "status": "complete",
+      "size": 137871,
+      "expected_size": 137871,
+      "rel_path": "raw_ephys_data/probe00/_spikeglx_ephysData_g0_t0.imec0.ap.ch",
+      "action": "skipped_complete"
+    },
+    {
+      "path": "G:\\academic\\ONE\\cortexlab\\Subjects\\KS043\\2020-12-07\\001\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec0.ap.meta",
+      "status": "complete",
+      "size": 17798,
+      "expected_size": 17798,
+      "rel_path": "raw_ephys_data/probe00/_spikeglx_ephysData_g0_t0.imec0.ap.meta",
+      "action": "skipped_complete"
+    }
+  ],
+  "local_cbin_candidates": [
+    "G:\\academic\\ONE\\cortexlab\\Subjects\\KS043\\2020-12-07\\001\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec0.ap.cbin"
+  ],
+  "ap_bin": "G:\\academic\\ONE\\cortexlab\\Subjects\\KS043\\2020-12-07\\001\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec0.ap.bin",
+  "decompress_record": {
+    "path": "G:\\academic\\ONE\\cortexlab\\Subjects\\KS043\\2020-12-07\\001\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec0.ap.bin",
+    "status": "complete",
+    "size": 102897219040,
+    "expected_size": 102897219040,
+    "action": "decompressed_overwrite_if_needed",
+    "before": {
+      "path": "G:\\academic\\ONE\\cortexlab\\Subjects\\KS043\\2020-12-07\\001\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec0.ap.bin",
+      "status": "partial",
+      "size": 51004800000,
+      "expected_size": 102897219040
+    }
+  }
+}
