@@ -1,0 +1,70 @@
+{
+  "eid": "bb099402-fb31-4cfd-824e-1c97530a0875",
+  "pid": null,
+  "probe": "probe00",
+  "run_label": "bb099402_probe00_20260702_202008",
+  "run_dir": "G:\\academic\\week8_kilosort4_runs\\bb099402_probe00_20260702_202008",
+  "ap_bin": "G:\\academic\\ONE\\churchlandlab_ucla\\Subjects\\UCLA017\\2021-11-16\\002\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.ap.bin",
+  "download_records": [
+    {
+      "path": "G:\\academic\\ONE\\churchlandlab_ucla\\Subjects\\UCLA017\\2021-11-16\\002\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.ap.cbin",
+      "status": "complete",
+      "size": 61515875999,
+      "expected_size": 61515875999,
+      "rel_path": "raw_ephys_data/probe00/_spikeglx_ephysData_g0_t0.imec.ap.cbin",
+      "action": "downloaded_or_resumed",
+      "before": {
+        "path": "G:\\academic\\ONE\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.ap.cbin",
+        "status": "missing",
+        "size": 0,
+        "expected_size": 61515875999
+      }
+    },
+    {
+      "path": "G:\\academic\\ONE\\churchlandlab_ucla\\Subjects\\UCLA017\\2021-11-16\\002\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.ap.ch",
+      "status": "complete",
+      "size": 208096,
+      "expected_size": 208096,
+      "rel_path": "raw_ephys_data/probe00/_spikeglx_ephysData_g0_t0.imec.ap.ch",
+      "action": "downloaded_or_resumed",
+      "before": {
+        "path": "G:\\academic\\ONE\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.ap.ch",
+        "status": "missing",
+        "size": 0,
+        "expected_size": 208096
+      }
+    },
+    {
+      "path": "G:\\academic\\ONE\\churchlandlab_ucla\\Subjects\\UCLA017\\2021-11-16\\002\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.ap.meta",
+      "status": "complete",
+      "size": 16757,
+      "expected_size": 16757,
+      "rel_path": "raw_ephys_data/probe00/_spikeglx_ephysData_g0_t0.imec.ap.meta",
+      "action": "downloaded_or_resumed",
+      "before": {
+        "path": "G:\\academic\\ONE\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.ap.meta",
+        "status": "missing",
+        "size": 0,
+        "expected_size": 16757
+      }
+    }
+  ],
+  "decompress_record": {
+    "path": "G:\\academic\\ONE\\churchlandlab_ucla\\Subjects\\UCLA017\\2021-11-16\\002\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.ap.bin",
+    "status": "complete",
+    "size": 153448060920,
+    "expected_size": 153448060920,
+    "action": "decompressed"
+  },
+  "kilosort_results_dir": "G:\\academic\\week8_kilosort4_runs\\bb099402_probe00_20260702_202008\\kilosort4",
+  "kilosort_settings": {
+    "filename": "G:\\academic\\ONE\\churchlandlab_ucla\\Subjects\\UCLA017\\2021-11-16\\002\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.ap.bin",
+    "n_chan_bin": "385",
+    "fs": "30000.0",
+    "nearest_chans": "2",
+    "n_pcs": "2"
+  },
+  "save_extra_vars": false,
+  "clear_cache": true,
+  "feature_memory_estimate_32m_spikes_gib": 0.476837158203125
+}
