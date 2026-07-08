@@ -1,0 +1,70 @@
+{
+  "eid": "9545aa05-3945-4054-a5c3-a259f7209d61",
+  "pid": null,
+  "probe": "probe01",
+  "run_label": "9545aa05_probe01_20260706_234838",
+  "run_dir": "G:\\academic\\week8_kilosort4_runs\\9545aa05_probe01_20260706_234838",
+  "ap_bin": "G:\\academic\\ONE\\mrsicflogellab\\Subjects\\SWC_058\\2020-12-10\\001\\raw_ephys_data\\probe01\\_spikeglx_ephysData_g0_t0.imec1.ap.bin",
+  "download_records": [
+    {
+      "path": "G:\\academic\\ONE\\mrsicflogellab\\Subjects\\SWC_058\\2020-12-10\\001\\raw_ephys_data\\probe01\\_spikeglx_ephysData_g0_t0.imec1.ap.cbin",
+      "status": "complete",
+      "size": 40685241318,
+      "expected_size": 40685241318,
+      "rel_path": "raw_ephys_data/probe01/_spikeglx_ephysData_g0_t0.imec1.ap.cbin",
+      "action": "downloaded_or_resumed",
+      "before": {
+        "path": "G:\\academic\\ONE\\raw_ephys_data\\probe01\\_spikeglx_ephysData_g0_t0.imec1.ap.cbin",
+        "status": "missing",
+        "size": 0,
+        "expected_size": 40685241318
+      }
+    },
+    {
+      "path": "G:\\academic\\ONE\\mrsicflogellab\\Subjects\\SWC_058\\2020-12-10\\001\\raw_ephys_data\\probe01\\_spikeglx_ephysData_g0_t0.imec1.ap.ch",
+      "status": "complete",
+      "size": 137457,
+      "expected_size": 137457,
+      "rel_path": "raw_ephys_data/probe01/_spikeglx_ephysData_g0_t0.imec1.ap.ch",
+      "action": "downloaded_or_resumed",
+      "before": {
+        "path": "G:\\academic\\ONE\\raw_ephys_data\\probe01\\_spikeglx_ephysData_g0_t0.imec1.ap.ch",
+        "status": "missing",
+        "size": 0,
+        "expected_size": 137457
+      }
+    },
+    {
+      "path": "G:\\academic\\ONE\\mrsicflogellab\\Subjects\\SWC_058\\2020-12-10\\001\\raw_ephys_data\\probe01\\_spikeglx_ephysData_g0_t0.imec1.ap.meta",
+      "status": "complete",
+      "size": 17767,
+      "expected_size": 17767,
+      "rel_path": "raw_ephys_data/probe01/_spikeglx_ephysData_g0_t0.imec1.ap.meta",
+      "action": "downloaded_or_resumed",
+      "before": {
+        "path": "G:\\academic\\ONE\\raw_ephys_data\\probe01\\_spikeglx_ephysData_g0_t0.imec1.ap.meta",
+        "status": "missing",
+        "size": 0,
+        "expected_size": 17767
+      }
+    }
+  ],
+  "decompress_record": {
+    "path": "G:\\academic\\ONE\\mrsicflogellab\\Subjects\\SWC_058\\2020-12-10\\001\\raw_ephys_data\\probe01\\_spikeglx_ephysData_g0_t0.imec1.ap.bin",
+    "status": "complete",
+    "size": 102464723900,
+    "expected_size": 102464723900,
+    "action": "decompressed"
+  },
+  "kilosort_results_dir": "G:\\academic\\week8_kilosort4_runs\\9545aa05_probe01_20260706_234838\\kilosort4",
+  "kilosort_settings": {
+    "filename": "G:\\academic\\ONE\\mrsicflogellab\\Subjects\\SWC_058\\2020-12-10\\001\\raw_ephys_data\\probe01\\_spikeglx_ephysData_g0_t0.imec1.ap.bin",
+    "n_chan_bin": "385",
+    "fs": "30000.390639481",
+    "nearest_chans": "2",
+    "n_pcs": "2"
+  },
+  "save_extra_vars": false,
+  "clear_cache": true,
+  "feature_memory_estimate_32m_spikes_gib": 0.476837158203125
+}
