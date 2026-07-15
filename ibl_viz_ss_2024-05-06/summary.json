@@ -1,0 +1,21 @@
+{
+  "source_url": "https://viz.internationalbrainlab.org/app?spikesorting=ss_2024-05-06",
+  "source_data_url": "https://viz.internationalbrainlab.org/static/cache/ss_2024-05-06/data.js",
+  "default_spikesorting": "ss_2024-05-06",
+  "default_pid": "c4f6665f-8be5-476b-a6e8-d81eeae9279d",
+  "default_dset": "bwm",
+  "data_js_bytes": 7707881,
+  "lz_string_bytes": 4814,
+  "decompressed_json_bytes": 33859869,
+  "n_session_records": 699,
+  "n_unique_eids": 459,
+  "n_unique_pids": 699,
+  "n_bwm_insertions": 699,
+  "n_rs_insertions": 0,
+  "output_files": [
+    "flask_ctx.json",
+    "sessions_by_insertion.csv",
+    "eid_directory.csv",
+    "brain_regions_by_insertion.csv"
+  ]
+}

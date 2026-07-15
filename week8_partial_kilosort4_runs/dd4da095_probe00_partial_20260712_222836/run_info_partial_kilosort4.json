@@ -1,0 +1,93 @@
+{
+  "eid": "dd4da095-4a99-4bf3-9727-f735077dba66",
+  "pid": null,
+  "probe": "probe00",
+  "run_label": "dd4da095_probe00_partial_20260712_222836",
+  "run_dir": "G:\\academic\\week8_partial_kilosort4_runs\\dd4da095_probe00_partial_20260712_222836",
+  "partial_ap_cbin": "G:\\academic\\week8_partial_kilosort4_runs\\dd4da095_probe00_partial_20260712_222836\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.ap.cbin",
+  "partial_ap_ch": "G:\\academic\\week8_partial_kilosort4_runs\\dd4da095_probe00_partial_20260712_222836\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.ap.ch",
+  "full_ap_ch": "G:\\academic\\week8_partial_kilosort4_runs\\dd4da095_probe00_partial_20260712_222836\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.full.ap.ch",
+  "partial_ap_bin": "G:\\academic\\week8_partial_kilosort4_runs\\dd4da095_probe00_partial_20260712_222836\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.first_600s.chunked.rawint16.ap.bin",
+  "partial_download_gb": 1.8,
+  "partial_max_seconds": 600.0,
+  "partial_chunk_seconds": 10.0,
+  "partial_samples_written": 6420000,
+  "partial_ch_record": {
+    "full_ch_path": "G:\\academic\\week8_partial_kilosort4_runs\\dd4da095_probe00_partial_20260712_222836\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.full.ap.ch",
+    "partial_ch_path": "G:\\academic\\week8_partial_kilosort4_runs\\dd4da095_probe00_partial_20260712_222836\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.ap.ch",
+    "partial_cbin_size": 1800000000,
+    "complete_chunks": 214,
+    "partial_samples_from_ch": 6420000,
+    "eid": "dd4da095-4a99-4bf3-9727-f735077dba66",
+    "pid": null,
+    "probe": "probe00",
+    "rel_path": "raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.ap.ch",
+    "file_kind": ".partial.ap.ch"
+  },
+  "download_records": [
+    {
+      "path": "G:\\academic\\week8_partial_kilosort4_runs\\dd4da095_probe00_partial_20260712_222836\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.ap.ch",
+      "status": "complete",
+      "size": 77963,
+      "requested_bytes": null,
+      "url": "https://ibl.flatironinstitute.org/public/mainenlab/Subjects/ZM_1897/2019-12-02/001/raw_ephys_data/probe00/_spikeglx_ephysData_g0_t0.imec.ap.26bcf8d8-f330-4bbf-b5fb-dfadbbffb49e.ch",
+      "eid": "dd4da095-4a99-4bf3-9727-f735077dba66",
+      "pid": null,
+      "probe": "probe00",
+      "rel_path": "raw_ephys_data/probe00/_spikeglx_ephysData_g0_t0.imec.ap.ch",
+      "file_kind": ".ch"
+    },
+    {
+      "path": "G:\\academic\\week8_partial_kilosort4_runs\\dd4da095_probe00_partial_20260712_222836\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.ap.meta",
+      "status": "complete",
+      "size": 16755,
+      "requested_bytes": null,
+      "url": "https://ibl.flatironinstitute.org/public/mainenlab/Subjects/ZM_1897/2019-12-02/001/raw_ephys_data/probe00/_spikeglx_ephysData_g0_t0.imec.ap.f9daae7b-ff40-4091-a107-eac1b23f94a1.meta",
+      "eid": "dd4da095-4a99-4bf3-9727-f735077dba66",
+      "pid": null,
+      "probe": "probe00",
+      "rel_path": "raw_ephys_data/probe00/_spikeglx_ephysData_g0_t0.imec.ap.meta",
+      "file_kind": ".meta"
+    },
+    {
+      "path": "G:\\academic\\week8_partial_kilosort4_runs\\dd4da095_probe00_partial_20260712_222836\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.ap.cbin",
+      "status": "complete",
+      "size": 1800000000,
+      "requested_bytes": 1800000000,
+      "url": "https://ibl.flatironinstitute.org/public/mainenlab/Subjects/ZM_1897/2019-12-02/001/raw_ephys_data/probe00/_spikeglx_ephysData_g0_t0.imec.ap.3d6e0136-274a-44de-92ce-68e5d51bdd55.cbin",
+      "eid": "dd4da095-4a99-4bf3-9727-f735077dba66",
+      "pid": null,
+      "probe": "probe00",
+      "rel_path": "raw_ephys_data/probe00/_spikeglx_ephysData_g0_t0.imec.ap.cbin",
+      "file_kind": ".cbin",
+      "full_file_size": 21278555040
+    }
+  ],
+  "partial_bin_record": {
+    "status": "created",
+    "samples_written": 6420000,
+    "path": "G:\\academic\\week8_partial_kilosort4_runs\\dd4da095_probe00_partial_20260712_222836\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.first_600s.chunked.rawint16.ap.bin",
+    "size": 4943400000,
+    "eid": "dd4da095-4a99-4bf3-9727-f735077dba66",
+    "pid": null,
+    "probe": "probe00",
+    "rel_path": "raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.first_600s.chunked.rawint16.ap.bin",
+    "file_kind": ".partial.ap.bin",
+    "requested_bytes": "",
+    "url": "",
+    "full_file_size": "",
+    "partial_download_gb": 1.8,
+    "partial_max_seconds": 600.0,
+    "partial_chunk_seconds": 10.0,
+    "fs": 30000.0
+  },
+  "partial_kilosort_results_dir": "G:\\academic\\week8_partial_kilosort4_runs\\dd4da095_probe00_partial_20260712_222836\\kilosort4_partial",
+  "partial_kilosort_settings": {
+    "filename": "G:\\academic\\week8_partial_kilosort4_runs\\dd4da095_probe00_partial_20260712_222836\\raw_ephys_data\\probe00\\_spikeglx_ephysData_g0_t0.imec.first_600s.chunked.rawint16.ap.bin",
+    "n_chan_bin": "385",
+    "fs": "30000.0",
+    "nearest_chans": "2",
+    "n_pcs": "2"
+  },
+  "partial_kilosort_status": "complete"
+}

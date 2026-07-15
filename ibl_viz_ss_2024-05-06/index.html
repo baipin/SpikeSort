@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IBL Viz Dataset Directory</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>IBL Viz Dataset Directory</h1>
+      <p>Local query interface for ss_2024-05-06 eid and brain-region tables.</p>
+    </div>
+    <a class="source-link" href="https://viz.internationalbrainlab.org/app?spikesorting=ss_2024-05-06" target="_blank" rel="noreferrer">Source</a>
+  </header>
+
+  <main>
+    <section class="controls" aria-label="Filters">
+      <label class="search-box">
+        <span>Search</span>
+        <input id="searchInput" type="search" placeholder="eid, pid, lab, subject, probe, region">
+      </label>
+
+      <label>
+        <span>Lab</span>
+        <select id="labFilter">
+          <option value="">All labs</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Region</span>
+        <select id="regionFilter">
+          <option value="">All regions</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Min good clusters</span>
+        <input id="minGoodClusters" type="number" min="0" step="1" placeholder="0">
+      </label>
+
+      <label>
+        <span>Sort</span>
+        <select id="sortSelect">
+          <option value="n_good_clusters_total:desc">Good clusters desc</option>
+          <option value="n_overall_clusters_total:desc">All clusters desc</option>
+          <option value="n_spikes_total:desc">Spikes desc</option>
+          <option value="recording_date:asc">Date asc</option>
+          <option value="recording_date:desc">Date desc</option>
+          <option value="labs:asc">Lab asc</option>
+        </select>
+      </label>
+
+      <button id="resetButton" type="button" title="Clear filters" aria-label="Clear filters">Reset</button>
+    </section>
+
+    <section class="stats" aria-live="polite">
+      <div>
+        <strong id="shownCount">0</strong>
+        <span>shown eids</span>
+      </div>
+      <div>
+        <strong id="totalCount">0</strong>
+        <span>total eids</span>
+      </div>
+      <div>
+        <strong id="totalInsertions">0</strong>
+        <span>insertions</span>
+      </div>
+      <div>
+        <strong id="totalGoodClusters">0</strong>
+        <span>good clusters</span>
+      </div>
+    </section>
+
+    <section class="table-shell">
+      <div class="table-actions">
+        <button id="downloadFiltered" type="button">Download filtered CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>EID</th>
+              <th>Lab</th>
+              <th>Subject</th>
+              <th>Date</th>
+              <th>Probes</th>
+              <th>Good / All</th>
+              <th>Spikes</th>
+              <th>Trials</th>
+              <th>Regions</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <aside id="detailPanel" class="detail-panel" aria-label="EID details" aria-hidden="true">
+    <div class="detail-header">
+      <div>
+        <span class="eyebrow">Selected eid</span>
+        <h2 id="detailTitle">No selection</h2>
+      </div>
+      <button id="closeDetail" type="button" title="Close details" aria-label="Close details">X</button>
+    </div>
+    <div id="detailContent" class="detail-content"></div>
+  </aside>
+
+  <div id="loading" class="loading">Loading local CSV files...</div>
+  <script src="./app.js"></script>
+</body>
+</html>
