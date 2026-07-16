@@ -1,0 +1,18 @@
+{
+  "run_label": "dd4da095_probe00_partial_20260712_222836",
+  "eid": "dd4da095-4a99-4bf3-9727-f735077dba66",
+  "probe": "probe00",
+  "baseline_partial_run_dir": "G:\\academic\\week8_partial_kilosort4_runs\\dd4da095_probe00_partial_20260712_222836",
+  "baseline_partial_ks_dir": "G:\\academic\\week8_partial_kilosort4_runs\\dd4da095_probe00_partial_20260712_222836\\kilosort4_partial",
+  "preprocessed_copy": "G:\\academic\\week8_partial_dct_kilosort_runs\\dd4da095_probe00_partial_20260712_222836\\baseline_preprocessed\\temp_wh.dat",
+  "ratio": 0.2,
+  "dct_window_samples": 600,
+  "dct_bin": "G:\\academic\\week8_partial_dct_kilosort_runs\\dd4da095_probe00_partial_20260712_222836\\ratio_0.20\\dd4da095_probe00_partial_20260712_222836_ratio_0.20_dctwin_600samp_preprocessed_int16.bin",
+  "dct_kilosort_results_dir": "G:\\academic\\week8_partial_dct_kilosort_runs\\dd4da095_probe00_partial_20260712_222836\\ratio_0.20\\kilosort4_dct",
+  "n_chan": 385,
+  "fs": 30000.0,
+  "n_samples": 6420000,
+  "n_keep": 120,
+  "status": "complete",
+  "error": ""
+}
