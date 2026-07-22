@@ -297,10 +297,14 @@ class AccuracyPredictorModel:
         return out
 
     def predict_probe_accuracy(self, probe_feature_df: pd.DataFrame, ratio: float) -> Dict[str, object]:
-        frame = build_ratio_feature_frame(probe_feature_df, ratio=float(ratio))
+        ratio = float(ratio)
+        frame = build_ratio_feature_frame(probe_feature_df, ratio=ratio)
         pred = self.predict_dataframe(frame)
+        if np.isclose(ratio, 1.0):
+            # In the ratio=1.0 baseline convention, the uncompressed run is compared with itself.
+            pred["predicted_accuracy"] = 1.0
         return {
-            "ratio": float(ratio),
+            "ratio": ratio,
             "predicted_probe_accuracy_mean": float(pred["predicted_accuracy"].mean()),
             "predicted_neuron_accuracy_table": pred,
         }

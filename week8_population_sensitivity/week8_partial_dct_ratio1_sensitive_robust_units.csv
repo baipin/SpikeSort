@@ -1,0 +1,7 @@
+run_label,neuron_type,selection_ratio,baseline_cluster_id,selection_accuracy,baseline_spikes,baseline_depth_um
+8ca740c5_probe00_partial_20260712_222836,most sensitive,0.3,195,0.0,4966,2160.138671875
+8ca740c5_probe00_partial_20260712_222836,most robust,0.3,101,1.0,1561,1242.5240478515625
+cde63527_probe01_partial_20260712_222836,most sensitive,0.3,137,0.0,3080,2278.240234375
+cde63527_probe01_partial_20260712_222836,most robust,0.3,173,1.0,246,2514.28173828125
+dd4da095_probe00_partial_20260712_222836,most sensitive,0.3,269,0.0,2585,1598.5740966796875
+dd4da095_probe00_partial_20260712_222836,most robust,0.3,222,1.0,3068,1278.674072265625
