@@ -1,0 +1,2 @@
+source G:/ACADEMIC/esp32s3-bandwidth-sender/build/gdbinit/symbols
+source G:/ACADEMIC/esp32s3-bandwidth-sender/build/gdbinit/connect

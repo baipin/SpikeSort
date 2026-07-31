@@ -1,0 +1,67 @@
+Listening on 0.0.0.0:5001, frame=4110 bytes, payload=4096 bytesMetrics WebSocket listening on ws://127.0.0.1:8765
+
+CSV output: captures\frames_20260731_213315.csv and captures\metrics_20260731_213315.csv
+SQLite output: captures\bandwidth_capture.sqlite3
+InfluxDB output: http://127.0.0.1:8086 org=neural-link-lab bucket=esp32s3_bandwidth
+Connected by ('192.168.137.115', 65481)
+fps=5.4 rate=21.5 KiB/s missing=10 loss=17.544% crc_errors=3090 old=0 avg_interval=190.50 ms jitter=1237.99 ms bw_jitter=0.00 KiB/s
+fps=3.8 rate=15.4 KiB/s missing=71 loss=67.619% crc_errors=2865 old=0 avg_interval=261.38 ms jitter=1430.71 ms bw_jitter=4.35 KiB/s
+fps=2.8 rate=11.4 KiB/s missing=80 loss=67.797% crc_errors=4515 old=0 avg_interval=352.41 ms jitter=2119.11 ms bw_jitter=5.10 KiB/s
+fps=15.8 rate=63.4 KiB/s missing=128 loss=79.012% crc_errors=615 old=0 avg_interval=63.35 ms jitter=303.85 ms bw_jitter=24.00 KiB/s
+fps=3.4 rate=13.5 KiB/s missing=18 loss=33.962% crc_errors=3510 old=0 avg_interval=298.35 ms jitter=1699.45 ms bw_jitter=21.77 KiB/s
+fps=3.1 rate=12.3 KiB/s missing=0 loss=0.000% crc_errors=3496 old=0 avg_interval=11.69 ms jitter=37.00 ms bw_jitter=20.15 KiB/s
+fps=4.3 rate=17.1 KiB/s missing=98 loss=85.965% crc_errors=1229 old=0 avg_interval=863.76 ms jitter=3441.65 ms bw_jitter=18.52 KiB/s
+fps=2.4 rate=9.7 KiB/s missing=99 loss=76.154% crc_errors=4305 old=0 avg_interval=413.07 ms jitter=2253.20 ms bw_jitter=17.70 KiB/s
+fps=1.3 rate=5.2 KiB/s missing=34 loss=69.388% crc_errors=3885 old=0 avg_interval=778.89 ms jitter=2934.79 ms bw_jitter=17.33 KiB/s
+fps=2.2 rate=9.0 KiB/s missing=123 loss=79.870% crc_errors=4305 old=0 avg_interval=445.54 ms jitter=2420.96 ms bw_jitter=16.63 KiB/s
+fps=1.4 rate=5.6 KiB/s missing=112 loss=88.189% crc_errors=3885 old=0 avg_interval=721.05 ms jitter=2738.65 ms bw_jitter=16.20 KiB/s
+fps=2.5 rate=10.0 KiB/s missing=132 loss=80.982% crc_errors=4305 old=0 avg_interval=400.71 ms jitter=2188.94 ms bw_jitter=15.57 KiB/s
+fps=1.3 rate=5.2 KiB/s missing=103 loss=87.288% crc_errors=3885 old=0 avg_interval=765.43 ms jitter=2908.22 ms bw_jitter=15.21 KiB/s
+fps=2.4 rate=9.7 KiB/s missing=117 loss=79.054% crc_errors=4305 old=0 avg_interval=413.23 ms jitter=2246.19 ms bw_jitter=14.69 KiB/s
+No data for 3 seconds; closing stale connection
+Connected by ('192.168.137.115', 60193)
+Disconnected
+Connected by ('192.168.137.115', 60194)
+fps=19.5 rate=78.2 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=53.37 ms jitter=29.55 ms bw_jitter=0.00 KiB/s
+Disconnected
+Connected by ('192.168.137.115', 60195)
+fps=19.9 rate=79.8 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=50.01 ms jitter=30.36 ms bw_jitter=0.00 KiB/s
+fps=19.4 rate=77.9 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=53.63 ms jitter=55.41 ms bw_jitter=1.34 KiB/s
+fps=20.6 rate=82.9 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=46.39 ms jitter=39.76 ms bw_jitter=2.50 KiB/s
+fps=19.4 rate=77.8 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=53.71 ms jitter=47.75 ms bw_jitter=2.36 KiB/s
+fps=20.6 rate=82.7 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=46.66 ms jitter=42.24 ms bw_jitter=2.47 KiB/s
+fps=19.5 rate=78.5 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=49.93 ms jitter=50.24 ms bw_jitter=2.32 KiB/s
+fps=20.5 rate=82.1 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=50.08 ms jitter=59.48 ms bw_jitter=2.27 KiB/s
+fps=19.6 rate=78.5 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=49.87 ms jitter=46.75 ms bw_jitter=2.20 KiB/s
+fps=20.3 rate=81.6 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=52.21 ms jitter=53.52 ms bw_jitter=2.12 KiB/s
+fps=19.6 rate=78.7 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=50.98 ms jitter=48.72 ms bw_jitter=2.06 KiB/s
+fps=20.4 rate=81.9 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=48.98 ms jitter=44.89 ms bw_jitter=2.03 KiB/s
+fps=19.8 rate=79.3 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=47.78 ms jitter=39.73 ms bw_jitter=1.96 KiB/s
+fps=19.5 rate=78.3 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=50.08 ms jitter=52.14 ms bw_jitter=1.94 KiB/s
+fps=20.4 rate=81.7 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=52.91 ms jitter=56.62 ms bw_jitter=1.92 KiB/s
+fps=19.7 rate=79.0 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=46.78 ms jitter=46.15 ms bw_jitter=1.87 KiB/s
+fps=20.5 rate=82.3 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=50.04 ms jitter=51.25 ms bw_jitter=1.90 KiB/s
+fps=19.5 rate=78.4 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=49.96 ms jitter=57.77 ms bw_jitter=1.89 KiB/s
+fps=20.3 rate=81.4 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=53.04 ms jitter=51.96 ms bw_jitter=1.86 KiB/s
+fps=19.6 rate=78.5 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=51.10 ms jitter=51.44 ms bw_jitter=1.84 KiB/s
+fps=20.7 rate=83.0 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=46.08 ms jitter=40.35 ms bw_jitter=1.91 KiB/s
+fps=19.6 rate=78.5 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=49.99 ms jitter=59.15 ms bw_jitter=1.90 KiB/s
+fps=20.5 rate=82.2 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=50.03 ms jitter=58.24 ms bw_jitter=1.90 KiB/s
+fps=19.5 rate=78.4 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=49.93 ms jitter=56.07 ms bw_jitter=1.90 KiB/s
+fps=20.5 rate=82.3 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=49.95 ms jitter=50.06 ms bw_jitter=1.90 KiB/s
+fps=19.4 rate=78.0 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=50.32 ms jitter=53.01 ms bw_jitter=1.91 KiB/s
+fps=20.6 rate=82.7 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=49.84 ms jitter=58.12 ms bw_jitter=1.94 KiB/s
+fps=19.3 rate=77.4 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=53.92 ms jitter=57.82 ms bw_jitter=1.98 KiB/s
+fps=20.8 rate=83.5 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=46.31 ms jitter=44.87 ms bw_jitter=2.04 KiB/s
+fps=19.5 rate=78.4 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=49.80 ms jitter=53.43 ms bw_jitter=2.04 KiB/s
+fps=20.5 rate=82.2 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=50.04 ms jitter=57.28 ms bw_jitter=2.03 KiB/s
+fps=19.4 rate=77.8 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=53.57 ms jitter=52.90 ms bw_jitter=2.08 KiB/s
+fps=20.6 rate=82.7 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=46.39 ms jitter=45.44 ms bw_jitter=2.08 KiB/s
+fps=19.5 rate=78.1 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=53.66 ms jitter=54.86 ms bw_jitter=2.07 KiB/s
+fps=20.5 rate=82.3 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=48.74 ms jitter=42.73 ms bw_jitter=2.05 KiB/s
+fps=19.7 rate=79.0 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=47.94 ms jitter=43.96 ms bw_jitter=2.02 KiB/s
+fps=20.3 rate=81.6 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=51.90 ms jitter=58.77 ms bw_jitter=2.01 KiB/s
+fps=19.7 rate=79.1 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=47.97 ms jitter=41.65 ms bw_jitter=1.99 KiB/s
+fps=19.5 rate=78.3 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=52.17 ms jitter=55.10 ms bw_jitter=1.99 KiB/s
+fps=20.4 rate=81.8 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=50.81 ms jitter=44.21 ms bw_jitter=2.00 KiB/s
+fps=19.6 rate=78.7 KiB/s missing=0 loss=0.000% crc_errors=0 old=0 avg_interval=49.13 ms jitter=48.82 ms bw_jitter=2.00 KiB/s

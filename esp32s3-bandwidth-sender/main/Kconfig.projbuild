@@ -1,0 +1,77 @@
+menu "Bandwidth Sender"
+
+    config BANDWIDTH_WIFI_SSID
+        string "WiFi SSID"
+        default "YOUR_HOTSPOT_SSID"
+        help
+            WiFi network used by the ESP32-S3 bandwidth sender.
+
+    config BANDWIDTH_WIFI_PASSWORD
+        string "WiFi password"
+        default "YOUR_HOTSPOT_PASSWORD"
+        help
+            Password for the WiFi network.
+
+    config BANDWIDTH_SERVER_IP
+        string "TCP server IPv4 address"
+        default "192.168.137.1"
+        help
+            Laptop IP address reachable from the ESP32-S3.
+
+    config BANDWIDTH_SERVER_PORT
+        int "TCP server port"
+        default 5001
+        range 1 65535
+        help
+            TCP port listened on by the laptop receiver.
+
+    config BANDWIDTH_PAYLOAD_BYTES
+        int "Payload bytes per frame"
+        default 4096
+        range 1 65535
+        help
+            Binary payload size appended after the 12-byte frame header.
+
+    config BANDWIDTH_FPS
+        int "Frames per second"
+        default 20
+        range 1 1000
+        help
+            Target frame cadence for the sender task.
+
+    config BANDWIDTH_SEND_TIMEOUT_MS
+        int "Per-frame send timeout in milliseconds"
+        default 100
+        range 1 10000
+        help
+            Drop the current application frame if non-blocking send cannot finish in this time.
+
+    config BANDWIDTH_SOCKET_SNDBUF
+        int "TCP socket send buffer bytes"
+        default 16384
+        range 0 1048576
+        help
+            Requested SO_SNDBUF size. Set 0 to keep the lwIP default.
+
+    config BANDWIDTH_SNTP_ENABLE
+        bool "Enable SNTP clock sync"
+        default y
+        help
+            Synchronize ESP32-S3 system time before streaming so the receiver can estimate end-to-end latency.
+
+    config BANDWIDTH_SNTP_SERVER
+        string "SNTP server"
+        default "pool.ntp.org"
+        depends on BANDWIDTH_SNTP_ENABLE
+        help
+            NTP/SNTP server used for ESP32-S3 wall-clock synchronization.
+
+    config BANDWIDTH_SNTP_SYNC_TIMEOUT_MS
+        int "SNTP sync timeout in milliseconds"
+        default 15000
+        range 1000 120000
+        depends on BANDWIDTH_SNTP_ENABLE
+        help
+            Maximum time to wait for SNTP synchronization before falling back to monotonic uptime timestamps.
+
+endmenu

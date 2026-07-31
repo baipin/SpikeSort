@@ -1,0 +1,12 @@
+Command: C:\Users\baipi\.espressif\python_env\idf6.0_py3.13_env\Scripts\python.exe E:\esp\v6.0.2\esp-idf\tools/idf_monitor.py -p COM7 -b 115200 --toolchain-prefix xtensa-esp32s3-elf- --target esp32s3 --revision 0 G:\ACADEMIC\esp32s3-bandwidth-sender\build\esp32s3-bandwidth-sender.elf G:\ACADEMIC\esp32s3-bandwidth-sender\build\bootloader\bootloader.elf --force-color -m 'C:\Users\baipi\.espressif\python_env\idf6.0_py3.13_env\Scripts\python.exe' 'E:\esp\v6.0.2\esp-idf\tools\idf.py' '-p' 'COM7'
+[0;33m--- Warning: GDB cannot open serial ports accessed as COMx[0m
+[0;33m--- Using \\.\COM7 instead...[0m
+[0;33m--- esp-idf-monitor 1.9.0 on \\.\COM7 115200[0m
+[0;33m--- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H[0m
+[0;33m--- Connection to \\.\COM7 failed. Available ports:
+--- COM4
+--- COM6
+--- COM3
+--- COM5
+--- COM7[0m
+[0m
