@@ -1,7 +1,7 @@
 # SpikeSort
 Spike Sorting Research.
 
-## Environment Dependence
+## Environment Dependence (Week 1- 5)
 Follow [this](https://kilosort.readthedocs.io/en/latest/README.html) instruction to install the environment.  
 ```
 conda
@@ -30,7 +30,7 @@ conda activate kilosort
 ```
 Open jupyter lab to start work:`jupyter lab`. Or open GUI with `python -m kilosort`.
 
-## Environment Dependence from week 6
+## Environment Dependence (Week 6-9)
 
 From week 6 (6.ipynb), you need to install more environment dependence. Follow [Installation of IBL Unified Environment](https://docs.internationalbrainlab.org/02_installation.html) to install the environment.   
 Run them line by line:   
@@ -54,7 +54,11 @@ python -m ipykernel install --user --name kilosort --display-name "Python (Kilos
 ```
 After this, you can switch to any kernel in any environment. Just run `jupyter lab F:\`in any environment including base is okay.
 
-## Local Artifact Layout
+## Environment Dependence (from Week10)
+
+Please see the readme file under `/esp32s3-banwidth-sender` folder.
+
+## Architecture
 
 Large generated data is kept out of the repository root:
 
@@ -66,5 +70,17 @@ Large generated data is kept out of the repository root:
 - `outputs/week4/`, `outputs/week5/`, `outputs/week7/`, `outputs/week8/`: week-specific result tables and caches.
 - `reports/`: generated reports, PDFs, LaTeX outputs, and presentation artifacts.
 
-The notebooks write newly generated files into these folders instead of the repository root. Large binary artifacts are ignored by `.gitignore`.
+You can obtain these files by executing the notebook code on your own device after clone this repository.
 
+## Notebook Overview
+
+- `1.ipynb`: Downloads the short Neuropixels sample dataset, prepares Kilosort probe files, and runs the initial baseline Kilosort workflow used by later notebooks.
+- `2.ipynb`: Continues the baseline workflow, applies DCT compression experiments to preprocessed neural signals, rebuilds `whitened_data.npy`, and generates compression evaluation caches.
+- `3.ipynb`: Evaluates compressed-data sorting against the baseline using baseline-anchored spike labeling, nearest/mutual/Hungarian-style time matching, and detection-time metrics.
+- `4.ipynb`: Runs strict fixed-baseline-template sorting on compressed reconstructed data and evaluates binned spike-count accuracy across compression ratios.
+- `5.ipynb`: Studies neuron-level sensitivity under different compression ratios, builds per-neuron accuracy tables, and trains/uses the accuracy predictor and ratio recommender.
+- `6.ipynb`: Introduces the IBL/ONE workflow with behavioral trial loading and basic behavioral performance examples.
+- `7.ipynb`: Redraws constraint-aware keep-ratio diagnostics from cached Week 5 results, comparing mean-bin and all-neuron accuracy constraints.
+- `8.ipynb`: Works with OpenAlyx raw electrophysiology sessions, downloads/decompresses AP data when needed, runs Kilosort4 on full or partial data, and evaluates DCT-compressed partial runs.
+- `9.ipynb`: Discovers Week 8 partial DCT Kilosort outputs, applies the learned predictor, and generates compression-ratio recommendations for each recording.
+-  `/esp32s3-banwidth-sender`: Esp32 hardware research.
