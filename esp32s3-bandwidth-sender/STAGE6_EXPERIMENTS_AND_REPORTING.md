@@ -13,7 +13,7 @@ docker compose -f docker-compose.monitoring.yml up -d
 Start the receiver:
 
 ```powershell
-python -u receiver.py
+python -u receiver.py --manifest experiments\baseline_near.json --experiment-id baseline-near-001 --condition baseline-near
 ```
 
 Reset or flash the ESP32-S3 and let the run continue for the planned duration. For baseline stability, use at least 30 minutes.
@@ -30,6 +30,12 @@ Copy `experiments/run_template.json` to a run-specific JSON file and fill in:
 - neural-data mapping notes, such as compression ratio and channel/neuron count
 
 The manifest keeps the bandwidth result connected to the spike-sorting application context instead of becoming an isolated network benchmark.
+
+For a first close-range sanity check, use:
+
+```powershell
+experiments\baseline_near.json
+```
 
 ## Generate the Report
 
@@ -61,6 +67,13 @@ The report includes:
 - arrival jitter
 - bandwidth volatility
 - P50/P95/P99 latency when SNTP-based timestamps are available
+- quality gates for CRC integrity, application loss, frame rate, throughput, and latency availability
+
+For the baseline manifest:
+
+```powershell
+python tools\generate_report.py --db captures\bandwidth_capture.sqlite3 --out reports --manifest experiments\baseline_near.json --last-minutes 30
+```
 
 ## Recommended Experiment Matrix
 

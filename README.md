@@ -70,7 +70,7 @@ Large generated data is kept out of the repository root:
 - `outputs/week4/`, `outputs/week5/`, `outputs/week7/`, `outputs/week8/`: week-specific result tables and caches.
 - `reports/`: generated reports, PDFs, LaTeX outputs, and presentation artifacts.
 
-You can obtain these files by executing the notebook code on your own device after clone this repository.
+Some data filed are excluded. You can obtain these files by executing the notebook code on your own device after clone this repository.
 
 ## Notebook Overview
 

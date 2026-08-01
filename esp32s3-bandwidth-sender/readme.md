@@ -99,9 +99,9 @@ This confirms that Python can write metrics to InfluxDB.
 The ESP32-S3 firmware currently expects:
 
 ```text
-SSID: Dennis
-Password: 60763312
-Receiver IP: 192.168.137.1
+SSID: (Your Wifi SSID)
+Password: (Your Wifi password)
+Receiver IP: 192.168.137.1 (Your computer IP address, get it from ipconfig command)
 Receiver TCP port: 5001
 ```
 
@@ -122,7 +122,7 @@ Get-NetIPAddress -AddressFamily IPv4
 Run:
 
 ```powershell
-python -u receiver.py
+python -u receiver.py --manifest experiments\baseline_near.json --experiment-id baseline-near-001 --condition baseline-near
 ```
 
 The receiver listens on:

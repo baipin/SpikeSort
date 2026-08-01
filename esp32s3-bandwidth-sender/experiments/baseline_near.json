@@ -1,0 +1,44 @@
+{
+  "experiment_id": "baseline-near-001",
+  "operator": "",
+  "started_at_local": "",
+  "condition_label": "baseline-near",
+  "application_context": {
+    "workload": "spike_stream_surrogate",
+    "downstream_task": "wireless bandwidth and latency validation for neural recording / spike-sorting pipeline",
+    "notes": "Baseline close-range hotspot run for checking whether the 20 fps x 4 KiB stream is stable before distance/interference experiments."
+  },
+  "device": {
+    "board": "ESP32-S3-PICO-1",
+    "firmware_project": "esp32s3-bandwidth-sender",
+    "serial_port": "COM7"
+  },
+  "network": {
+    "ssid": "Dennis",
+    "receiver_ip": "192.168.137.1",
+    "receiver_port": 5001,
+    "hotspot_device": "Windows laptop mobile hotspot",
+    "ntp_server": "pool.ntp.org"
+  },
+  "stream": {
+    "transport": "WiFi + TCP",
+    "target_fps": 20,
+    "payload_bytes": 4096,
+    "frame_bytes": 4110
+  },
+  "condition": {
+    "distance_m": 1,
+    "line_of_sight": true,
+    "board_orientation": "near laptop hotspot",
+    "interference_notes": "",
+    "laptop_power_mode": "",
+    "duration_min": 30
+  },
+  "neural_data_scenario": {
+    "source_notebook_or_dataset": "deterministic firmware surrogate payload",
+    "compression_ratio": null,
+    "channels_or_neurons": null,
+    "sample_rate_hz": null,
+    "payload_mapping_notes": "Use this baseline before mapping payload size to a compressed neural stream scenario."
+  }
+}

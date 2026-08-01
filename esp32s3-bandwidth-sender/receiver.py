@@ -179,9 +179,11 @@ class WebSocketBroadcaster:
 
 
 class CaptureStore:
-    def __init__(self, output_dir: Path):
+    def __init__(self, output_dir: Path, run_metadata=None):
         output_dir.mkdir(parents=True, exist_ok=True)
         started_at = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.run_metadata = run_metadata or {}
+        self.run_id = self.run_metadata.get("experiment_id") or started_at
         self.frame_csv_path = output_dir / f"frames_{started_at}.csv"
         self.metrics_csv_path = output_dir / f"metrics_{started_at}.csv"
         self.sqlite_path = output_dir / "bandwidth_capture.sqlite3"
@@ -288,6 +290,15 @@ class CaptureStore:
     def _init_db(self):
         self.db.execute(
             """
+            CREATE TABLE IF NOT EXISTS experiment_runs (
+                run_id TEXT PRIMARY KEY,
+                started_at_ns INTEGER NOT NULL,
+                metadata_json TEXT NOT NULL
+            )
+            """
+        )
+        self.db.execute(
+            """
             CREATE TABLE IF NOT EXISTS frames (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 recv_time_ns INTEGER NOT NULL,
@@ -331,6 +342,18 @@ class CaptureStore:
         self._ensure_column("metrics", "latency_p50_ms", "REAL")
         self._ensure_column("metrics", "latency_p95_ms", "REAL")
         self._ensure_column("metrics", "latency_p99_ms", "REAL")
+        self.db.execute(
+            """
+            INSERT OR REPLACE INTO experiment_runs
+            (run_id, started_at_ns, metadata_json)
+            VALUES (?, ?, ?)
+            """,
+            (
+                self.run_id,
+                time.time_ns(),
+                json.dumps(self.run_metadata, separators=(",", ":"), sort_keys=True),
+            ),
+        )
         self.db.commit()
 
     def _ensure_column(self, table, column, definition):
@@ -348,6 +371,7 @@ class InfluxWriter:
         token: str,
         measurement: str,
         enabled: bool,
+        extra_tags=None,
     ):
         self.url = url.rstrip("/")
         self.org = org
@@ -355,6 +379,7 @@ class InfluxWriter:
         self.token = token
         self.measurement = measurement
         self.enabled = enabled
+        self.extra_tags = extra_tags or {}
         self.failed_writes = 0
         self.last_error = None
 
@@ -391,6 +416,9 @@ class InfluxWriter:
             "payload_bytes": str(PAYLOAD_BYTES),
             "frame_bytes": str(FRAME_BYTES),
         }
+        for key, value in self.extra_tags.items():
+            if value not in (None, ""):
+                tags[key] = str(value)
         fields = {
             "fps": metrics["fps"],
             "target_fps": TARGET_FPS,
@@ -539,7 +567,26 @@ def parse_args():
     parser.add_argument("--influx-token", default=os.environ.get("INFLUX_TOKEN", INFLUX_TOKEN))
     parser.add_argument("--influx-measurement", default=os.environ.get("INFLUX_MEASUREMENT", INFLUX_MEASUREMENT))
     parser.add_argument("--no-influx", action="store_true")
+    parser.add_argument("--experiment-id", default=os.environ.get("BANDWIDTH_EXPERIMENT_ID"))
+    parser.add_argument("--condition", default=os.environ.get("BANDWIDTH_CONDITION"))
+    parser.add_argument("--notes", default=os.environ.get("BANDWIDTH_NOTES"))
+    parser.add_argument("--manifest", help="Optional experiment JSON manifest to bind to this capture run")
     return parser.parse_args()
+
+
+def load_run_metadata(args):
+    metadata = {}
+    if args.manifest:
+        with Path(args.manifest).open("r", encoding="utf-8") as handle:
+            metadata.update(json.load(handle))
+    if args.experiment_id:
+        metadata["experiment_id"] = args.experiment_id
+    if args.condition:
+        metadata["condition_label"] = args.condition
+    if args.notes:
+        metadata["operator_notes"] = args.notes
+    metadata.setdefault("receiver_started_at_local", datetime.now().isoformat(timespec="seconds"))
+    return metadata
 
 
 def run_receiver(args, store: CaptureStore, broadcaster, influx_writer: InfluxWriter):
@@ -659,7 +706,8 @@ def run_receiver(args, store: CaptureStore, broadcaster, influx_writer: InfluxWr
 
 def main():
     args = parse_args()
-    store = CaptureStore(Path(args.output_dir))
+    run_metadata = load_run_metadata(args)
+    store = CaptureStore(Path(args.output_dir), run_metadata)
     broadcaster = None
     if not args.no_websocket:
         broadcaster = WebSocketBroadcaster(args.ws_host, args.ws_port)
@@ -671,6 +719,10 @@ def main():
         args.influx_token,
         args.influx_measurement,
         not args.no_influx,
+        {
+            "experiment_id": run_metadata.get("experiment_id"),
+            "condition": run_metadata.get("condition_label"),
+        },
     )
 
     try:

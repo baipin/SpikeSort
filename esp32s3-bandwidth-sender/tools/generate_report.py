@@ -8,6 +8,8 @@ from pathlib import Path
 
 
 DEFAULT_DB = Path("captures") / "bandwidth_capture.sqlite3"
+TARGET_FPS = 20.0
+TARGET_RATE_KIB_S = 20.0 * 4110.0 / 1024.0
 
 
 def percentile(values, pct):
@@ -52,6 +54,47 @@ def load_manifest(path):
         return json.load(handle)
 
 
+def iso_from_ns(value):
+    if value is None:
+        return None
+    return datetime.fromtimestamp(value / 1_000_000_000.0, tz=timezone.utc).isoformat()
+
+
+def load_latest_db_metadata(db):
+    if not table_exists(db, "experiment_runs"):
+        return {}
+    row = db.execute(
+        "SELECT metadata_json FROM experiment_runs ORDER BY started_at_ns DESC LIMIT 1"
+    ).fetchone()
+    if row is None:
+        return {}
+    try:
+        return json.loads(row[0])
+    except json.JSONDecodeError:
+        return {}
+
+
+def quality_gates(summary):
+    gates = []
+
+    def add(name, passed, value, criterion):
+        gates.append(
+            {
+                "gate": name,
+                "status": "PASS" if passed else "WARN",
+                "value": value,
+                "criterion": criterion,
+            }
+        )
+
+    add("CRC / parser integrity", summary["crc_errors_total"] == 0, summary["crc_errors_total"], "crc_errors == 0")
+    add("Application loss", (summary["loss_rate_max"] or 0.0) <= 0.001, fmt((summary["loss_rate_max"] or 0.0) * 100, 4, "%"), "max loss <= 0.1%")
+    add("Mean frame rate", summary["fps_mean"] is not None and summary["fps_mean"] >= TARGET_FPS * 0.95, fmt(summary["fps_mean"], 2), "mean fps >= 95% target")
+    add("Mean throughput", summary["rate_kib_s_mean"] is not None and summary["rate_kib_s_mean"] >= TARGET_RATE_KIB_S * 0.95, fmt(summary["rate_kib_s_mean"], 2, " KiB/s"), "mean throughput >= 95% target")
+    add("Latency availability", summary["latency_count"] > 0, summary["latency_count"], "SNTP latency samples present")
+    return gates
+
+
 def summarize(db_path, last_minutes=None):
     with sqlite3.connect(db_path) as db:
         if not table_exists(db, "frames") or not table_exists(db, "metrics"):
@@ -71,6 +114,8 @@ def summarize(db_path, last_minutes=None):
         frame_where = "WHERE recv_time_ns >= ?" if cutoff_ns is not None else ""
         metric_where = "WHERE window_end_ns >= ?" if cutoff_ns is not None else ""
         params = (cutoff_ns,) if cutoff_ns is not None else ()
+
+        db_metadata = load_latest_db_metadata(db)
 
         frame_count, first_recv_ns, last_recv_ns = db.execute(
             f"SELECT COUNT(*), MIN(recv_time_ns), MAX(recv_time_ns) FROM frames {frame_where}",
@@ -140,7 +185,10 @@ def summarize(db_path, last_minutes=None):
     return {
         "db_path": str(db_path),
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "capture_start_utc": iso_from_ns(first_recv_ns),
+        "capture_end_utc": iso_from_ns(last_recv_ns),
         "time_filter": f"last {last_minutes:g} minutes" if last_minutes is not None else "all data",
+        "db_metadata": db_metadata,
         "frame_count": frame_count,
         "duration_s": duration_s,
         "seq_min": seq_min,
@@ -174,14 +222,23 @@ def summarize(db_path, last_minutes=None):
 
 
 def write_summary_csv(summary, path):
+    csv_summary = dict(summary)
+    csv_summary.pop("db_metadata", None)
     with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(summary.keys()))
+        writer = csv.DictWriter(handle, fieldnames=list(csv_summary.keys()))
         writer.writeheader()
-        writer.writerow(summary)
+        writer.writerow(csv_summary)
 
 
 def write_markdown(summary, manifest, path):
-    manifest_text = json.dumps(manifest, indent=2) if manifest else "No manifest supplied."
+    metadata = {}
+    metadata.update(summary.get("db_metadata") or {})
+    metadata.update(manifest or {})
+    manifest_text = json.dumps(metadata, indent=2) if metadata else "No manifest or DB run metadata supplied."
+    gate_rows = "\n".join(
+        f"| {gate['gate']} | {gate['status']} | {gate['value']} | {gate['criterion']} |"
+        for gate in quality_gates(summary)
+    )
     content = f"""# ESP32-S3 Neural Stream Bandwidth Experiment Report
 
 Generated at: `{summary['generated_at']}`
@@ -195,6 +252,8 @@ This report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surroga
 | Metric | Value |
 | --- | ---: |
 | Time filter | {summary['time_filter']} |
+| Capture start UTC | {summary['capture_start_utc'] or 'n/a'} |
+| Capture end UTC | {summary['capture_end_utc'] or 'n/a'} |
 | Captured frames | {summary['frame_count']} |
 | Capture duration | {fmt(summary['duration_s'], 2, ' s')} |
 | Mean FPS | {fmt(summary['fps_mean'], 2)} |
@@ -219,12 +278,19 @@ This report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surroga
 | P95 latency | {fmt(summary['latency_p95_ms'], 3, ' ms')} |
 | P99 latency | {fmt(summary['latency_p99_ms'], 3, ' ms')} |
 
+## Quality Gates
+
+| Gate | Status | Value | Criterion |
+| --- | --- | ---: | --- |
+{gate_rows}
+
 ## Interpretation Notes
 
 - A healthy run should keep loss rate and CRC/resync errors at zero for the current 20 fps x 4 KiB workload.
 - Arrival jitter captures WiFi/TCP cadence variability even when TCP eventually delivers every byte.
 - Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.
 - If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.
+- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.
 
 ## Experiment Manifest
 
