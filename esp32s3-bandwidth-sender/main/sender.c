@@ -331,4 +331,50 @@ static void sender_task(void *arg)
         while (true) {
             const int64_t now_us = esp_timer_get_time();
             if (now_us < next_frame_us) {
-                const int64_t sleep_ms = (next_frame_us 
+                const int64_t sleep_ms = (next_frame_us - now_us) / 1000;
+                vTaskDelay(pdMS_TO_TICKS(sleep_ms > 0 ? sleep_ms : 1));
+                continue;
+            }
+
+            fill_frame(frame, seq);
+            const send_frame_result_t send_result = send_frame_with_timeout(sock, frame, FRAME_BYTES);
+            if (send_result == SEND_FRAME_OK) {
+                sent_frames++;
+            } else if (send_result == SEND_FRAME_DROPPED) {
+                dropped_frames++;
+                ESP_LOGW(TAG, "Dropped frame seq=%" PRIu32 " after timeout", seq);
+            } else {
+                dropped_frames++;
+                ESP_LOGW(TAG, "Dropped frame seq=%" PRIu32 " because socket failed", seq);
+                seq++;
+                break;
+            }
+
+            seq++;
+            next_frame_us += FRAME_INTERVAL_US;
+
+            const int64_t stats_elapsed_us = esp_timer_get_time() - stats_start_us;
+            if (stats_elapsed_us >= 1000000) {
+                ESP_LOGI(TAG,
+                         "stats sent=%" PRIu32 " dropped=%" PRIu32 " total_seq=%" PRIu32 " rate=%.1f KiB/s",
+                         sent_frames,
+                         dropped_frames,
+                         seq,
+                         (double)sent_frames * FRAME_BYTES * 1000000.0 / stats_elapsed_us / 1024.0);
+                sent_frames = 0;
+                dropped_frames = 0;
+                stats_start_us = esp_timer_get_time();
+            }
+        }
+
+        shutdown(sock, SHUT_RDWR);
+        close(sock);
+        ESP_LOGW(TAG, "TCP disconnected, retrying in 2 seconds");
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+}
+
+void sender_start(void)
+{
+    xTaskCreate(sender_task, "bandwidth_sender", 8192, NULL, 5, NULL);
+}

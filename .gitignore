@@ -1,10 +1,15 @@
-# Ignore data file.
+# Large binary / array data files.
 *.bin
 *.cbin
 *.ch
 *.meta
 *.dat
 *.npy
+*.npz
+*.ap.bin
+*.ap.cbin
+*.sqlite3
+*.sqlite3-*
 
 # Ignore example data folder
 .test_data/
@@ -12,3 +17,27 @@
 
 # Ignore hidden temporary files
 .kilosort/
+
+# Organized local artifacts and raw-data caches.
+data/
+ONE/
+alf/
+kilosort4/
+ks_recon_ratio_*/
+week8_kilosort4/
+week8_kilosort4_runs/
+week8_partial_kilosort4_runs/
+week8_partial_dct_kilosort_runs/
+
+# Build/runtime output from the ESP32 monitoring project.
+esp32s3-bandwidth-sender/build/
+esp32s3-bandwidth-sender/captures/
+esp32s3-bandwidth-sender/reports/
+esp32s3-bandwidth-sender/*.log
+esp32s3-bandwidth-sender/*.err.log
+esp32s3-bandwidth-sender/__pycache__/
+
+# Python caches and local logs.
+__pycache__/
+*.pyc
+logs/

@@ -675,12 +675,102 @@
       "pluginVersion": "11.3.0",
       "targets": [
         {
-          "query": "from(bucket: \"esp32s3_bandwidth\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"bandwidth_window\")\n  |> filter(fn: (r) => r._field == \"fps\" or r._field == \"rate_kib_s\" or r._field == \"loss_rate\" or r._field == \"interval_jitter_ms\" or r._field == \"bandwidth_jitter_kib_s\")\n  |> last()\n  |> keep(columns: [\"_time\", \"_field\", \"_value\", \"payload_bytes\", \"frame_bytes\", \"workload\"])",
+          "query": "from(bucket: \"esp32s3_bandwidth\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"bandwidth_window\")\n  |> filter(fn: (r) => r._field == \"fps\" or r._field == \"rate_kib_s\" or r._field == \"loss_rate\" or r._field == \"interval_jitter_ms\" or r._field == \"bandwidth_jitter_kib_s\" or r._field == \"latency_avg_ms\" or r._field == \"latency_p95_ms\" or r._field == \"latency_p99_ms\")\n  |> last()\n  |> keep(columns: [\"_time\", \"_field\", \"_value\", \"payload_bytes\", \"frame_bytes\", \"workload\"])",
           "refId": "A"
         }
       ],
       "title": "Latest Window Summary",
       "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb_bandwidth"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "latency",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "query": "from(bucket: \"esp32s3_bandwidth\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"bandwidth_window\")\n  |> filter(fn: (r) => r._field == \"latency_avg_ms\" or r._field == \"latency_p50_ms\" or r._field == \"latency_p95_ms\" or r._field == \"latency_p99_ms\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "title": "End-to-End Latency Distribution",
+      "type": "timeseries"
     }
   ],
   "refresh": "1s",

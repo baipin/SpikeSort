@@ -590,4 +590,94 @@ def run_receiver(args, store: CaptureStore, broadcaster, influx_writer: InfluxWr
                             del buffer[0]
                             invalid_scan_bytes += 1
                             if invalid_scan_bytes >= MAX_RESYNC_BYTES:
-                                print("Unable to resync frame stream; reconnecting", 
+                                print("Unable to resync frame stream; reconnecting", flush=True)
+                                close_connection = True
+                                break
+                            continue
+
+                        seq, send_ts_us = struct.unpack_from("<IQ", buffer, 0)
+                        if not stats.looks_plausible(seq, send_ts_us):
+                            stats.record_crc_error()
+                            del buffer[0]
+                            invalid_scan_bytes += 1
+                            if invalid_scan_bytes >= MAX_RESYNC_BYTES:
+                                print("Unable to resync plausible frame stream; reconnecting", flush=True)
+                                close_connection = True
+                                break
+                            continue
+
+                        del buffer[:FRAME_BYTES]
+                        invalid_scan_bytes = 0
+                        recv_time_ns = time.time_ns()
+                        timestamp_mode, latency_ms = classify_timestamp(send_ts_us, recv_time_ns)
+                        arrival_interval_ms = stats.record_frame(seq, recv_time_ns, latency_ms)
+                        store.record_frame(
+                            {
+                                "recv_time_ns": recv_time_ns,
+                                "seq": seq,
+                                "send_ts_us": send_ts_us,
+                                "timestamp_mode": timestamp_mode,
+                                "latency_ms": latency_ms,
+                                "payload_bytes": PAYLOAD_BYTES,
+                                "frame_bytes": FRAME_BYTES,
+                                "arrival_interval_ms": arrival_interval_ms,
+                            }
+                        )
+
+                    metrics = stats.maybe_emit_metrics()
+                    if metrics is not None:
+                        store.record_metrics(metrics)
+                        influx_writer.write_metrics(metrics)
+                        if broadcaster is not None:
+                            broadcaster.broadcast_json(metrics)
+                        print(
+                            "fps={fps:.1f} rate={rate:.1f} KiB/s missing={missing} "
+                            "loss={loss:.3%} crc_errors={crc} old={old} "
+                            "avg_interval={avg:.2f} ms jitter={jitter:.2f} ms "
+                            "bw_jitter={bw_jitter:.2f} KiB/s latency_p95={latency_p95}".format(
+                                fps=metrics["fps"],
+                                rate=metrics["rate_kib_s"],
+                                missing=metrics["missing_frames"],
+                                loss=metrics["loss_rate"],
+                                crc=metrics["crc_errors"],
+                                old=metrics["old_frames"],
+                                avg=metrics["avg_interval_ms"],
+                                jitter=metrics["interval_jitter_ms"],
+                                bw_jitter=metrics["bandwidth_jitter_kib_s"],
+                                latency_p95=(
+                                    f"{metrics['latency_p95_ms']:.2f} ms"
+                                    if metrics["latency_p95_ms"] is not None
+                                    else "unavailable"
+                                ),
+                            ),
+                            flush=True,
+                        )
+
+                    if close_connection:
+                        break
+
+
+def main():
+    args = parse_args()
+    store = CaptureStore(Path(args.output_dir))
+    broadcaster = None
+    if not args.no_websocket:
+        broadcaster = WebSocketBroadcaster(args.ws_host, args.ws_port)
+        broadcaster.start()
+    influx_writer = InfluxWriter(
+        args.influx_url,
+        args.influx_org,
+        args.influx_bucket,
+        args.influx_token,
+        args.influx_measurement,
+        not args.no_influx,
+    )
+
+    try:
+        run_receiver(args, store, broadcaster, influx_writer)
+    finally:
+        store.close()
+
+
+if __name__ == "__main__":
+    main()

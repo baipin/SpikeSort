@@ -1,0 +1,44 @@
+{
+  "experiment_id": "esp32s3_hotspot_baseline_001",
+  "operator": "",
+  "started_at_local": "",
+  "application_context": {
+    "workload": "spike_stream_surrogate",
+    "downstream_task": "wireless bandwidth and latency validation for neural recording / spike-sorting pipeline",
+    "notes": "Use this run to judge whether the ESP32-S3 link can sustain compressed neural-data transport without application-layer frame gaps."
+  },
+  "device": {
+    "board": "ESP32-S3-PICO-1",
+    "firmware_project": "esp32s3-bandwidth-sender",
+    "serial_port": "COM7"
+  },
+  "network": {
+    "ssid": "Dennis",
+    "receiver_ip": "192.168.137.1",
+    "receiver_port": 5001,
+    "hotspot_device": "Windows laptop mobile hotspot",
+    "ntp_server": "pool.ntp.org"
+  },
+  "stream": {
+    "transport": "WiFi + TCP",
+    "target_fps": 20,
+    "payload_bytes": 4096,
+    "frame_bytes": 4110,
+    "timestamp_mode_expected": "epoch_us when SNTP succeeds; monotonic_us fallback otherwise"
+  },
+  "condition": {
+    "distance_m": null,
+    "line_of_sight": true,
+    "board_orientation": "",
+    "interference_notes": "",
+    "laptop_power_mode": "",
+    "duration_min": 30
+  },
+  "neural_data_scenario": {
+    "source_notebook_or_dataset": "",
+    "compression_ratio": null,
+    "channels_or_neurons": null,
+    "sample_rate_hz": null,
+    "payload_mapping_notes": "Current firmware payload is a deterministic surrogate. Fill this section when mapping payload size to a real compressed neural stream."
+  }
+}

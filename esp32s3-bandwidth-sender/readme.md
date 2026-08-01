@@ -201,3 +201,13 @@ If Grafana shows no real data:
 - Run `python monitoring\write_sample_influx_point.py`.
 - Keep `python -u receiver.py` running.
 - Confirm the receiver log shows `InfluxDB output: http://127.0.0.1:8086`.
+
+## Generate An Experiment Report
+
+The SQLite database is cumulative, so report a specific recent window after a run:
+
+```powershell
+python tools\generate_report.py --db captures\bandwidth_capture.sqlite3 --out reports --manifest experiments\run_template.json --last-minutes 10
+```
+
+This writes a Markdown report and CSV summary under `reports/`.
