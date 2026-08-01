@@ -60,20 +60,6 @@ Please see the readme file under `/esp32s3-banwidth-sender` folder.
 
 ## Architecture
 
-Large generated data is kept out of the repository root:
-
-- `data/preprocessed/`: large preprocessed arrays such as `whitened_data.npy`.
-- `data/reconstructed/`: reconstructed `.bin` streams and paired quantization metadata.
-- `data/dct_coefficients/`: large DCT coefficient rebuild caches.
-- `data/week4_fixed_template/`: large Week 4 fixed-template control binaries.
-- `outputs/caches/`: reusable evaluation caches such as baseline and compression results.
-- `outputs/week4/`, `outputs/week5/`, `outputs/week7/`, `outputs/week8/`: week-specific result tables and caches.
-- `reports/`: generated reports, PDFs, LaTeX outputs, and presentation artifacts.
-
-Some data filed are excluded. You can obtain these files by executing the notebook code on your own device after clone this repository.
-
-## Notebook Overview
-
 - `1.ipynb`: Downloads the short Neuropixels sample dataset, prepares Kilosort probe files, and runs the initial baseline Kilosort workflow used by later notebooks.
 - `2.ipynb`: Continues the baseline workflow, applies DCT compression experiments to preprocessed neural signals, rebuilds `whitened_data.npy`, and generates compression evaluation caches.
 - `3.ipynb`: Evaluates compressed-data sorting against the baseline using baseline-anchored spike labeling, nearest/mutual/Hungarian-style time matching, and detection-time metrics.
@@ -84,3 +70,30 @@ Some data filed are excluded. You can obtain these files by executing the notebo
 - `8.ipynb`: Works with OpenAlyx raw electrophysiology sessions, downloads/decompresses AP data when needed, runs Kilosort4 on full or partial data, and evaluates DCT-compressed partial runs.
 - `9.ipynb`: Discovers Week 8 partial DCT Kilosort outputs, applies the learned predictor, and generates compression-ratio recommendations for each recording.
 -  `/esp32s3-banwidth-sender`: Esp32 hardware research.
+
+Data and output folders:
+
+```text
+data/
+|-- preprocessed/          # Large preprocessed arrays, e.g. whitened_data.npy
+|-- reconstructed/         # Reconstructed binary streams and quantization metadata
+|-- dct_coefficients/      # Large DCT coefficient rebuild caches
+`-- week4_fixed_template/  # Large Week 4 fixed-template control binaries
+
+outputs/
+|-- caches/                # Reusable baseline/compression evaluation caches
+|-- week4/                 # Week 4 fixed-template sorting summaries and ratio tables
+|-- week5/                 # Week 5 neuron sensitivity tables and figures
+|-- week7/                 # Constraint-aware keep-ratio diagnostic outputs
+`-- week8/                 # Week 8 manifests and small exported metadata
+
+reports/
+|-- week4/                 # Week 4 generated report files
+`-- week45/                # Week 4/5 presentation and LaTeX artifacts
+
+esp32s3-bandwidth-sender/  # ESP32-S3 bandwidth monitor firmware, receiver, dashboard, and reports
+```
+
+Large raw data, reconstructed binaries, Kilosort run directories, ESP32 build artifacts, and receiver captures are local artifacts and are intentionally ignored by Git.
+
+Some data files are excluded. You can obtain these files by executing the notebook code on your own device after clone this repository.
