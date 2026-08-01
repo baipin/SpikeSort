@@ -1,0 +1,1628 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ESP32-S3 Bandwidth Report Browser</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --ink: #17212b;
+      --muted: #66717f;
+      --line: #d8dee7;
+      --blue: #2364aa;
+      --green: #1b8a5a;
+      --red: #b42318;
+      --orange: #bc6500;
+      --shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      font-size: 14px;
+      letter-spacing: 0;
+    }
+
+    header {
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+      position: sticky;
+      top: 0;
+      z-index: 3;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      font-weight: 650;
+    }
+
+    .meta { color: var(--muted); font-size: 12px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      min-height: calc(100vh - 58px);
+    }
+
+    aside {
+      border-right: 1px solid var(--line);
+      background: #fbfcfe;
+      padding: 14px;
+      overflow: auto;
+      max-height: calc(100vh - 58px);
+      position: sticky;
+      top: 58px;
+    }
+
+    main {
+      padding: 18px;
+      min-width: 0;
+    }
+
+    input[type="search"] {
+      width: 100%;
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 10px;
+      color: var(--ink);
+      background: var(--panel);
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin: 12px 0;
+    }
+
+    button {
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button.active {
+      border-color: var(--blue);
+      color: var(--blue);
+      background: #eef5ff;
+    }
+
+    .list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .item {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .item.selected {
+      border-color: var(--blue);
+      outline: 2px solid rgba(35, 100, 170, 0.14);
+    }
+
+    .item-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .item-title {
+      font-weight: 650;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .item-sub {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .quick {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .panel h2, .panel h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(130px, 1fr));
+      gap: 10px;
+    }
+
+    .kpi {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 72px;
+      background: #fcfdff;
+    }
+
+    .kpi span {
+      color: var(--muted);
+      display: block;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .kpi strong {
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .figures {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 12px;
+    }
+
+    img {
+      width: 100%;
+      height: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 13px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px;
+      text-align: right;
+      vertical-align: top;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: var(--panel);
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 650;
+      background: #f8fafc;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .bar-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: minmax(95px, 130px) 1fr 70px;
+      gap: 8px;
+      align-items: center;
+      margin: 8px 0;
+    }
+
+    .bar-track {
+      height: 12px;
+      background: #edf1f7;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      background: var(--blue);
+      min-width: 1px;
+    }
+
+    .bar.fps { background: var(--green); }
+    .bar.latency { background: var(--orange); }
+    .bar.loss { background: var(--red); }
+
+    .chart {
+      width: 100%;
+      min-height: 300px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .markdown {
+      line-height: 1.55;
+    }
+
+    .markdown h1 { font-size: 20px; margin: 0 0 10px; }
+    .markdown h2 { font-size: 16px; margin: 18px 0 8px; }
+    .markdown h3 { font-size: 14px; margin: 16px 0 8px; }
+    .markdown pre {
+      overflow: auto;
+      background: #0f1720;
+      color: #eef4ff;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    a:hover { text-decoration: underline; }
+
+    .empty {
+      color: var(--muted);
+      padding: 24px;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      aside {
+        position: static;
+        max-height: none;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .kpis { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ESP32-S3 Bandwidth Report Browser</h1>
+    <a href="../" style="color:#2364aa;font-weight:700;text-decoration:none;">Portal Home</a>
+    <div class="meta" id="indexMeta">Loading index...</div>
+  </header>
+  <div class="layout">
+    <aside>
+      <input id="filter" type="search" placeholder="Filter by label, ID, condition, timestamp">
+      <div class="tabs">
+        <button id="reportsTab" class="active" type="button">Reports</button>
+        <button id="comparisonsTab" type="button">Comparisons</button>
+      </div>
+      <div id="reportList" class="list"></div>
+    </aside>
+    <main>
+      <div class="toolbar">
+        <div>
+          <strong id="viewTitle">Latest Report</strong>
+          <div class="meta" id="viewSub"></div>
+        </div>
+        <div class="links">
+          <button id="selectLatest" type="button">Select Latest 4</button>
+          <button id="clearSelected" type="button">Clear Compare</button>
+        </div>
+      </div>
+      <section id="detail"></section>
+      <section class="panel">
+        <h2>Selected Report Comparison</h2>
+        <div id="comparison"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Embedded report index for static hosting.
+    window.REPORT_INDEX = {
+  "generatedAt": "2026-08-01T03:21:54.211206+00:00",
+  "reports": [
+    {
+      "stamp": "20260801_110804",
+      "label": "throttle-40kib",
+      "summaryPath": "bandwidth_summary_20260801_110804.csv",
+      "reportPath": "bandwidth_report_20260801_110804.md",
+      "figures": [
+        "figures/bandwidth_timeseries_20260801_110804.png",
+        "figures/latency_histogram_20260801_110804.png"
+      ],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-08-01T03:08:04.067510+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is whether the wireless link can sustain the configured stream rate while keeping application frame loss, parser errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | last 0.8 minutes |\n| Capture start UTC | 2026-08-01T03:07:12.227212+00:00 |\n| Capture end UTC | 2026-08-01T03:07:55.632924+00:00 |\n| Captured frames | 368 |\n| Capture duration | 43.41 s |\n| Mean FPS | 8.82 |\n| FPS range | 8.02 - 9.24 |\n| Mean throughput | 35.42 KiB/s |\n| Throughput range | 32.20 - 37.07 KiB/s |\n| Total missing frames by sequence | 10 |\n| Missing frames by in-window gaps | 10 |\n| Longest consecutive missing run | 1 |\n| Window missing-frame sum | 0 |\n| Mean loss rate | 0.0000% |\n| Max loss rate | 0.0000% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 244.819 ms |\n| Max arrival jitter | 467.915 ms |\n| Mean bandwidth volatility | 0.651 KiB/s |\n| Max bandwidth volatility | 3.447 KiB/s |\n| Latency samples | 368 |\n| Mean latency | 5329.628 ms |\n| P50 latency | 5487.324 ms |\n| P95 latency | 6522.090 ms |\n| P99 latency | 6705.307 ms |\n\n## Quality Gates\n\n| Gate | Status | Value | Criterion |\n| --- | --- | ---: | --- |\n| CRC / parser integrity | PASS | 0 | crc_errors == 0 |\n| Application loss | PASS | 0.0000% | max loss <= 0.1% |\n| Mean frame rate | WARN | 8.82 | mean fps >= 95% target |\n| Mean throughput | WARN | 35.42 KiB/s | mean throughput >= 95% target |\n| Latency availability | PASS | 368 | SNTP latency samples present |\n\n## Figures\n\n![Bandwidth Timeseries 20260801 110804](figures/bandwidth_timeseries_20260801_110804.png)\n\n![Latency Histogram 20260801 110804](figures/latency_histogram_20260801_110804.png)\n\n\n## Interpretation Notes\n\n- A healthy run should keep loss rate and CRC/resync errors at zero for the current 20 fps x 4 KiB workload.\n- Arrival jitter captures WiFi/TCP cadence variability even when TCP eventually delivers every byte.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.\n\n## Experiment Manifest\n\n```json\n{\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"receiver-side bottleneck emulation for neural stream stability\",\n    \"notes\": \"Receiver read limit is about half of the nominal 80 KiB/s stream target. This is a stress condition intended to force backlog and frame loss.\"\n  },\n  \"condition\": {\n    \"receiver_read_limit_kib_s\": 40,\n    \"duration_min\": 10,\n    \"purpose\": \"severe bottleneck below target throughput\"\n  },\n  \"condition_label\": \"throttle-40kib\",\n  \"experiment_id\": \"throttle-40kib-001\",\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\"\n  },\n  \"operator\": \"\",\n  \"read_limit_kib_s\": 40.0,\n  \"receiver_started_at_local\": \"2026-08-01T11:07:11\",\n  \"started_at_local\": \"\",\n  \"stream\": {\n    \"transport\": \"WiFi + TCP\",\n    \"target_fps\": 20,\n    \"payload_bytes\": 4096,\n    \"frame_bytes\": 4110,\n    \"nominal_rate_kib_s\": 80.27\n  }\n}\n```\n",
+      "summary": {
+        "db_path": "captures\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-08-01T03:08:04.067510+00:00",
+        "capture_start_utc": "2026-08-01T03:07:12.227212+00:00",
+        "capture_end_utc": "2026-08-01T03:07:55.632924+00:00",
+        "time_filter": "last 0.8 minutes",
+        "frame_count": "368",
+        "duration_s": "43.4057121",
+        "seq_min": "705162",
+        "seq_max": "705539",
+        "expected_frames": "378",
+        "total_missing_by_seq": "10",
+        "missing_frames_by_gaps": "10",
+        "longest_missing_run": "1",
+        "missing_frames_window_sum": "0",
+        "loss_rate_mean": "0.0",
+        "loss_rate_max": "0.0",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "8.82369671030275",
+        "fps_min": "8.022233781381836",
+        "fps_max": "9.236693503863867",
+        "rate_kib_s_mean": "35.41542331967218",
+        "rate_kib_s_min": "32.19861410300717",
+        "rate_kib_s_max": "37.073056934453604",
+        "interval_jitter_ms_mean": "244.818739441587",
+        "interval_jitter_ms_max": "467.9151805361655",
+        "bandwidth_jitter_kib_s_mean": "0.6514842364675991",
+        "bandwidth_jitter_kib_s_max": "3.446751580621926",
+        "latency_count": "368",
+        "latency_avg_ms": "5329.628047282609",
+        "latency_p50_ms": "5487.3235",
+        "latency_p95_ms": "6522.090155",
+        "latency_p99_ms": "6705.306906",
+        "latency_window_p95_max_ms": "6726.8928",
+        "experiment_id": "throttle-40kib-001",
+        "condition_label": "throttle-40kib",
+        "read_limit_kib_s": "40.0",
+        "distance_m": ""
+      }
+    },
+    {
+      "stamp": "20260801_110704",
+      "label": "throttle-60kib",
+      "summaryPath": "bandwidth_summary_20260801_110704.csv",
+      "reportPath": "bandwidth_report_20260801_110704.md",
+      "figures": [
+        "figures/bandwidth_timeseries_20260801_110704.png",
+        "figures/latency_histogram_20260801_110704.png"
+      ],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-08-01T03:07:04.011501+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is whether the wireless link can sustain the configured stream rate while keeping application frame loss, parser errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | last 0.8 minutes |\n| Capture start UTC | 2026-08-01T03:06:14.142435+00:00 |\n| Capture end UTC | 2026-08-01T03:06:56.664013+00:00 |\n| Captured frames | 480 |\n| Capture duration | 42.52 s |\n| Mean FPS | 11.65 |\n| FPS range | 10.60 - 13.17 |\n| Mean throughput | 46.76 KiB/s |\n| Throughput range | 42.53 - 52.86 KiB/s |\n| Total missing frames by sequence | 8 |\n| Missing frames by in-window gaps | 8 |\n| Longest consecutive missing run | 1 |\n| Window missing-frame sum | 0 |\n| Mean loss rate | 0.0000% |\n| Max loss rate | 0.0000% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 221.482 ms |\n| Max arrival jitter | 325.678 ms |\n| Mean bandwidth volatility | 2.208 KiB/s |\n| Max bandwidth volatility | 6.607 KiB/s |\n| Latency samples | 480 |\n| Mean latency | 3663.836 ms |\n| P50 latency | 3719.912 ms |\n| P95 latency | 4727.935 ms |\n| P99 latency | 4939.398 ms |\n\n## Quality Gates\n\n| Gate | Status | Value | Criterion |\n| --- | --- | ---: | --- |\n| CRC / parser integrity | PASS | 0 | crc_errors == 0 |\n| Application loss | PASS | 0.0000% | max loss <= 0.1% |\n| Mean frame rate | WARN | 11.65 | mean fps >= 95% target |\n| Mean throughput | WARN | 46.76 KiB/s | mean throughput >= 95% target |\n| Latency availability | PASS | 480 | SNTP latency samples present |\n\n## Figures\n\n![Bandwidth Timeseries 20260801 110704](figures/bandwidth_timeseries_20260801_110704.png)\n\n![Latency Histogram 20260801 110704](figures/latency_histogram_20260801_110704.png)\n\n\n## Interpretation Notes\n\n- A healthy run should keep loss rate and CRC/resync errors at zero for the current 20 fps x 4 KiB workload.\n- Arrival jitter captures WiFi/TCP cadence variability even when TCP eventually delivers every byte.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.\n\n## Experiment Manifest\n\n```json\n{\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"receiver-side bottleneck emulation for neural stream stability\",\n    \"notes\": \"Receiver read limit is below the nominal 80 KiB/s stream target. This should expose TCP backpressure, jitter, and possible sender-side frame drops.\"\n  },\n  \"condition\": {\n    \"receiver_read_limit_kib_s\": 60,\n    \"duration_min\": 10,\n    \"purpose\": \"moderate bottleneck below target throughput\"\n  },\n  \"condition_label\": \"throttle-60kib\",\n  \"experiment_id\": \"throttle-60kib-001\",\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\"\n  },\n  \"operator\": \"\",\n  \"read_limit_kib_s\": 60.0,\n  \"receiver_started_at_local\": \"2026-08-01T11:06:12\",\n  \"started_at_local\": \"\",\n  \"stream\": {\n    \"transport\": \"WiFi + TCP\",\n    \"target_fps\": 20,\n    \"payload_bytes\": 4096,\n    \"frame_bytes\": 4110,\n    \"nominal_rate_kib_s\": 80.27\n  }\n}\n```\n",
+      "summary": {
+        "db_path": "captures\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-08-01T03:07:04.011501+00:00",
+        "capture_start_utc": "2026-08-01T03:06:14.142435+00:00",
+        "capture_end_utc": "2026-08-01T03:06:56.664013+00:00",
+        "time_filter": "last 0.8 minutes",
+        "frame_count": "480",
+        "duration_s": "42.5215781",
+        "seq_min": "704640",
+        "seq_max": "705127",
+        "expected_frames": "488",
+        "total_missing_by_seq": "8",
+        "missing_frames_by_gaps": "8",
+        "longest_missing_run": "1",
+        "missing_frames_window_sum": "0",
+        "loss_rate_mean": "0.0",
+        "loss_rate_max": "0.0",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "11.65065102039775",
+        "fps_min": "10.595771255953316",
+        "fps_max": "13.171095872042404",
+        "rate_kib_s_mean": "46.761890326010494",
+        "rate_kib_s_min": "42.52794908395325",
+        "rate_kib_s_max": "52.86445706454519",
+        "interval_jitter_ms_mean": "221.4824790098446",
+        "interval_jitter_ms_max": "325.67790018555553",
+        "bandwidth_jitter_kib_s_mean": "2.2079899657052535",
+        "bandwidth_jitter_kib_s_max": "6.606992216970497",
+        "latency_count": "480",
+        "latency_avg_ms": "3663.8361202083333",
+        "latency_p50_ms": "3719.91155",
+        "latency_p95_ms": "4727.93466",
+        "latency_p99_ms": "4939.397722",
+        "latency_window_p95_max_ms": "5005.645175",
+        "experiment_id": "throttle-60kib-001",
+        "condition_label": "throttle-60kib",
+        "read_limit_kib_s": "60.0",
+        "distance_m": ""
+      }
+    },
+    {
+      "stamp": "20260801_110606",
+      "label": "throttle-100kib",
+      "summaryPath": "bandwidth_summary_20260801_110606.csv",
+      "reportPath": "bandwidth_report_20260801_110606.md",
+      "figures": [
+        "figures/bandwidth_timeseries_20260801_110606.png",
+        "figures/latency_histogram_20260801_110606.png"
+      ],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-08-01T03:06:06.470006+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is whether the wireless link can sustain the configured stream rate while keeping application frame loss, parser errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | last 0.8 minutes |\n| Capture start UTC | 2026-08-01T03:05:16.622207+00:00 |\n| Capture end UTC | 2026-08-01T03:05:58.132085+00:00 |\n| Captured frames | 718 |\n| Capture duration | 41.51 s |\n| Mean FPS | 17.54 |\n| FPS range | 15.44 - 19.52 |\n| Mean throughput | 70.40 KiB/s |\n| Throughput range | 61.95 - 78.33 KiB/s |\n| Total missing frames by sequence | 2 |\n| Missing frames by in-window gaps | 2 |\n| Longest consecutive missing run | 1 |\n| Window missing-frame sum | 0 |\n| Mean loss rate | 0.0000% |\n| Max loss rate | 0.0000% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 153.618 ms |\n| Max arrival jitter | 221.084 ms |\n| Mean bandwidth volatility | 4.567 KiB/s |\n| Max bandwidth volatility | 10.324 KiB/s |\n| Latency samples | 718 |\n| Mean latency | 2310.255 ms |\n| P50 latency | 2388.985 ms |\n| P95 latency | 3196.419 ms |\n| P99 latency | 3372.561 ms |\n\n## Quality Gates\n\n| Gate | Status | Value | Criterion |\n| --- | --- | ---: | --- |\n| CRC / parser integrity | PASS | 0 | crc_errors == 0 |\n| Application loss | PASS | 0.0000% | max loss <= 0.1% |\n| Mean frame rate | WARN | 17.54 | mean fps >= 95% target |\n| Mean throughput | WARN | 70.40 KiB/s | mean throughput >= 95% target |\n| Latency availability | PASS | 718 | SNTP latency samples present |\n\n## Figures\n\n![Bandwidth Timeseries 20260801 110606](figures/bandwidth_timeseries_20260801_110606.png)\n\n![Latency Histogram 20260801 110606](figures/latency_histogram_20260801_110606.png)\n\n\n## Interpretation Notes\n\n- A healthy run should keep loss rate and CRC/resync errors at zero for the current 20 fps x 4 KiB workload.\n- Arrival jitter captures WiFi/TCP cadence variability even when TCP eventually delivers every byte.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.\n\n## Experiment Manifest\n\n```json\n{\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"receiver-side bottleneck emulation for neural stream stability\",\n    \"notes\": \"Receiver read limit is set above the nominal 80 KiB/s stream target. This should behave close to baseline while verifying the throttling path.\"\n  },\n  \"condition\": {\n    \"receiver_read_limit_kib_s\": 100,\n    \"duration_min\": 10,\n    \"purpose\": \"near-baseline control with receiver-side read limiting enabled\"\n  },\n  \"condition_label\": \"throttle-100kib\",\n  \"experiment_id\": \"throttle-100kib-001\",\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\"\n  },\n  \"operator\": \"\",\n  \"read_limit_kib_s\": 100.0,\n  \"receiver_started_at_local\": \"2026-08-01T11:05:15\",\n  \"started_at_local\": \"\",\n  \"stream\": {\n    \"transport\": \"WiFi + TCP\",\n    \"target_fps\": 20,\n    \"payload_bytes\": 4096,\n    \"frame_bytes\": 4110,\n    \"nominal_rate_kib_s\": 80.27\n  }\n}\n```\n",
+      "summary": {
+        "db_path": "captures\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-08-01T03:06:06.470006+00:00",
+        "capture_start_utc": "2026-08-01T03:05:16.622207+00:00",
+        "capture_end_utc": "2026-08-01T03:05:58.132085+00:00",
+        "time_filter": "last 0.8 minutes",
+        "frame_count": "718",
+        "duration_s": "41.5098781",
+        "seq_min": "703854",
+        "seq_max": "704573",
+        "expected_frames": "720",
+        "total_missing_by_seq": "2",
+        "missing_frames_by_gaps": "2",
+        "longest_missing_run": "1",
+        "missing_frames_window_sum": "0",
+        "loss_rate_mean": "0.0",
+        "loss_rate_max": "0.0",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "17.541009844976916",
+        "fps_min": "15.435682261569717",
+        "fps_max": "19.515873626129792",
+        "rate_kib_s_mean": "70.40385787388196",
+        "rate_kib_s_min": "61.95376376469876",
+        "rate_kib_s_max": "78.3303130892514",
+        "interval_jitter_ms_mean": "153.6178958277178",
+        "interval_jitter_ms_max": "221.08444464059994",
+        "bandwidth_jitter_kib_s_mean": "4.567458980274001",
+        "bandwidth_jitter_kib_s_max": "10.323860869086676",
+        "latency_count": "718",
+        "latency_avg_ms": "2310.2554401114207",
+        "latency_p50_ms": "2388.9853000000003",
+        "latency_p95_ms": "3196.4189699999997",
+        "latency_p99_ms": "3372.560649",
+        "latency_window_p95_max_ms": "3439.08071",
+        "experiment_id": "throttle-100kib-001",
+        "condition_label": "throttle-100kib",
+        "read_limit_kib_s": "100.0",
+        "distance_m": ""
+      }
+    },
+    {
+      "stamp": "20260801_110508",
+      "label": "baseline-near",
+      "summaryPath": "bandwidth_summary_20260801_110508.csv",
+      "reportPath": "bandwidth_report_20260801_110508.md",
+      "figures": [
+        "figures/bandwidth_timeseries_20260801_110508.png",
+        "figures/latency_histogram_20260801_110508.png"
+      ],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-08-01T03:05:08.487653+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is whether the wireless link can sustain the configured stream rate while keeping application frame loss, parser errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | last 0.8 minutes |\n| Capture start UTC | 2026-08-01T03:04:14.156801+00:00 |\n| Capture end UTC | 2026-08-01T03:04:57.160393+00:00 |\n| Captured frames | 860 |\n| Capture duration | 43.00 s |\n| Mean FPS | 19.99 |\n| FPS range | 19.30 - 20.78 |\n| Mean throughput | 80.24 KiB/s |\n| Throughput range | 77.46 - 83.39 KiB/s |\n| Total missing frames by sequence | 0 |\n| Missing frames by in-window gaps | 0 |\n| Longest consecutive missing run | 0 |\n| Window missing-frame sum | 0 |\n| Mean loss rate | 0.0000% |\n| Max loss rate | 0.0000% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 51.124 ms |\n| Max arrival jitter | 65.403 ms |\n| Mean bandwidth volatility | 1.810 KiB/s |\n| Max bandwidth volatility | 2.727 KiB/s |\n| Latency samples | 860 |\n| Mean latency | 1158.482 ms |\n| P50 latency | 1147.355 ms |\n| P95 latency | 1280.273 ms |\n| P99 latency | 1317.883 ms |\n\n## Quality Gates\n\n| Gate | Status | Value | Criterion |\n| --- | --- | ---: | --- |\n| CRC / parser integrity | PASS | 0 | crc_errors == 0 |\n| Application loss | PASS | 0.0000% | max loss <= 0.1% |\n| Mean frame rate | PASS | 19.99 | mean fps >= 95% target |\n| Mean throughput | PASS | 80.24 KiB/s | mean throughput >= 95% target |\n| Latency availability | PASS | 860 | SNTP latency samples present |\n\n## Figures\n\n![Bandwidth Timeseries 20260801 110508](figures/bandwidth_timeseries_20260801_110508.png)\n\n![Latency Histogram 20260801 110508](figures/latency_histogram_20260801_110508.png)\n\n\n## Interpretation Notes\n\n- A healthy run should keep loss rate and CRC/resync errors at zero for the current 20 fps x 4 KiB workload.\n- Arrival jitter captures WiFi/TCP cadence variability even when TCP eventually delivers every byte.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.\n\n## Experiment Manifest\n\n```json\n{\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"wireless bandwidth and latency validation for neural recording / spike-sorting pipeline\",\n    \"notes\": \"Baseline close-range hotspot run for checking whether the 20 fps x 4 KiB stream is stable before distance/interference experiments.\"\n  },\n  \"condition\": {\n    \"distance_m\": 1,\n    \"line_of_sight\": true,\n    \"board_orientation\": \"near laptop hotspot\",\n    \"interference_notes\": \"\",\n    \"laptop_power_mode\": \"\",\n    \"duration_min\": 30\n  },\n  \"condition_label\": \"baseline-near\",\n  \"device\": {\n    \"board\": \"ESP32-S3-PICO-1\",\n    \"firmware_project\": \"esp32s3-bandwidth-sender\",\n    \"serial_port\": \"COM7\"\n  },\n  \"experiment_id\": \"baseline-near-001\",\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\",\n    \"ntp_server\": \"pool.ntp.org\"\n  },\n  \"neural_data_scenario\": {\n    \"source_notebook_or_dataset\": \"deterministic firmware surrogate payload\",\n    \"compression_ratio\": null,\n    \"channels_or_neurons\": null,\n    \"sample_rate_hz\": null,\n    \"payload_mapping_notes\": \"Use this baseline before mapping payload size to a compressed neural stream scenario.\"\n  },\n  \"operator\": \"\",\n  \"receiver_started_at_local\": \"2026-08-01T11:04:13\",\n  \"started_at_local\": \"\",\n  \"stream\": {\n    \"transport\": \"WiFi + TCP\",\n    \"target_fps\": 20,\n    \"payload_bytes\": 4096,\n    \"frame_bytes\": 4110\n  }\n}\n```\n",
+      "summary": {
+        "db_path": "captures\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-08-01T03:05:08.487653+00:00",
+        "capture_start_utc": "2026-08-01T03:04:14.156801+00:00",
+        "capture_end_utc": "2026-08-01T03:04:57.160393+00:00",
+        "time_filter": "last 0.8 minutes",
+        "frame_count": "860",
+        "duration_s": "43.0035915",
+        "seq_min": "702975",
+        "seq_max": "703834",
+        "expected_frames": "860",
+        "total_missing_by_seq": "0",
+        "missing_frames_by_gaps": "0",
+        "longest_missing_run": "0",
+        "missing_frames_window_sum": "0",
+        "loss_rate_mean": "0.0",
+        "loss_rate_max": "0.0",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "19.99149425427617",
+        "fps_min": "19.298425055466332",
+        "fps_max": "20.77543623221843",
+        "rate_kib_s_mean": "80.23929822761235",
+        "rate_kib_s_min": "77.45754587692053",
+        "rate_kib_s_max": "83.38578409611107",
+        "interval_jitter_ms_mean": "51.124167883167644",
+        "interval_jitter_ms_max": "65.40269316873471",
+        "bandwidth_jitter_kib_s_mean": "1.810404698209719",
+        "bandwidth_jitter_kib_s_max": "2.727051485880665",
+        "latency_count": "860",
+        "latency_avg_ms": "1158.4815531395348",
+        "latency_p50_ms": "1147.35495",
+        "latency_p95_ms": "1280.27338",
+        "latency_p99_ms": "1317.8825929999998",
+        "latency_window_p95_max_ms": "1321.4133",
+        "experiment_id": "baseline-near-001",
+        "condition_label": "baseline-near",
+        "read_limit_kib_s": "",
+        "distance_m": "1"
+      }
+    },
+    {
+      "stamp": "20260801_110109",
+      "label": "baseline-near",
+      "summaryPath": "bandwidth_summary_20260801_110109.csv",
+      "reportPath": "bandwidth_report_20260801_110109.md",
+      "figures": [
+        "figures/bandwidth_timeseries_20260801_110109.png",
+        "figures/latency_histogram_20260801_110109.png"
+      ],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-08-01T03:01:09.893909+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is whether the wireless link can sustain the configured stream rate while keeping application frame loss, parser errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | last 10 minutes |\n| Capture start UTC | 2026-08-01T02:34:40.058763+00:00 |\n| Capture end UTC | 2026-08-01T02:44:40.046203+00:00 |\n| Captured frames | 11788 |\n| Capture duration | 599.99 s |\n| Mean FPS | 19.99 |\n| FPS range | 17.12 - 21.75 |\n| Mean throughput | 80.23 KiB/s |\n| Throughput range | 68.72 - 87.30 KiB/s |\n| Total missing frames by sequence | 5 |\n| Missing frames by in-window gaps | 5 |\n| Longest consecutive missing run | 1 |\n| Window missing-frame sum | 0 |\n| Mean loss rate | 0.0000% |\n| Max loss rate | 0.0000% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 49.740 ms |\n| Max arrival jitter | 81.441 ms |\n| Mean bandwidth volatility | 2.006 KiB/s |\n| Max bandwidth volatility | 5.203 KiB/s |\n| Latency samples | 11788 |\n| Mean latency | 1025.202 ms |\n| P50 latency | 1013.155 ms |\n| P95 latency | 1144.555 ms |\n| P99 latency | 1188.156 ms |\n\n## Quality Gates\n\n| Gate | Status | Value | Criterion |\n| --- | --- | ---: | --- |\n| CRC / parser integrity | PASS | 0 | crc_errors == 0 |\n| Application loss | PASS | 0.0000% | max loss <= 0.1% |\n| Mean frame rate | PASS | 19.99 | mean fps >= 95% target |\n| Mean throughput | PASS | 80.23 KiB/s | mean throughput >= 95% target |\n| Latency availability | PASS | 11788 | SNTP latency samples present |\n\n## Figures\n\n![Bandwidth Timeseries 20260801 110109](figures/bandwidth_timeseries_20260801_110109.png)\n\n![Latency Histogram 20260801 110109](figures/latency_histogram_20260801_110109.png)\n\n\n## Interpretation Notes\n\n- A healthy run should keep loss rate and CRC/resync errors at zero for the current 20 fps x 4 KiB workload.\n- Arrival jitter captures WiFi/TCP cadence variability even when TCP eventually delivers every byte.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.\n\n## Experiment Manifest\n\n```json\n{\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"wireless bandwidth and latency validation for neural recording / spike-sorting pipeline\",\n    \"notes\": \"Baseline close-range hotspot run for checking whether the 20 fps x 4 KiB stream is stable before distance/interference experiments.\"\n  },\n  \"condition\": {\n    \"distance_m\": 1,\n    \"line_of_sight\": true,\n    \"board_orientation\": \"near laptop hotspot\",\n    \"interference_notes\": \"\",\n    \"laptop_power_mode\": \"\",\n    \"duration_min\": 30\n  },\n  \"condition_label\": \"baseline-near\",\n  \"device\": {\n    \"board\": \"ESP32-S3-PICO-1\",\n    \"firmware_project\": \"esp32s3-bandwidth-sender\",\n    \"serial_port\": \"COM7\"\n  },\n  \"experiment_id\": \"baseline-near-001\",\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\",\n    \"ntp_server\": \"pool.ntp.org\"\n  },\n  \"neural_data_scenario\": {\n    \"source_notebook_or_dataset\": \"deterministic firmware surrogate payload\",\n    \"compression_ratio\": null,\n    \"channels_or_neurons\": null,\n    \"sample_rate_hz\": null,\n    \"payload_mapping_notes\": \"Use this baseline before mapping payload size to a compressed neural stream scenario.\"\n  },\n  \"operator\": \"\",\n  \"receiver_started_at_local\": \"2026-08-01T10:26:28\",\n  \"started_at_local\": \"\",\n  \"stream\": {\n    \"transport\": \"WiFi + TCP\",\n    \"target_fps\": 20,\n    \"payload_bytes\": 4096,\n    \"frame_bytes\": 4110\n  }\n}\n```\n",
+      "summary": {
+        "db_path": "captures\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-08-01T03:01:09.893909+00:00",
+        "capture_start_utc": "2026-08-01T02:34:40.058763+00:00",
+        "capture_end_utc": "2026-08-01T02:44:40.046203+00:00",
+        "time_filter": "last 10 minutes",
+        "frame_count": "11788",
+        "duration_s": "599.9874396",
+        "seq_min": "690479",
+        "seq_max": "702271",
+        "expected_frames": "11793",
+        "total_missing_by_seq": "5",
+        "missing_frames_by_gaps": "5",
+        "longest_missing_run": "1",
+        "missing_frames_window_sum": "0",
+        "loss_rate_mean": "0.0",
+        "loss_rate_max": "0.0",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "19.988095700306538",
+        "fps_min": "17.12070166764337",
+        "fps_max": "21.751663433726783",
+        "rate_kib_s_mean": "80.22565754712878",
+        "rate_kib_s_min": "68.7168787636858",
+        "rate_kib_s_max": "87.30403975841512",
+        "interval_jitter_ms_mean": "49.73980091644258",
+        "interval_jitter_ms_max": "81.44070643893065",
+        "bandwidth_jitter_kib_s_mean": "2.005559692035617",
+        "bandwidth_jitter_kib_s_max": "5.202606466260927",
+        "latency_count": "11788",
+        "latency_avg_ms": "1025.2015902103835",
+        "latency_p50_ms": "1013.15485",
+        "latency_p95_ms": "1144.55512",
+        "latency_p99_ms": "1188.1564400000002",
+        "latency_window_p95_max_ms": "1369.7291",
+        "experiment_id": "baseline-near-001",
+        "condition_label": "baseline-near",
+        "read_limit_kib_s": "",
+        "distance_m": "1"
+      }
+    },
+    {
+      "stamp": "20260801_110007",
+      "label": "20260801_110007",
+      "summaryPath": "bandwidth_summary_20260801_110007.csv",
+      "reportPath": "bandwidth_report_20260801_110007.md",
+      "figures": [
+        "figures/bandwidth_timeseries_20260801_110007.png",
+        "figures/latency_histogram_20260801_110007.png"
+      ],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-08-01T03:00:07.082076+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is whether the wireless link can sustain the configured stream rate while keeping application frame loss, parser errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | last 10 minutes |\n| Capture start UTC | 2026-08-01T02:34:40.058763+00:00 |\n| Capture end UTC | 2026-08-01T02:44:40.046203+00:00 |\n| Captured frames | 11788 |\n| Capture duration | 599.99 s |\n| Mean FPS | 19.99 |\n| FPS range | 17.12 - 21.75 |\n| Mean throughput | 80.23 KiB/s |\n| Throughput range | 68.72 - 87.30 KiB/s |\n| Total missing frames by sequence | 5 |\n| Missing frames by in-window gaps | 5 |\n| Longest consecutive missing run | 1 |\n| Window missing-frame sum | 0 |\n| Mean loss rate | 0.0000% |\n| Max loss rate | 0.0000% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 49.740 ms |\n| Max arrival jitter | 81.441 ms |\n| Mean bandwidth volatility | 2.006 KiB/s |\n| Max bandwidth volatility | 5.203 KiB/s |\n| Latency samples | 11788 |\n| Mean latency | 1025.202 ms |\n| P50 latency | 1013.155 ms |\n| P95 latency | 1144.555 ms |\n| P99 latency | 1188.156 ms |\n\n## Quality Gates\n\n| Gate | Status | Value | Criterion |\n| --- | --- | ---: | --- |\n| CRC / parser integrity | PASS | 0 | crc_errors == 0 |\n| Application loss | PASS | 0.0000% | max loss <= 0.1% |\n| Mean frame rate | PASS | 19.99 | mean fps >= 95% target |\n| Mean throughput | PASS | 80.23 KiB/s | mean throughput >= 95% target |\n| Latency availability | PASS | 11788 | SNTP latency samples present |\n\n## Figures\n\n![Bandwidth Timeseries 20260801 110007](figures/bandwidth_timeseries_20260801_110007.png)\n\n![Latency Histogram 20260801 110007](figures/latency_histogram_20260801_110007.png)\n\n\n## Interpretation Notes\n\n- A healthy run should keep loss rate and CRC/resync errors at zero for the current 20 fps x 4 KiB workload.\n- Arrival jitter captures WiFi/TCP cadence variability even when TCP eventually delivers every byte.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.\n\n## Experiment Manifest\n\n```json\n{\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"wireless bandwidth and latency validation for neural recording / spike-sorting pipeline\",\n    \"notes\": \"Baseline close-range hotspot run for checking whether the 20 fps x 4 KiB stream is stable before distance/interference experiments.\"\n  },\n  \"condition\": {\n    \"distance_m\": 1,\n    \"line_of_sight\": true,\n    \"board_orientation\": \"near laptop hotspot\",\n    \"interference_notes\": \"\",\n    \"laptop_power_mode\": \"\",\n    \"duration_min\": 30\n  },\n  \"condition_label\": \"baseline-near\",\n  \"device\": {\n    \"board\": \"ESP32-S3-PICO-1\",\n    \"firmware_project\": \"esp32s3-bandwidth-sender\",\n    \"serial_port\": \"COM7\"\n  },\n  \"experiment_id\": \"baseline-near-001\",\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\",\n    \"ntp_server\": \"pool.ntp.org\"\n  },\n  \"neural_data_scenario\": {\n    \"source_notebook_or_dataset\": \"deterministic firmware surrogate payload\",\n    \"compression_ratio\": null,\n    \"channels_or_neurons\": null,\n    \"sample_rate_hz\": null,\n    \"payload_mapping_notes\": \"Use this baseline before mapping payload size to a compressed neural stream scenario.\"\n  },\n  \"operator\": \"\",\n  \"receiver_started_at_local\": \"2026-08-01T10:26:28\",\n  \"started_at_local\": \"\",\n  \"stream\": {\n    \"transport\": \"WiFi + TCP\",\n    \"target_fps\": 20,\n    \"payload_bytes\": 4096,\n    \"frame_bytes\": 4110\n  }\n}\n```\n",
+      "summary": {
+        "db_path": "captures\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-08-01T03:00:07.082076+00:00",
+        "capture_start_utc": "2026-08-01T02:34:40.058763+00:00",
+        "capture_end_utc": "2026-08-01T02:44:40.046203+00:00",
+        "time_filter": "last 10 minutes",
+        "frame_count": "11788",
+        "duration_s": "599.9874396",
+        "seq_min": "690479",
+        "seq_max": "702271",
+        "expected_frames": "11793",
+        "total_missing_by_seq": "5",
+        "missing_frames_by_gaps": "5",
+        "longest_missing_run": "1",
+        "missing_frames_window_sum": "0",
+        "loss_rate_mean": "0.0",
+        "loss_rate_max": "0.0",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "19.988095700306538",
+        "fps_min": "17.12070166764337",
+        "fps_max": "21.751663433726783",
+        "rate_kib_s_mean": "80.22565754712878",
+        "rate_kib_s_min": "68.7168787636858",
+        "rate_kib_s_max": "87.30403975841512",
+        "interval_jitter_ms_mean": "49.73980091644258",
+        "interval_jitter_ms_max": "81.44070643893065",
+        "bandwidth_jitter_kib_s_mean": "2.005559692035617",
+        "bandwidth_jitter_kib_s_max": "5.202606466260927",
+        "latency_count": "11788",
+        "latency_avg_ms": "1025.2015902103835",
+        "latency_p50_ms": "1013.15485",
+        "latency_p95_ms": "1144.55512",
+        "latency_p99_ms": "1188.1564400000002",
+        "latency_window_p95_max_ms": "1369.7291"
+      }
+    },
+    {
+      "stamp": "20260801_104451",
+      "label": "20260801_104451",
+      "summaryPath": "bandwidth_summary_20260801_104451.csv",
+      "reportPath": "bandwidth_report_20260801_104451.md",
+      "figures": [],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-08-01T02:44:51.484622+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is whether the wireless link can sustain the configured stream rate while keeping application frame loss, parser errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | last 15 minutes |\n| Capture start UTC | 2026-08-01T02:29:40.064714+00:00 |\n| Capture end UTC | 2026-08-01T02:44:40.046203+00:00 |\n| Captured frames | 17746 |\n| Capture duration | 899.98 s |\n| Mean FPS | 19.99 |\n| FPS range | 17.12 - 21.75 |\n| Mean throughput | 80.24 KiB/s |\n| Throughput range | 68.72 - 87.30 KiB/s |\n| Total missing frames by sequence | 6 |\n| Missing frames by in-window gaps | 6 |\n| Longest consecutive missing run | 1 |\n| Window missing-frame sum | 0 |\n| Mean loss rate | 0.0000% |\n| Max loss rate | 0.0000% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 50.113 ms |\n| Max arrival jitter | 81.441 ms |\n| Mean bandwidth volatility | 2.021 KiB/s |\n| Max bandwidth volatility | 5.203 KiB/s |\n| Latency samples | 17746 |\n| Mean latency | 1025.424 ms |\n| P50 latency | 1013.444 ms |\n| P95 latency | 1145.201 ms |\n| P99 latency | 1188.349 ms |\n\n## Quality Gates\n\n| Gate | Status | Value | Criterion |\n| --- | --- | ---: | --- |\n| CRC / parser integrity | PASS | 0 | crc_errors == 0 |\n| Application loss | PASS | 0.0000% | max loss <= 0.1% |\n| Mean frame rate | PASS | 19.99 | mean fps >= 95% target |\n| Mean throughput | PASS | 80.24 KiB/s | mean throughput >= 95% target |\n| Latency availability | PASS | 17746 | SNTP latency samples present |\n\n## Interpretation Notes\n\n- A healthy run should keep loss rate and CRC/resync errors at zero for the current 20 fps x 4 KiB workload.\n- Arrival jitter captures WiFi/TCP cadence variability even when TCP eventually delivers every byte.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.\n\n## Experiment Manifest\n\n```json\n{\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"wireless bandwidth and latency validation for neural recording / spike-sorting pipeline\",\n    \"notes\": \"Baseline close-range hotspot run for checking whether the 20 fps x 4 KiB stream is stable before distance/interference experiments.\"\n  },\n  \"condition\": {\n    \"distance_m\": 1,\n    \"line_of_sight\": true,\n    \"board_orientation\": \"near laptop hotspot\",\n    \"interference_notes\": \"\",\n    \"laptop_power_mode\": \"\",\n    \"duration_min\": 30\n  },\n  \"condition_label\": \"baseline-near\",\n  \"device\": {\n    \"board\": \"ESP32-S3-PICO-1\",\n    \"firmware_project\": \"esp32s3-bandwidth-sender\",\n    \"serial_port\": \"COM7\"\n  },\n  \"experiment_id\": \"baseline-near-001\",\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\",\n    \"ntp_server\": \"pool.ntp.org\"\n  },\n  \"neural_data_scenario\": {\n    \"source_notebook_or_dataset\": \"deterministic firmware surrogate payload\",\n    \"compression_ratio\": null,\n    \"channels_or_neurons\": null,\n    \"sample_rate_hz\": null,\n    \"payload_mapping_notes\": \"Use this baseline before mapping payload size to a compressed neural stream scenario.\"\n  },\n  \"operator\": \"\",\n  \"receiver_started_at_local\": \"2026-08-01T10:26:28\",\n  \"started_at_local\": \"\",\n  \"stream\": {\n    \"transport\": \"WiFi + TCP\",\n    \"target_fps\": 20,\n    \"payload_bytes\": 4096,\n    \"frame_bytes\": 4110\n  }\n}\n```\n",
+      "summary": {
+        "db_path": "captures\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-08-01T02:44:51.484622+00:00",
+        "capture_start_utc": "2026-08-01T02:29:40.064714+00:00",
+        "capture_end_utc": "2026-08-01T02:44:40.046203+00:00",
+        "time_filter": "last 15 minutes",
+        "frame_count": "17746",
+        "duration_s": "899.9814885",
+        "seq_min": "684520",
+        "seq_max": "702271",
+        "expected_frames": "17752",
+        "total_missing_by_seq": "6",
+        "missing_frames_by_gaps": "6",
+        "longest_missing_run": "1",
+        "missing_frames_window_sum": "0",
+        "loss_rate_mean": "0.0",
+        "loss_rate_max": "0.0",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "19.99083741255906",
+        "fps_min": "17.12070166764337",
+        "fps_max": "21.751663433726783",
+        "rate_kib_s_mean": "80.23666188048605",
+        "rate_kib_s_min": "68.7168787636858",
+        "rate_kib_s_max": "87.30403975841512",
+        "interval_jitter_ms_mean": "50.112980008226394",
+        "interval_jitter_ms_max": "81.44070643893065",
+        "bandwidth_jitter_kib_s_mean": "2.0207479151523096",
+        "bandwidth_jitter_kib_s_max": "5.202606466260927",
+        "latency_count": "17746",
+        "latency_avg_ms": "1025.4241908204665",
+        "latency_p50_ms": "1013.4440999999999",
+        "latency_p95_ms": "1145.200925",
+        "latency_p99_ms": "1188.349435",
+        "latency_window_p95_max_ms": "1369.7291"
+      }
+    },
+    {
+      "stamp": "20260801_102141",
+      "label": "20260801_102141",
+      "summaryPath": "bandwidth_summary_20260801_102141.csv",
+      "reportPath": "bandwidth_report_20260801_102141.md",
+      "figures": [],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-08-01T02:21:41.142899+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is whether the wireless link can sustain the configured stream rate while keeping application frame loss, parser errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | last 10 minutes |\n| Capture start UTC | 2026-08-01T01:49:35.960486+00:00 |\n| Capture end UTC | 2026-08-01T01:59:35.920548+00:00 |\n| Captured frames | 11958 |\n| Capture duration | 599.96 s |\n| Mean FPS | 20.00 |\n| FPS range | 18.65 - 20.91 |\n| Mean throughput | 80.27 KiB/s |\n| Throughput range | 74.87 - 83.94 KiB/s |\n| Total missing frames by sequence | 1 |\n| Missing frames by in-window gaps | 1 |\n| Longest consecutive missing run | 1 |\n| Window missing-frame sum | 0 |\n| Mean loss rate | 0.0000% |\n| Max loss rate | 0.0000% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 51.490 ms |\n| Max arrival jitter | 102.580 ms |\n| Mean bandwidth volatility | 2.062 KiB/s |\n| Max bandwidth volatility | 4.976 KiB/s |\n| Latency samples | 11958 |\n| Mean latency | 1038.010 ms |\n| P50 latency | 1022.045 ms |\n| P95 latency | 1166.088 ms |\n| P99 latency | 1214.013 ms |\n\n## Quality Gates\n\n| Gate | Status | Value | Criterion |\n| --- | --- | ---: | --- |\n| CRC / parser integrity | PASS | 0 | crc_errors == 0 |\n| Application loss | PASS | 0.0000% | max loss <= 0.1% |\n| Mean frame rate | PASS | 20.00 | mean fps >= 95% target |\n| Mean throughput | PASS | 80.27 KiB/s | mean throughput >= 95% target |\n| Latency availability | PASS | 11958 | SNTP latency samples present |\n\n## Interpretation Notes\n\n- A healthy run should keep loss rate and CRC/resync errors at zero for the current 20 fps x 4 KiB workload.\n- Arrival jitter captures WiFi/TCP cadence variability even when TCP eventually delivers every byte.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.\n\n## Experiment Manifest\n\n```json\n{\n  \"experiment_id\": \"baseline-near-001\",\n  \"operator\": \"\",\n  \"started_at_local\": \"\",\n  \"condition_label\": \"baseline-near\",\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"wireless bandwidth and latency validation for neural recording / spike-sorting pipeline\",\n    \"notes\": \"Baseline close-range hotspot run for checking whether the 20 fps x 4 KiB stream is stable before distance/interference experiments.\"\n  },\n  \"device\": {\n    \"board\": \"ESP32-S3-PICO-1\",\n    \"firmware_project\": \"esp32s3-bandwidth-sender\",\n    \"serial_port\": \"COM7\"\n  },\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\",\n    \"ntp_server\": \"pool.ntp.org\"\n  },\n  \"stream\": {\n    \"transport\": \"WiFi + TCP\",\n    \"target_fps\": 20,\n    \"payload_bytes\": 4096,\n    \"frame_bytes\": 4110\n  },\n  \"condition\": {\n    \"distance_m\": 1,\n    \"line_of_sight\": true,\n    \"board_orientation\": \"near laptop hotspot\",\n    \"interference_notes\": \"\",\n    \"laptop_power_mode\": \"\",\n    \"duration_min\": 30\n  },\n  \"neural_data_scenario\": {\n    \"source_notebook_or_dataset\": \"deterministic firmware surrogate payload\",\n    \"compression_ratio\": null,\n    \"channels_or_neurons\": null,\n    \"sample_rate_hz\": null,\n    \"payload_mapping_notes\": \"Use this baseline before mapping payload size to a compressed neural stream scenario.\"\n  }\n}\n```\n",
+      "summary": {
+        "db_path": "captures\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-08-01T02:21:41.142899+00:00",
+        "capture_start_utc": "2026-08-01T01:49:35.960486+00:00",
+        "capture_end_utc": "2026-08-01T01:59:35.920548+00:00",
+        "time_filter": "last 10 minutes",
+        "frame_count": "11958",
+        "duration_s": "599.9600626",
+        "seq_min": "668830",
+        "seq_max": "680788",
+        "expected_frames": "11959",
+        "total_missing_by_seq": "1",
+        "missing_frames_by_gaps": "1",
+        "longest_missing_run": "1",
+        "missing_frames_window_sum": "0",
+        "loss_rate_mean": "0.0",
+        "loss_rate_max": "0.0",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "20.000006167849254",
+        "fps_min": "18.654353484273965",
+        "fps_max": "20.912714512169327",
+        "rate_kib_s_mean": "80.27346225572309",
+        "rate_kib_s_min": "74.87245392613868",
+        "rate_kib_s_max": "83.93677406739837",
+        "interval_jitter_ms_mean": "51.48996591880597",
+        "interval_jitter_ms_max": "102.57982494772291",
+        "bandwidth_jitter_kib_s_mean": "2.0619290768271434",
+        "bandwidth_jitter_kib_s_max": "4.976203075568841",
+        "latency_count": "11958",
+        "latency_avg_ms": "1038.010485950828",
+        "latency_p50_ms": "1022.04505",
+        "latency_p95_ms": "1166.08817",
+        "latency_p99_ms": "1214.012503",
+        "latency_window_p95_max_ms": "1372.1002"
+      }
+    },
+    {
+      "stamp": "20260801_060350",
+      "label": "20260801_060350",
+      "summaryPath": "bandwidth_summary_20260801_060350.csv",
+      "reportPath": "bandwidth_report_20260801_060350.md",
+      "figures": [],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-07-31T22:03:50.098910+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is whether the wireless link can sustain the configured stream rate while keeping application frame loss, parser errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | last 10 minutes |\n| Captured frames | 11526 |\n| Capture duration | 599.83 s |\n| Mean FPS | 19.97 |\n| FPS range | 6.74 - 21.83 |\n| Mean throughput | 80.15 KiB/s |\n| Throughput range | 27.05 - 87.62 KiB/s |\n| Total missing frames by sequence | 11 |\n| Missing frames by in-window gaps | 11 |\n| Longest consecutive missing run | 1 |\n| Window missing-frame sum | 0 |\n| Mean loss rate | 0.0000% |\n| Max loss rate | 0.0000% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 53.353 ms |\n| Max arrival jitter | 589.556 ms |\n| Mean bandwidth volatility | 2.092 KiB/s |\n| Max bandwidth volatility | 14.830 KiB/s |\n| Latency samples | 11526 |\n| Mean latency | 1076.927 ms |\n| P50 latency | 1055.156 ms |\n| P95 latency | 1208.033 ms |\n| P99 latency | 1292.444 ms |\n\n## Interpretation Notes\n\n- A healthy run should keep loss rate and CRC/resync errors at zero for the current 20 fps x 4 KiB workload.\n- Arrival jitter captures WiFi/TCP cadence variability even when TCP eventually delivers every byte.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n\n## Experiment Manifest\n\n```json\n{\n  \"experiment_id\": \"esp32s3_hotspot_baseline_001\",\n  \"operator\": \"\",\n  \"started_at_local\": \"\",\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"wireless bandwidth and latency validation for neural recording / spike-sorting pipeline\",\n    \"notes\": \"Use this run to judge whether the ESP32-S3 link can sustain compressed neural-data transport without application-layer frame gaps.\"\n  },\n  \"device\": {\n    \"board\": \"ESP32-S3-PICO-1\",\n    \"firmware_project\": \"esp32s3-bandwidth-sender\",\n    \"serial_port\": \"COM7\"\n  },\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\",\n    \"ntp_server\": \"pool.ntp.org\"\n  },\n  \"stream\": {\n    \"transport\": \"WiFi + TCP\",\n    \"target_fps\": 20,\n    \"payload_bytes\": 4096,\n    \"frame_bytes\": 4110,\n    \"timestamp_mode_expected\": \"epoch_us when SNTP succeeds; monotonic_us fallback otherwise\"\n  },\n  \"condition\": {\n    \"distance_m\": null,\n    \"line_of_sight\": true,\n    \"board_orientation\": \"\",\n    \"interference_notes\": \"\",\n    \"laptop_power_mode\": \"\",\n    \"duration_min\": 30\n  },\n  \"neural_data_scenario\": {\n    \"source_notebook_or_dataset\": \"\",\n    \"compression_ratio\": null,\n    \"channels_or_neurons\": null,\n    \"sample_rate_hz\": null,\n    \"payload_mapping_notes\": \"Current firmware payload is a deterministic surrogate. Fill this section when mapping payload size to a real compressed neural stream.\"\n  }\n}\n```\n",
+      "summary": {
+        "db_path": "captures\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-07-31T22:03:50.098910+00:00",
+        "time_filter": "last 10 minutes",
+        "frame_count": "11526",
+        "duration_s": "599.8348158",
+        "seq_min": "387984",
+        "seq_max": "399520",
+        "expected_frames": "11537",
+        "total_missing_by_seq": "11",
+        "missing_frames_by_gaps": "11",
+        "longest_missing_run": "1",
+        "missing_frames_window_sum": "0",
+        "loss_rate_mean": "0.0",
+        "loss_rate_max": "0.0",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "19.96862679002325",
+        "fps_min": "6.739757653473098",
+        "fps_max": "21.829985886919683",
+        "rate_kib_s_mean": "80.14751572948786",
+        "rate_kib_s_min": "27.05117573806097",
+        "rate_kib_s_max": "87.61840038597647",
+        "interval_jitter_ms_mean": "53.352949205414156",
+        "interval_jitter_ms_max": "589.5562424460164",
+        "bandwidth_jitter_kib_s_mean": "2.091644492114931",
+        "bandwidth_jitter_kib_s_max": "14.829829744426265",
+        "latency_count": "11526",
+        "latency_avg_ms": "1076.9269965295853",
+        "latency_p50_ms": "1055.156",
+        "latency_p95_ms": "1208.032575",
+        "latency_p99_ms": "1292.443875",
+        "latency_window_p95_max_ms": "3296.3407749999997"
+      }
+    },
+    {
+      "stamp": "20260801_060314",
+      "label": "20260801_060314",
+      "summaryPath": "bandwidth_summary_20260801_060314.csv",
+      "reportPath": "bandwidth_report_20260801_060314.md",
+      "figures": [],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-07-31T22:03:14.093590+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is whether the wireless link can sustain the configured stream rate while keeping application frame loss, parser errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | last 10 minutes |\n| Captured frames | 11525 |\n| Capture duration | 599.89 s |\n| Mean FPS | 19.97 |\n| FPS range | 6.74 - 21.83 |\n| Mean throughput | 80.14 KiB/s |\n| Throughput range | 27.05 - 87.62 KiB/s |\n| Total missing frames by sequence | 11 |\n| Window missing-frame sum | 0 |\n| Mean loss rate | 0.0000% |\n| Max loss rate | 0.0000% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 53.481 ms |\n| Max arrival jitter | 589.556 ms |\n| Mean bandwidth volatility | 2.083 KiB/s |\n| Max bandwidth volatility | 14.830 KiB/s |\n| Latency samples | 11525 |\n| Mean latency | 1078.437 ms |\n| P50 latency | 1056.330 ms |\n| P95 latency | 1210.133 ms |\n| P99 latency | 1295.045 ms |\n\n## Interpretation Notes\n\n- A healthy run should keep loss rate and CRC/resync errors at zero for the current 20 fps x 4 KiB workload.\n- Arrival jitter captures WiFi/TCP cadence variability even when TCP eventually delivers every byte.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n\n## Experiment Manifest\n\n```json\n{\n  \"experiment_id\": \"esp32s3_hotspot_baseline_001\",\n  \"operator\": \"\",\n  \"started_at_local\": \"\",\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"wireless bandwidth and latency validation for neural recording / spike-sorting pipeline\",\n    \"notes\": \"Use this run to judge whether the ESP32-S3 link can sustain compressed neural-data transport without application-layer frame gaps.\"\n  },\n  \"device\": {\n    \"board\": \"ESP32-S3-PICO-1\",\n    \"firmware_project\": \"esp32s3-bandwidth-sender\",\n    \"serial_port\": \"COM7\"\n  },\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\",\n    \"ntp_server\": \"pool.ntp.org\"\n  },\n  \"stream\": {\n    \"transport\": \"WiFi + TCP\",\n    \"target_fps\": 20,\n    \"payload_bytes\": 4096,\n    \"frame_bytes\": 4110,\n    \"timestamp_mode_expected\": \"epoch_us when SNTP succeeds; monotonic_us fallback otherwise\"\n  },\n  \"condition\": {\n    \"distance_m\": null,\n    \"line_of_sight\": true,\n    \"board_orientation\": \"\",\n    \"interference_notes\": \"\",\n    \"laptop_power_mode\": \"\",\n    \"duration_min\": 30\n  },\n  \"neural_data_scenario\": {\n    \"source_notebook_or_dataset\": \"\",\n    \"compression_ratio\": null,\n    \"channels_or_neurons\": null,\n    \"sample_rate_hz\": null,\n    \"payload_mapping_notes\": \"Current firmware payload is a deterministic surrogate. Fill this section when mapping payload size to a real compressed neural stream.\"\n  }\n}\n```\n",
+      "summary": {
+        "db_path": "captures\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-07-31T22:03:14.093590+00:00",
+        "time_filter": "last 10 minutes",
+        "frame_count": "11525",
+        "duration_s": "599.8903457",
+        "seq_min": "387268",
+        "seq_max": "398803",
+        "expected_frames": "11536",
+        "total_missing_by_seq": "11",
+        "missing_frames_window_sum": "0",
+        "loss_rate_mean": "0.0",
+        "loss_rate_max": "0.0",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "19.966735835881398",
+        "fps_min": "6.739757653473098",
+        "fps_max": "21.829985886919683",
+        "rate_kib_s_mean": "80.13992606003178",
+        "rate_kib_s_min": "27.05117573806097",
+        "rate_kib_s_max": "87.61840038597647",
+        "interval_jitter_ms_mean": "53.48096688138306",
+        "interval_jitter_ms_max": "589.5562424460164",
+        "bandwidth_jitter_kib_s_mean": "2.082773104009027",
+        "bandwidth_jitter_kib_s_max": "14.829829744426265",
+        "latency_count": "11525",
+        "latency_avg_ms": "1078.4365990021693",
+        "latency_p50_ms": "1056.3298",
+        "latency_p95_ms": "1210.13346",
+        "latency_p99_ms": "1295.0452080000005",
+        "latency_window_p95_max_ms": "3296.3407749999997"
+      }
+    },
+    {
+      "stamp": "20260801_060205",
+      "label": "20260801_060205",
+      "summaryPath": "bandwidth_summary_20260801_060205.csv",
+      "reportPath": "bandwidth_report_20260801_060205.md",
+      "figures": [],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-07-31T22:02:05.123377+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is whether the wireless link can sustain the configured stream rate while keeping application frame loss, parser errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Captured frames | 418042 |\n| Capture duration | 197145.28 s |\n| Mean FPS | 19.55 |\n| FPS range | 0.00 - 46.92 |\n| Mean throughput | 78.46 KiB/s |\n| Throughput range | 0.00 - 188.33 KiB/s |\n| Total missing frames by sequence | 0 |\n| Window missing-frame sum | 45233 |\n| Mean loss rate | 0.8416% |\n| Max loss rate | 98.3146% |\n| CRC/resync errors | 4119799 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 109.140 ms |\n| Max arrival jitter | 17734.597 ms |\n| Mean bandwidth volatility | 2.422 KiB/s |\n| Max bandwidth volatility | 121.014 KiB/s |\n| Latency samples | 388428 |\n| Mean latency | 1159.681 ms |\n| P50 latency | 1114.281 ms |\n| P95 latency | 1365.837 ms |\n| P99 latency | 1462.308 ms |\n\n## Interpretation Notes\n\n- A healthy run should keep loss rate and CRC/resync errors at zero for the current 20 fps x 4 KiB workload.\n- Arrival jitter captures WiFi/TCP cadence variability even when TCP eventually delivers every byte.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n\n## Experiment Manifest\n\n```json\n{\n  \"experiment_id\": \"esp32s3_hotspot_baseline_001\",\n  \"operator\": \"\",\n  \"started_at_local\": \"\",\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"wireless bandwidth and latency validation for neural recording / spike-sorting pipeline\",\n    \"notes\": \"Use this run to judge whether the ESP32-S3 link can sustain compressed neural-data transport without application-layer frame gaps.\"\n  },\n  \"device\": {\n    \"board\": \"ESP32-S3-PICO-1\",\n    \"firmware_project\": \"esp32s3-bandwidth-sender\",\n    \"serial_port\": \"COM7\"\n  },\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\",\n    \"ntp_server\": \"pool.ntp.org\"\n  },\n  \"stream\": {\n    \"transport\": \"WiFi + TCP\",\n    \"target_fps\": 20,\n    \"payload_bytes\": 4096,\n    \"frame_bytes\": 4110,\n    \"timestamp_mode_expected\": \"epoch_us when SNTP succeeds; monotonic_us fallback otherwise\"\n  },\n  \"condition\": {\n    \"distance_m\": null,\n    \"line_of_sight\": true,\n    \"board_orientation\": \"\",\n    \"interference_notes\": \"\",\n    \"laptop_power_mode\": \"\",\n    \"duration_min\": 30\n  },\n  \"neural_data_scenario\": {\n    \"source_notebook_or_dataset\": \"\",\n    \"compression_ratio\": null,\n    \"channels_or_neurons\": null,\n    \"sample_rate_hz\": null,\n    \"payload_mapping_notes\": \"Current firmware payload is a deterministic surrogate. Fill this section when mapping payload size to a real compressed neural stream.\"\n  }\n}\n```\n",
+      "summary": {
+        "db_path": "captures\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-07-31T22:02:05.123377+00:00",
+        "frame_count": "418042",
+        "duration_s": "197145.2756818",
+        "seq_min": "0",
+        "seq_max": "397419",
+        "expected_frames": "397420",
+        "total_missing_by_seq": "0",
+        "missing_frames_window_sum": "45233",
+        "loss_rate_mean": "0.008415594657315392",
+        "loss_rate_max": "0.9831460674157303",
+        "crc_errors_total": "4119799",
+        "old_frames_total": "0",
+        "fps_mean": "19.54891312065771",
+        "fps_min": "0.0",
+        "fps_max": "46.92143474965723",
+        "rate_kib_s_mean": "78.46292277920232",
+        "rate_kib_s_min": "0.0",
+        "rate_kib_s_max": "188.32724298934687",
+        "interval_jitter_ms_mean": "109.1404746381214",
+        "interval_jitter_ms_max": "17734.597328200198",
+        "bandwidth_jitter_kib_s_mean": "2.4222581687421707",
+        "bandwidth_jitter_kib_s_max": "121.01399136110787",
+        "latency_count": "388428",
+        "latency_avg_ms": "1159.6808416733604",
+        "latency_p50_ms": "1114.28085",
+        "latency_p95_ms": "1365.8373649999999",
+        "latency_p99_ms": "1462.307926",
+        "latency_window_p95_max_ms": "3296.3407749999997"
+      }
+    }
+  ],
+  "comparisons": [
+    {
+      "stamp": "20260801_110814",
+      "csvPath": "comparisons/comparison_summary_20260801_110814.csv",
+      "reportPath": "comparisons/comparison_report_20260801_110814.md",
+      "images": [
+        "comparisons/comparison_summary_20260801_110814.png",
+        "comparisons/throughput_latency_tradeoff_20260801_110814.png"
+      ],
+      "markdown": "# ESP32-S3 Bandwidth Experiment Comparison\n\nCombined CSV: `comparison_summary_20260801_110814.csv`\n\n| Run | Mean throughput KiB/s | Mean FPS | Max loss rate | CRC errors | Mean jitter ms | P95 latency ms |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |\n| baseline-near | 80.23929822761235 | 19.99149425427617 | 0.0 | 0 | 51.124167883167644 | 1280.27338 |\n| throttle-100kib | 70.40385787388196 | 17.541009844976916 | 0.0 | 0 | 153.6178958277178 | 3196.4189699999997 |\n| throttle-60kib | 46.761890326010494 | 11.65065102039775 | 0.0 | 0 | 221.4824790098446 | 4727.93466 |\n| throttle-40kib | 35.41542331967218 | 8.82369671030275 | 0.0 | 0 | 244.818739441587 | 6522.090155 |\n\n## Figures\n\n![comparison_summary_20260801_110814](comparison_summary_20260801_110814.png)\n\n![throughput_latency_tradeoff_20260801_110814](throughput_latency_tradeoff_20260801_110814.png)\n\n",
+      "rows": [
+        {
+          "label": "baseline-near",
+          "time_filter": "last 0.8 minutes",
+          "capture_start_utc": "2026-08-01T03:04:14.156801+00:00",
+          "capture_end_utc": "2026-08-01T03:04:57.160393+00:00",
+          "experiment_id": "baseline-near-001",
+          "condition_label": "baseline-near",
+          "read_limit_kib_s": "",
+          "distance_m": "1",
+          "fps_mean": "19.99149425427617",
+          "rate_kib_s_mean": "80.23929822761235",
+          "loss_rate_max": "0.0",
+          "crc_errors_total": "0",
+          "interval_jitter_ms_mean": "51.124167883167644",
+          "latency_p95_ms": "1280.27338",
+          "latency_p99_ms": "1317.8825929999998",
+          "longest_missing_run": "0",
+          "summary_path": "reports\\bandwidth_summary_20260801_110508.csv",
+          "bandwidth_jitter_kib_s_max": "2.727051485880665",
+          "bandwidth_jitter_kib_s_mean": "1.810404698209719",
+          "db_path": "captures\\bandwidth_capture.sqlite3",
+          "duration_s": "43.0035915",
+          "expected_frames": "860",
+          "fps_max": "20.77543623221843",
+          "fps_min": "19.298425055466332",
+          "frame_count": "860",
+          "generated_at": "2026-08-01T03:05:08.487653+00:00",
+          "interval_jitter_ms_max": "65.40269316873471",
+          "latency_avg_ms": "1158.4815531395348",
+          "latency_count": "860",
+          "latency_p50_ms": "1147.35495",
+          "latency_window_p95_max_ms": "1321.4133",
+          "loss_rate_mean": "0.0",
+          "missing_frames_by_gaps": "0",
+          "missing_frames_window_sum": "0",
+          "old_frames_total": "0",
+          "rate_kib_s_max": "83.38578409611107",
+          "rate_kib_s_min": "77.45754587692053",
+          "seq_max": "703834",
+          "seq_min": "702975",
+          "total_missing_by_seq": "0"
+        },
+        {
+          "label": "throttle-100kib",
+          "time_filter": "last 0.8 minutes",
+          "capture_start_utc": "2026-08-01T03:05:16.622207+00:00",
+          "capture_end_utc": "2026-08-01T03:05:58.132085+00:00",
+          "experiment_id": "throttle-100kib-001",
+          "condition_label": "throttle-100kib",
+          "read_limit_kib_s": "100.0",
+          "distance_m": "",
+          "fps_mean": "17.541009844976916",
+          "rate_kib_s_mean": "70.40385787388196",
+          "loss_rate_max": "0.0",
+          "crc_errors_total": "0",
+          "interval_jitter_ms_mean": "153.6178958277178",
+          "latency_p95_ms": "3196.4189699999997",
+          "latency_p99_ms": "3372.560649",
+          "longest_missing_run": "1",
+          "summary_path": "reports\\bandwidth_summary_20260801_110606.csv",
+          "bandwidth_jitter_kib_s_max": "10.323860869086676",
+          "bandwidth_jitter_kib_s_mean": "4.567458980274001",
+          "db_path": "captures\\bandwidth_capture.sqlite3",
+          "duration_s": "41.5098781",
+          "expected_frames": "720",
+          "fps_max": "19.515873626129792",
+          "fps_min": "15.435682261569717",
+          "frame_count": "718",
+          "generated_at": "2026-08-01T03:06:06.470006+00:00",
+          "interval_jitter_ms_max": "221.08444464059994",
+          "latency_avg_ms": "2310.2554401114207",
+          "latency_count": "718",
+          "latency_p50_ms": "2388.9853000000003",
+          "latency_window_p95_max_ms": "3439.08071",
+          "loss_rate_mean": "0.0",
+          "missing_frames_by_gaps": "2",
+          "missing_frames_window_sum": "0",
+          "old_frames_total": "0",
+          "rate_kib_s_max": "78.3303130892514",
+          "rate_kib_s_min": "61.95376376469876",
+          "seq_max": "704573",
+          "seq_min": "703854",
+          "total_missing_by_seq": "2"
+        },
+        {
+          "label": "throttle-60kib",
+          "time_filter": "last 0.8 minutes",
+          "capture_start_utc": "2026-08-01T03:06:14.142435+00:00",
+          "capture_end_utc": "2026-08-01T03:06:56.664013+00:00",
+          "experiment_id": "throttle-60kib-001",
+          "condition_label": "throttle-60kib",
+          "read_limit_kib_s": "60.0",
+          "distance_m": "",
+          "fps_mean": "11.65065102039775",
+          "rate_kib_s_mean": "46.761890326010494",
+          "loss_rate_max": "0.0",
+          "crc_errors_total": "0",
+          "interval_jitter_ms_mean": "221.4824790098446",
+          "latency_p95_ms": "4727.93466",
+          "latency_p99_ms": "4939.397722",
+          "longest_missing_run": "1",
+          "summary_path": "reports\\bandwidth_summary_20260801_110704.csv",
+          "bandwidth_jitter_kib_s_max": "6.606992216970497",
+          "bandwidth_jitter_kib_s_mean": "2.2079899657052535",
+          "db_path": "captures\\bandwidth_capture.sqlite3",
+          "duration_s": "42.5215781",
+          "expected_frames": "488",
+          "fps_max": "13.171095872042404",
+          "fps_min": "10.595771255953316",
+          "frame_count": "480",
+          "generated_at": "2026-08-01T03:07:04.011501+00:00",
+          "interval_jitter_ms_max": "325.67790018555553",
+          "latency_avg_ms": "3663.8361202083333",
+          "latency_count": "480",
+          "latency_p50_ms": "3719.91155",
+          "latency_window_p95_max_ms": "5005.645175",
+          "loss_rate_mean": "0.0",
+          "missing_frames_by_gaps": "8",
+          "missing_frames_window_sum": "0",
+          "old_frames_total": "0",
+          "rate_kib_s_max": "52.86445706454519",
+          "rate_kib_s_min": "42.52794908395325",
+          "seq_max": "705127",
+          "seq_min": "704640",
+          "total_missing_by_seq": "8"
+        },
+        {
+          "label": "throttle-40kib",
+          "time_filter": "last 0.8 minutes",
+          "capture_start_utc": "2026-08-01T03:07:12.227212+00:00",
+          "capture_end_utc": "2026-08-01T03:07:55.632924+00:00",
+          "experiment_id": "throttle-40kib-001",
+          "condition_label": "throttle-40kib",
+          "read_limit_kib_s": "40.0",
+          "distance_m": "",
+          "fps_mean": "8.82369671030275",
+          "rate_kib_s_mean": "35.41542331967218",
+          "loss_rate_max": "0.0",
+          "crc_errors_total": "0",
+          "interval_jitter_ms_mean": "244.818739441587",
+          "latency_p95_ms": "6522.090155",
+          "latency_p99_ms": "6705.306906",
+          "longest_missing_run": "1",
+          "summary_path": "reports\\bandwidth_summary_20260801_110804.csv",
+          "bandwidth_jitter_kib_s_max": "3.446751580621926",
+          "bandwidth_jitter_kib_s_mean": "0.6514842364675991",
+          "db_path": "captures\\bandwidth_capture.sqlite3",
+          "duration_s": "43.4057121",
+          "expected_frames": "378",
+          "fps_max": "9.236693503863867",
+          "fps_min": "8.022233781381836",
+          "frame_count": "368",
+          "generated_at": "2026-08-01T03:08:04.067510+00:00",
+          "interval_jitter_ms_max": "467.9151805361655",
+          "latency_avg_ms": "5329.628047282609",
+          "latency_count": "368",
+          "latency_p50_ms": "5487.3235",
+          "latency_window_p95_max_ms": "6726.8928",
+          "loss_rate_mean": "0.0",
+          "missing_frames_by_gaps": "10",
+          "missing_frames_window_sum": "0",
+          "old_frames_total": "0",
+          "rate_kib_s_max": "37.073056934453604",
+          "rate_kib_s_min": "32.19861410300717",
+          "seq_max": "705539",
+          "seq_min": "705162",
+          "total_missing_by_seq": "10"
+        }
+      ]
+    },
+    {
+      "stamp": "20260801_110124",
+      "csvPath": "comparisons/comparison_summary_20260801_110124.csv",
+      "reportPath": "comparisons/comparison_report_20260801_110124.md",
+      "images": [
+        "comparisons/comparison_summary_20260801_110124.png",
+        "comparisons/throughput_latency_tradeoff_20260801_110124.png"
+      ],
+      "markdown": "# ESP32-S3 Bandwidth Experiment Comparison\n\nCombined CSV: `comparison_summary_20260801_110124.csv`\n\n| Run | Mean throughput KiB/s | Mean FPS | Max loss rate | CRC errors | Mean jitter ms | P95 latency ms |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |\n| baseline-near | 80.22565754712878 | 19.988095700306538 | 0.0 | 0 | 49.73980091644258 | 1144.55512 |\n| 20260801_110007 | 80.22565754712878 | 19.988095700306538 | 0.0 | 0 | 49.73980091644258 | 1144.55512 |\n\n## Figures\n\n![comparison_summary_20260801_110124](comparison_summary_20260801_110124.png)\n\n![throughput_latency_tradeoff_20260801_110124](throughput_latency_tradeoff_20260801_110124.png)\n\n",
+      "rows": [
+        {
+          "label": "baseline-near",
+          "time_filter": "last 10 minutes",
+          "capture_start_utc": "2026-08-01T02:34:40.058763+00:00",
+          "capture_end_utc": "2026-08-01T02:44:40.046203+00:00",
+          "experiment_id": "baseline-near-001",
+          "condition_label": "baseline-near",
+          "read_limit_kib_s": "",
+          "distance_m": "1",
+          "fps_mean": "19.988095700306538",
+          "rate_kib_s_mean": "80.22565754712878",
+          "loss_rate_max": "0.0",
+          "crc_errors_total": "0",
+          "interval_jitter_ms_mean": "49.73980091644258",
+          "latency_p95_ms": "1144.55512",
+          "latency_p99_ms": "1188.1564400000002",
+          "longest_missing_run": "1",
+          "summary_path": "reports\\bandwidth_summary_20260801_110109.csv",
+          "bandwidth_jitter_kib_s_max": "5.202606466260927",
+          "bandwidth_jitter_kib_s_mean": "2.005559692035617",
+          "db_path": "captures\\bandwidth_capture.sqlite3",
+          "duration_s": "599.9874396",
+          "expected_frames": "11793",
+          "fps_max": "21.751663433726783",
+          "fps_min": "17.12070166764337",
+          "frame_count": "11788",
+          "generated_at": "2026-08-01T03:01:09.893909+00:00",
+          "interval_jitter_ms_max": "81.44070643893065",
+          "latency_avg_ms": "1025.2015902103835",
+          "latency_count": "11788",
+          "latency_p50_ms": "1013.15485",
+          "latency_window_p95_max_ms": "1369.7291",
+          "loss_rate_mean": "0.0",
+          "missing_frames_by_gaps": "5",
+          "missing_frames_window_sum": "0",
+          "old_frames_total": "0",
+          "rate_kib_s_max": "87.30403975841512",
+          "rate_kib_s_min": "68.7168787636858",
+          "seq_max": "702271",
+          "seq_min": "690479",
+          "total_missing_by_seq": "5"
+        },
+        {
+          "label": "20260801_110007",
+          "time_filter": "last 10 minutes",
+          "capture_start_utc": "2026-08-01T02:34:40.058763+00:00",
+          "capture_end_utc": "2026-08-01T02:44:40.046203+00:00",
+          "experiment_id": "",
+          "condition_label": "",
+          "read_limit_kib_s": "",
+          "distance_m": "",
+          "fps_mean": "19.988095700306538",
+          "rate_kib_s_mean": "80.22565754712878",
+          "loss_rate_max": "0.0",
+          "crc_errors_total": "0",
+          "interval_jitter_ms_mean": "49.73980091644258",
+          "latency_p95_ms": "1144.55512",
+          "latency_p99_ms": "1188.1564400000002",
+          "longest_missing_run": "1",
+          "summary_path": "reports\\bandwidth_summary_20260801_110007.csv",
+          "bandwidth_jitter_kib_s_max": "5.202606466260927",
+          "bandwidth_jitter_kib_s_mean": "2.005559692035617",
+          "db_path": "captures\\bandwidth_capture.sqlite3",
+          "duration_s": "599.9874396",
+          "expected_frames": "11793",
+          "fps_max": "21.751663433726783",
+          "fps_min": "17.12070166764337",
+          "frame_count": "11788",
+          "generated_at": "2026-08-01T03:00:07.082076+00:00",
+          "interval_jitter_ms_max": "81.44070643893065",
+          "latency_avg_ms": "1025.2015902103835",
+          "latency_count": "11788",
+          "latency_p50_ms": "1013.15485",
+          "latency_window_p95_max_ms": "1369.7291",
+          "loss_rate_mean": "0.0",
+          "missing_frames_by_gaps": "5",
+          "missing_frames_window_sum": "0",
+          "old_frames_total": "0",
+          "rate_kib_s_max": "87.30403975841512",
+          "rate_kib_s_min": "68.7168787636858",
+          "seq_max": "702271",
+          "seq_min": "690479",
+          "total_missing_by_seq": "5"
+        }
+      ]
+    },
+    {
+      "stamp": "20260801_110024",
+      "csvPath": "comparisons/comparison_summary_20260801_110024.csv",
+      "reportPath": "comparisons/comparison_report_20260801_110024.md",
+      "images": [
+        "comparisons/comparison_summary_20260801_110024.png",
+        "comparisons/throughput_latency_tradeoff_20260801_110024.png"
+      ],
+      "markdown": "# ESP32-S3 Bandwidth Experiment Comparison\n\nCombined CSV: `comparison_summary_20260801_110024.csv`\n\n| Run | Mean throughput KiB/s | Mean FPS | Max loss rate | CRC errors | Mean jitter ms | P95 latency ms |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |\n| 20260801_102141 | 80.27346225572309 | 20.000006167849254 | 0.0 | 0 | 51.48996591880597 | 1166.08817 |\n| 20260801_104451 | 80.23666188048605 | 19.99083741255906 | 0.0 | 0 | 50.112980008226394 | 1145.200925 |\n| 20260801_110007 | 80.22565754712878 | 19.988095700306538 | 0.0 | 0 | 49.73980091644258 | 1144.55512 |\n\n## Figures\n\n![comparison_summary_20260801_110024](comparison_summary_20260801_110024.png)\n\n![throughput_latency_tradeoff_20260801_110024](throughput_latency_tradeoff_20260801_110024.png)\n\n",
+      "rows": [
+        {
+          "label": "20260801_102141",
+          "time_filter": "last 10 minutes",
+          "capture_start_utc": "2026-08-01T01:49:35.960486+00:00",
+          "capture_end_utc": "2026-08-01T01:59:35.920548+00:00",
+          "fps_mean": "20.000006167849254",
+          "rate_kib_s_mean": "80.27346225572309",
+          "loss_rate_max": "0.0",
+          "crc_errors_total": "0",
+          "interval_jitter_ms_mean": "51.48996591880597",
+          "latency_p95_ms": "1166.08817",
+          "latency_p99_ms": "1214.012503",
+          "longest_missing_run": "1",
+          "summary_path": "reports\\bandwidth_summary_20260801_102141.csv",
+          "bandwidth_jitter_kib_s_max": "4.976203075568841",
+          "bandwidth_jitter_kib_s_mean": "2.0619290768271434",
+          "db_path": "captures\\bandwidth_capture.sqlite3",
+          "duration_s": "599.9600626",
+          "expected_frames": "11959",
+          "fps_max": "20.912714512169327",
+          "fps_min": "18.654353484273965",
+          "frame_count": "11958",
+          "generated_at": "2026-08-01T02:21:41.142899+00:00",
+          "interval_jitter_ms_max": "102.57982494772291",
+          "latency_avg_ms": "1038.010485950828",
+          "latency_count": "11958",
+          "latency_p50_ms": "1022.04505",
+          "latency_window_p95_max_ms": "1372.1002",
+          "loss_rate_mean": "0.0",
+          "missing_frames_by_gaps": "1",
+          "missing_frames_window_sum": "0",
+          "old_frames_total": "0",
+          "rate_kib_s_max": "83.93677406739837",
+          "rate_kib_s_min": "74.87245392613868",
+          "seq_max": "680788",
+          "seq_min": "668830",
+          "total_missing_by_seq": "1"
+        },
+        {
+          "label": "20260801_104451",
+          "time_filter": "last 15 minutes",
+          "capture_start_utc": "2026-08-01T02:29:40.064714+00:00",
+          "capture_end_utc": "2026-08-01T02:44:40.046203+00:00",
+          "fps_mean": "19.99083741255906",
+          "rate_kib_s_mean": "80.23666188048605",
+          "loss_rate_max": "0.0",
+          "crc_errors_total": "0",
+          "interval_jitter_ms_mean": "50.112980008226394",
+          "latency_p95_ms": "1145.200925",
+          "latency_p99_ms": "1188.349435",
+          "longest_missing_run": "1",
+          "summary_path": "reports\\bandwidth_summary_20260801_104451.csv",
+          "bandwidth_jitter_kib_s_max": "5.202606466260927",
+          "bandwidth_jitter_kib_s_mean": "2.0207479151523096",
+          "db_path": "captures\\bandwidth_capture.sqlite3",
+          "duration_s": "899.9814885",
+          "expected_frames": "17752",
+          "fps_max": "21.751663433726783",
+          "fps_min": "17.12070166764337",
+          "frame_count": "17746",
+          "generated_at": "2026-08-01T02:44:51.484622+00:00",
+          "interval_jitter_ms_max": "81.44070643893065",
+          "latency_avg_ms": "1025.4241908204665",
+          "latency_count": "17746",
+          "latency_p50_ms": "1013.4440999999999",
+          "latency_window_p95_max_ms": "1369.7291",
+          "loss_rate_mean": "0.0",
+          "missing_frames_by_gaps": "6",
+          "missing_frames_window_sum": "0",
+          "old_frames_total": "0",
+          "rate_kib_s_max": "87.30403975841512",
+          "rate_kib_s_min": "68.7168787636858",
+          "seq_max": "702271",
+          "seq_min": "684520",
+          "total_missing_by_seq": "6"
+        },
+        {
+          "label": "20260801_110007",
+          "time_filter": "last 10 minutes",
+          "capture_start_utc": "2026-08-01T02:34:40.058763+00:00",
+          "capture_end_utc": "2026-08-01T02:44:40.046203+00:00",
+          "fps_mean": "19.988095700306538",
+          "rate_kib_s_mean": "80.22565754712878",
+          "loss_rate_max": "0.0",
+          "crc_errors_total": "0",
+          "interval_jitter_ms_mean": "49.73980091644258",
+          "latency_p95_ms": "1144.55512",
+          "latency_p99_ms": "1188.1564400000002",
+          "longest_missing_run": "1",
+          "summary_path": "reports\\bandwidth_summary_20260801_110007.csv",
+          "bandwidth_jitter_kib_s_max": "5.202606466260927",
+          "bandwidth_jitter_kib_s_mean": "2.005559692035617",
+          "db_path": "captures\\bandwidth_capture.sqlite3",
+          "duration_s": "599.9874396",
+          "expected_frames": "11793",
+          "fps_max": "21.751663433726783",
+          "fps_min": "17.12070166764337",
+          "frame_count": "11788",
+          "generated_at": "2026-08-01T03:00:07.082076+00:00",
+          "interval_jitter_ms_max": "81.44070643893065",
+          "latency_avg_ms": "1025.2015902103835",
+          "latency_count": "11788",
+          "latency_p50_ms": "1013.15485",
+          "latency_window_p95_max_ms": "1369.7291",
+          "loss_rate_mean": "0.0",
+          "missing_frames_by_gaps": "5",
+          "missing_frames_window_sum": "0",
+          "old_frames_total": "0",
+          "rate_kib_s_max": "87.30403975841512",
+          "rate_kib_s_min": "68.7168787636858",
+          "seq_max": "702271",
+          "seq_min": "690479",
+          "total_missing_by_seq": "5"
+        }
+      ]
+    }
+  ]
+};
+  </script>
+  <script>
+    const hasReportIndex = Boolean(window.REPORT_INDEX);
+    const data = window.REPORT_INDEX || { reports: [], comparisons: [], generatedAt: "" };
+    const pageBase = (() => {
+      const path = window.location.pathname;
+      if (path.endsWith("/")) return new URL("./", window.location.href);
+      const last = path.split("/").pop() || "";
+      const basePath = last.includes(".")
+        ? path.replace(/[^/]*$/, "")
+        : `${path}/`;
+      return new URL(basePath, window.location.origin);
+    })();
+
+    function assetUrl(path) {
+      const value = String(path || "");
+      if (!value || /^(https?:|data:|mailto:|#)/.test(value)) return value;
+      return new URL(value.replace(/^\.\//, ""), pageBase).href;
+    }
+    const state = {
+      mode: "reports",
+      activeStamp: data.reports[0]?.stamp || "",
+      selected: new Set(data.reports.slice(0, 4).map((report) => report.stamp)),
+      filter: ""
+    };
+
+    const metrics = [
+      ["fps_mean", "Mean FPS", "", 2],
+      ["rate_kib_s_mean", "Mean throughput", " KiB/s", 2],
+      ["loss_rate_max", "Max loss", "%", 4, 100],
+      ["crc_errors_total", "CRC errors", "", 0],
+      ["latency_p95_ms", "P95 latency", " ms", 1],
+      ["interval_jitter_ms_mean", "Mean jitter", " ms", 1],
+      ["frame_count", "Frames", "", 0],
+      ["duration_s", "Duration", " s", 1]
+    ];
+
+    function n(value) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function fmt(value, digits = 2, suffix = "", scale = 1) {
+      const parsed = n(value);
+      if (parsed === null) return "n/a";
+      return `${(parsed * scale).toFixed(digits)}${suffix}`;
+    }
+
+    function esc(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function reportTitle(report) {
+      return report.label || report.summary?.experiment_id || report.stamp;
+    }
+
+    function searchable(report) {
+      return [
+        report.stamp,
+        report.label,
+        report.summary?.experiment_id,
+        report.summary?.condition_label,
+        report.summary?.time_filter
+      ].join(" ").toLowerCase();
+    }
+
+    function filteredReports() {
+      const needle = state.filter.trim().toLowerCase();
+      return data.reports.filter((report) => !needle || searchable(report).includes(needle));
+    }
+
+    function renderList() {
+      const list = document.getElementById("reportList");
+      if (state.mode === "comparisons") {
+        list.innerHTML = data.comparisons.map((comparison) => `
+          <article class="item ${comparison.stamp === state.activeStamp ? "selected" : ""}" data-comparison="${esc(comparison.stamp)}">
+            <div class="item-title">Comparison ${esc(comparison.stamp)}</div>
+            <div class="item-sub">${comparison.rows.length} runs</div>
+            <div class="quick">
+              <span>${esc(comparison.csvPath)}</span>
+              <span>${comparison.images.length} figures</span>
+            </div>
+          </article>
+        `).join("") || `<div class="empty">No comparison reports found.</div>`;
+        list.querySelectorAll("[data-comparison]").forEach((item) => {
+          item.addEventListener("click", () => {
+            state.activeStamp = item.dataset.comparison;
+            render();
+          });
+        });
+        return;
+      }
+
+      list.innerHTML = filteredReports().map((report) => `
+        <article class="item ${report.stamp === state.activeStamp ? "selected" : ""}" data-report="${esc(report.stamp)}">
+          <div class="item-head">
+            <input type="checkbox" data-select="${esc(report.stamp)}" ${state.selected.has(report.stamp) ? "checked" : ""} aria-label="Select for comparison">
+            <div>
+              <div class="item-title">${esc(reportTitle(report))}</div>
+              <div class="item-sub">${esc(report.stamp)} - ${esc(report.summary?.time_filter || "")}</div>
+            </div>
+          </div>
+          <div class="quick">
+            <span>${fmt(report.summary?.rate_kib_s_mean, 2, " KiB/s")}</span>
+            <span>${fmt(report.summary?.latency_p95_ms, 0, " ms P95")}</span>
+          </div>
+        </article>
+      `).join("") || `<div class="empty">No reports match the filter.</div>`;
+
+      list.querySelectorAll("[data-report]").forEach((item) => {
+        item.addEventListener("click", (event) => {
+          if (event.target.matches("input")) return;
+          state.activeStamp = item.dataset.report;
+          render();
+        });
+      });
+      list.querySelectorAll("[data-select]").forEach((checkbox) => {
+        checkbox.addEventListener("change", () => {
+          checkbox.checked ? state.selected.add(checkbox.dataset.select) : state.selected.delete(checkbox.dataset.select);
+          renderComparison();
+        });
+      });
+    }
+
+    function kpis(report) {
+      return `<div class="kpis">` + metrics.map(([key, label, suffix, digits, scale]) => `
+        <div class="kpi">
+          <span>${label}</span>
+          <strong>${fmt(report.summary?.[key], digits, suffix, scale || 1)}</strong>
+        </div>
+      `).join("") + `</div>`;
+    }
+
+    function renderMarkdown(markdown, basePath = "") {
+      if (!markdown) return `<div class="empty">No Markdown content available.</div>`;
+      const lines = markdown.split(/\r?\n/);
+      let html = "";
+      let inCode = false;
+      let table = [];
+
+      function flushTable() {
+        if (!table.length) return;
+        const rows = table.filter((row) => !/^\|\s*-+/.test(row));
+        html += `<div class="table-wrap"><table>`;
+        rows.forEach((row, index) => {
+          const cells = row.split("|").slice(1, -1).map((cell) => cell.trim());
+          html += `<tr>${cells.map((cell) => index === 0 ? `<th>${esc(cell)}</th>` : `<td>${esc(cell)}</td>`).join("")}</tr>`;
+        });
+        html += `</table></div>`;
+        table = [];
+      }
+
+      for (const line of lines) {
+        if (line.startsWith("```")) {
+          flushTable();
+          html += inCode ? `</code></pre>` : `<pre><code>`;
+          inCode = !inCode;
+          continue;
+        }
+        if (inCode) {
+          html += `${esc(line)}\n`;
+          continue;
+        }
+        if (line.startsWith("|")) {
+          table.push(line);
+          continue;
+        }
+        flushTable();
+        if (line.startsWith("# ")) html += `<h1>${esc(line.slice(2))}</h1>`;
+        else if (line.startsWith("## ")) html += `<h2>${esc(line.slice(3))}</h2>`;
+        else if (line.startsWith("### ")) html += `<h3>${esc(line.slice(4))}</h3>`;
+        else if (line.startsWith("- ")) html += `<p>鈥?${esc(line.slice(2))}</p>`;
+        else if (/^!\[.*\]\((.*)\)/.test(line)) {
+          const match = line.match(/^!\[(.*)\]\((.*)\)/);
+          const src = /^(https?:|data:|\/)/.test(match[2]) ? match[2] : assetUrl(`${basePath}${match[2]}`);
+          html += `<img src="${esc(src)}" alt="${esc(match[1])}">`;
+        } else if (line.trim()) html += `<p>${esc(line)}</p>`;
+      }
+      flushTable();
+      return html;
+    }
+
+    function renderReportDetail() {
+      const report = data.reports.find((item) => item.stamp === state.activeStamp) || data.reports[0];
+      if (!report) {
+        document.getElementById("detail").innerHTML = `<section class="panel"><div class="empty">${hasReportIndex ? "No reports found. Run the report generator first." : "No embedded report index loaded. Rebuild this HTML with the report data included."}</div></section>`;
+        return;
+      }
+      state.activeStamp = report.stamp;
+      document.getElementById("viewTitle").textContent = reportTitle(report);
+      document.getElementById("viewSub").textContent = `${report.stamp} - ${report.summary?.capture_start_utc || "n/a"} to ${report.summary?.capture_end_utc || "n/a"}`;
+      document.getElementById("detail").innerHTML = `
+        <section class="panel">
+          ${kpis(report)}
+          <div class="links">
+            ${report.reportPath ? `<a href="${esc(assetUrl(report.reportPath))}">Open Markdown</a>` : ""}
+            <a href="${esc(assetUrl(report.summaryPath))}">Open CSV</a>
+          </div>
+        </section>
+        ${report.figures.length ? `<section class="panel"><h2>Figures</h2><div class="figures">${report.figures.map((src) => `<img src="${esc(assetUrl(src))}" alt="${esc(src)}">`).join("")}</div></section>` : ""}
+        <section class="panel markdown">
+          ${renderMarkdown(report.markdown)}
+        </section>
+      `;
+    }
+
+    function renderComparisonDetail() {
+      const comparison = data.comparisons.find((item) => item.stamp === state.activeStamp) || data.comparisons[0];
+      document.getElementById("viewTitle").textContent = comparison ? `Comparison ${comparison.stamp}` : "Comparisons";
+      document.getElementById("viewSub").textContent = comparison ? `${comparison.rows.length} runs · ${comparison.csvPath}` : "";
+      document.getElementById("detail").innerHTML = comparison ? `
+        <section class="panel">
+          <div class="links">
+            ${comparison.reportPath ? `<a href="${esc(assetUrl(comparison.reportPath))}">Open Markdown</a>` : ""}
+            <a href="${esc(assetUrl(comparison.csvPath))}">Open CSV</a>
+          </div>
+        </section>
+        ${comparison.images.length ? `<section class="panel"><h2>Generated Comparison Figures</h2><div class="figures">${comparison.images.map((src) => `<img src="${esc(assetUrl(src))}" alt="${esc(src)}">`).join("")}</div></section>` : ""}
+        <section class="panel markdown">${renderMarkdown(comparison.markdown, "comparisons/")}</section>
+      ` : `<section class="panel"><div class="empty">No comparison reports found.</div></section>`;
+    }
+
+    function selectedReports() {
+      return data.reports.filter((report) => state.selected.has(report.stamp));
+    }
+
+    function metricBars(rows, key, title, suffix, digits, cls, scale = 1) {
+      const max = Math.max(...rows.map((row) => n(row.summary?.[key]) ?? 0).map((value) => value * scale), 0.000001);
+      return `<div><h3>${title}</h3>` + rows.map((row) => {
+        const value = (n(row.summary?.[key]) ?? 0) * scale;
+        return `<div class="bar-row">
+          <span>${esc(reportTitle(row))}</span>
+          <div class="bar-track"><div class="bar ${cls}" style="width:${Math.max(1, value / max * 100)}%"></div></div>
+          <strong>${value.toFixed(digits)}${suffix}</strong>
+        </div>`;
+      }).join("") + `</div>`;
+    }
+
+    function scatter(rows) {
+      const points = rows.map((row) => ({
+        label: reportTitle(row),
+        x: n(row.summary?.rate_kib_s_mean),
+        y: n(row.summary?.latency_p95_ms)
+      })).filter((point) => point.x !== null && point.y !== null);
+      if (!points.length) return `<div class="empty">No throughput/latency points available.</div>`;
+      const width = 720, height = 320, pad = 48;
+      const maxX = Math.max(...points.map((point) => point.x)) * 1.1;
+      const maxY = Math.max(...points.map((point) => point.y)) * 1.1;
+      const dot = (point) => {
+        const x = pad + point.x / maxX * (width - pad * 1.6);
+        const y = height - pad - point.y / maxY * (height - pad * 1.4);
+        return `<g><circle cx="${x}" cy="${y}" r="6" fill="#2364aa"></circle><text x="${x + 8}" y="${y - 7}" font-size="12" fill="#17212b">${esc(point.label)}</text></g>`;
+      };
+      return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Throughput latency tradeoff">
+        <line x1="${pad}" y1="${height - pad}" x2="${width - 24}" y2="${height - pad}" stroke="#66717f"></line>
+        <line x1="${pad}" y1="24" x2="${pad}" y2="${height - pad}" stroke="#66717f"></line>
+        <text x="${width / 2}" y="${height - 10}" text-anchor="middle" font-size="12" fill="#66717f">Mean throughput KiB/s</text>
+        <text x="14" y="${height / 2}" transform="rotate(-90 14 ${height / 2})" text-anchor="middle" font-size="12" fill="#66717f">P95 latency ms</text>
+        ${points.map(dot).join("")}
+      </svg>`;
+    }
+
+    function renderComparison() {
+      const rows = selectedReports();
+      const target = document.getElementById("comparison");
+      if (!rows.length) {
+        target.innerHTML = `<div class="empty">Select reports in the sidebar to compare them.</div>`;
+        return;
+      }
+      target.innerHTML = `
+        <div class="bar-grid">
+          ${metricBars(rows, "rate_kib_s_mean", "Mean Throughput", " KiB/s", 2, "")}
+          ${metricBars(rows, "fps_mean", "Mean FPS", "", 2, "fps")}
+          ${metricBars(rows, "latency_p95_ms", "P95 Latency", " ms", 0, "latency")}
+          ${metricBars(rows, "loss_rate_max", "Max Loss", "%", 4, "loss", 100)}
+        </div>
+        <h3>Throughput vs Latency</h3>
+        ${scatter(rows)}
+        <div class="table-wrap">
+          <table>
+            <tr><th>Run</th><th>FPS</th><th>Throughput</th><th>Max loss</th><th>CRC</th><th>P95 latency</th><th>Jitter</th></tr>
+            ${rows.map((row) => `<tr>
+              <td>${esc(reportTitle(row))}</td>
+              <td>${fmt(row.summary?.fps_mean, 2)}</td>
+              <td>${fmt(row.summary?.rate_kib_s_mean, 2, " KiB/s")}</td>
+              <td>${fmt(row.summary?.loss_rate_max, 4, "%", 100)}</td>
+              <td>${fmt(row.summary?.crc_errors_total, 0)}</td>
+              <td>${fmt(row.summary?.latency_p95_ms, 1, " ms")}</td>
+              <td>${fmt(row.summary?.interval_jitter_ms_mean, 1, " ms")}</td>
+            </tr>`).join("")}
+          </table>
+        </div>
+      `;
+    }
+
+    function render() {
+      document.getElementById("indexMeta").textContent = `${data.reports.length} reports - ${data.comparisons.length} comparisons - index ${data.generatedAt || "not generated"}`;
+      document.getElementById("reportsTab").classList.toggle("active", state.mode === "reports");
+      document.getElementById("comparisonsTab").classList.toggle("active", state.mode === "comparisons");
+      renderList();
+      state.mode === "reports" ? renderReportDetail() : renderComparisonDetail();
+      renderComparison();
+    }
+
+    document.getElementById("filter").addEventListener("input", (event) => {
+      state.filter = event.target.value;
+      renderList();
+    });
+    document.getElementById("reportsTab").addEventListener("click", () => {
+      state.mode = "reports";
+      state.activeStamp = data.reports[0]?.stamp || "";
+      render();
+    });
+    document.getElementById("comparisonsTab").addEventListener("click", () => {
+      state.mode = "comparisons";
+      state.activeStamp = data.comparisons[0]?.stamp || "";
+      render();
+    });
+    document.getElementById("selectLatest").addEventListener("click", () => {
+      state.selected = new Set(data.reports.slice(0, 4).map((report) => report.stamp));
+      render();
+    });
+    document.getElementById("clearSelected").addEventListener("click", () => {
+      state.selected.clear();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
+

@@ -130,6 +130,17 @@ Combined CSV: `{csv_path.relative_to(path.parent).as_posix()}`
     path.write_text(content, encoding="utf-8")
 
 
+def refresh_report_browser(out_dir):
+    try:
+        from build_report_browser import build_index
+
+        reports_dir = Path(out_dir).resolve().parent
+        index_path = build_index(reports_dir)
+        print(f"Wrote {index_path}")
+    except Exception as exc:
+        print(f"Report browser index was not refreshed: {exc}")
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Compare ESP32-S3 bandwidth report summary CSV files")
     parser.add_argument("--summaries", nargs="+", required=True, help="One or more bandwidth_summary_*.csv files")
@@ -152,6 +163,7 @@ def main():
     print(f"Wrote {md_path}")
     for path in figure_paths:
         print(f"Wrote {path}")
+    refresh_report_browser(out_dir)
 
 
 if __name__ == "__main__":

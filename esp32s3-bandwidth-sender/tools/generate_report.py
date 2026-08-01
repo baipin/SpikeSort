@@ -450,6 +450,16 @@ This report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surroga
     path.write_text(content, encoding="utf-8")
 
 
+def refresh_report_browser(out_dir):
+    try:
+        from build_report_browser import build_index
+
+        index_path = build_index(Path(out_dir))
+        print(f"Wrote {index_path}")
+    except Exception as exc:
+        print(f"Report browser index was not refreshed: {exc}")
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate an ESP32-S3 bandwidth experiment report")
     parser.add_argument("--db", default=str(DEFAULT_DB), help="Receiver SQLite database path")
@@ -482,6 +492,7 @@ def main():
     write_summary_csv(summary, csv_path)
     print(f"Wrote {md_path}")
     print(f"Wrote {csv_path}")
+    refresh_report_browser(out_dir)
 
 
 if __name__ == "__main__":

@@ -132,6 +132,28 @@ This creates:
 - `reports\comparisons\comparison_report_<timestamp>.md`
 - comparison PNG figures for throughput, FPS, loss, latency, and throughput-vs-latency tradeoff
 
+## HTML Report Browser
+
+Open the static browser:
+
+```powershell
+reports\index.html
+```
+
+It reads `reports\report_index.js` and provides:
+
+- report search and browsing
+- rendered report Markdown
+- embedded single-run figures
+- selected-report comparison tables
+- browser-side throughput, FPS, loss, and latency charts
+
+The index is refreshed automatically after `tools\generate_report.py` or `tools\compare_reports.py` writes new outputs. To refresh it manually:
+
+```powershell
+python tools\build_report_browser.py
+```
+
 ## 2026-08-01 Short Validation Runs
 
 Four short receiver-side bottleneck tests were run against the ESP32-S3 on the Windows Mobile Hotspot. Each run was stopped after roughly 45 seconds, so treat these as engineering checks rather than final statistical evidence. For formal reporting, repeat each condition for 10-30 minutes.

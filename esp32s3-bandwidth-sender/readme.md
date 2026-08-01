@@ -235,3 +235,13 @@ python tools\compare_reports.py --summaries reports\bandwidth_summary_*.csv --ou
 ```
 
 The latest multi-condition short validation is summarized in `STAGE6_EXPERIMENTS_AND_REPORTING.md`. The generated comparison report and figures are under `reports/comparisons/`.
+
+## Browse Reports In HTML
+
+Open `reports/index.html` in a browser to view generated Markdown reports, figures, key metrics, and selected-report comparisons.
+
+The browser uses `reports/report_index.js`, which is refreshed automatically when `tools/generate_report.py` or `tools/compare_reports.py` runs. To refresh it manually:
+
+```powershell
+python tools\build_report_browser.py
+```

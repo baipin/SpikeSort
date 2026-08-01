@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Academic Visualization Portal</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fa;
+      --panel: #ffffff;
+      --ink: #17212b;
+      --muted: #66717f;
+      --line: #d8dee7;
+      --blue: #2364aa;
+      --green: #1b8a5a;
+      --orange: #bc6500;
+      --shadow: 0 1px 4px rgba(16, 24, 40, 0.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    header {
+      min-height: 132px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 28px clamp(18px, 4vw, 48px);
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(26px, 4vw, 44px);
+      line-height: 1.05;
+      font-weight: 720;
+    }
+
+    .subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+      max-width: 780px;
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .badge {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      color: var(--muted);
+      background: #fbfcfe;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .github-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid #24292f;
+      border-radius: 999px;
+      background: #24292f;
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, 0.12);
+      transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+    }
+
+    .github-link:hover {
+      background: #0f1419;
+      border-color: #0f1419;
+      transform: translateY(-1px);
+    }
+
+    .github-link:focus-visible {
+      outline: 3px solid rgba(35, 100, 170, 0.32);
+      outline-offset: 3px;
+    }
+
+    .github-link svg {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      fill: currentColor;
+    }
+
+    main {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 28px auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .app-card {
+      display: grid;
+      grid-template-rows: 220px 1fr;
+      min-height: 460px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .app-card:focus-visible {
+      outline: 3px solid rgba(35, 100, 170, 0.3);
+      outline-offset: 3px;
+    }
+
+    .preview {
+      position: relative;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: #eef2f7;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+
+    .preview .data-table {
+      width: min(92%, 520px);
+      border: 1px solid #cfd7e2;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .fake-row {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr 1fr 0.8fr;
+      gap: 8px;
+      padding: 9px 10px;
+      border-bottom: 1px solid #edf1f6;
+      color: #344054;
+      font-size: 12px;
+    }
+
+    .fake-row:first-child {
+      background: #f8fafc;
+      color: #66717f;
+      font-weight: 700;
+    }
+
+    .fake-row:last-child { border-bottom: 0; }
+
+    .pill {
+      justify-self: start;
+      border-radius: 999px;
+      padding: 2px 8px;
+      background: #e9f5ef;
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .desc {
+      color: var(--muted);
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fcfdff;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .enter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 38px;
+      width: 150px;
+      border-radius: 6px;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    footer {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto 28px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 880px) {
+      header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Academic Visualization Portal</h1>
+      <p class="subtitle">A static deployment entry point for the IBL dataset directory and the ESP32-S3 neural-stream bandwidth report browser.</p>
+    </div>
+    <a class="github-link" href="https://github.com/baipin/spikesort" target="_blank" rel="noreferrer" aria-label="Open GitHub repository">
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M8 0C3.58 0 0 3.67 0 8.2c0 3.62 2.29 6.69 5.47 7.77.4.08.55-.18.55-.39 0-.19-.01-.84-.01-1.52-2.01.38-2.53-.5-2.69-.96-.09-.24-.48-.96-.82-1.16-.28-.16-.68-.55-.01-.56.63-.01 1.08.59 1.23.84.72 1.24 1.87.89 2.33.68.07-.53.28-.89.51-1.1-1.78-.21-3.64-.91-3.64-4.03 0-.89.31-1.62.82-2.19-.08-.21-.36-1.04.08-2.16 0 0 .67-.22 2.2.84A7.42 7.42 0 0 1 8 3.99c.68 0 1.36.09 2 .27 1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.95.08 2.16.51.57.82 1.3.82 2.19 0 3.13-1.87 3.82-3.65 4.03.29.26.54.75.54 1.51 0 1.1-.01 1.98-.01 2.25 0 .21.15.47.55.39A8.14 8.14 0 0 0 16 8.2C16 3.67 12.42 0 8 0Z"></path>
+      </svg>
+      <span>GitHub</span>
+    </a>
+  </header>
+
+  <main>
+    <div class="grid" aria-label="Available pages">
+      <a class="app-card" href="./ibl-viz/index.html">
+        <div class="preview" aria-hidden="true">
+          <div class="data-table">
+            <div class="fake-row"><span>eid</span><span>lab</span><span>region</span><span>clusters</span></div>
+            <div class="fake-row"><span>51e53aff...</span><span>churchland</span><span class="pill">VISp</span><span>812</span></div>
+            <div class="fake-row"><span>8f6f7e4d...</span><span>steinmetz</span><span class="pill">CA1</span><span>604</span></div>
+            <div class="fake-row"><span>c7248e09...</span><span>mrsic-flogel</span><span class="pill">MOs</span><span>557</span></div>
+            <div class="fake-row"><span>f4c2b23d...</span><span>witten</span><span class="pill">CP</span><span>433</span></div>
+          </div>
+        </div>
+        <div class="body">
+          <h2>IBL Viz Dataset Directory</h2>
+          <p class="desc">Browse the ss_2024-05-06 dataset by eid, insertion, lab, subject, probe, brain region, and cluster counts.</p>
+          <div class="metrics">
+            <div class="metric"><strong id="iblEids">459</strong><span>unique eids</span></div>
+            <div class="metric"><strong id="iblInsertions">699</strong><span>insertions</span></div>
+            <div class="metric"><strong>CSV</strong><span>export ready</span></div>
+          </div>
+          <span class="enter">Open IBL Viz</span>
+        </div>
+      </a>
+
+      <a class="app-card" href="./esp32-reports/index.html">
+        <div class="preview" aria-hidden="true">
+          <img src="./esp32-reports/comparisons/comparison_summary_20260801_110814.png" alt="">
+        </div>
+        <div class="body">
+          <h2>ESP32-S3 Bandwidth Reports</h2>
+          <p class="desc">Review generated WiFi/TCP stream reports, inspect figures, and compare bandwidth, frame rate, loss, jitter, and latency across test conditions.</p>
+          <div class="metrics">
+            <div class="metric"><strong id="espReports">11</strong><span>reports indexed</span></div>
+            <div class="metric"><strong id="espComparisons">3</strong><span>comparisons</span></div>
+            <div class="metric"><strong>0 CRC</strong><span>latest short tests</span></div>
+          </div>
+          <span class="enter">Open Reports</span>
+        </div>
+      </a>
+    </div>
+  </main>
+
+  <footer>
+    2026 ©. For any enquiry, please email at dc.wang@my.cityu.edu.hk.
+  </footer>
+  <script>
+    fetch("./ibl-viz/summary.json")
+      .then((response) => response.ok ? response.json() : null)
+      .then((summary) => {
+        if (!summary) return;
+        const eids = summary.unique_eids ?? summary.n_unique_eids ?? summary.eids;
+        const insertions = summary.unique_pids ?? summary.n_insertions ?? summary.insertions;
+        if (eids) document.getElementById("iblEids").textContent = eids;
+        if (insertions) document.getElementById("iblInsertions").textContent = insertions;
+      })
+      .catch(() => {});
+  </script>
+</body>
+</html>

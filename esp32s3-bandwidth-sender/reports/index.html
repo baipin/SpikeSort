@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ESP32-S3 Bandwidth Report Browser</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --ink: #17212b;
+      --muted: #66717f;
+      --line: #d8dee7;
+      --blue: #2364aa;
+      --green: #1b8a5a;
+      --red: #b42318;
+      --orange: #bc6500;
+      --shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      font-size: 14px;
+      letter-spacing: 0;
+    }
+
+    header {
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+      position: sticky;
+      top: 0;
+      z-index: 3;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      font-weight: 650;
+    }
+
+    .meta { color: var(--muted); font-size: 12px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      min-height: calc(100vh - 58px);
+    }
+
+    aside {
+      border-right: 1px solid var(--line);
+      background: #fbfcfe;
+      padding: 14px;
+      overflow: auto;
+      max-height: calc(100vh - 58px);
+      position: sticky;
+      top: 58px;
+    }
+
+    main {
+      padding: 18px;
+      min-width: 0;
+    }
+
+    input[type="search"] {
+      width: 100%;
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 10px;
+      color: var(--ink);
+      background: var(--panel);
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin: 12px 0;
+    }
+
+    button {
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button.active {
+      border-color: var(--blue);
+      color: var(--blue);
+      background: #eef5ff;
+    }
+
+    .list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .item {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .item.selected {
+      border-color: var(--blue);
+      outline: 2px solid rgba(35, 100, 170, 0.14);
+    }
+
+    .item-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .item-title {
+      font-weight: 650;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .item-sub {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .quick {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .panel h2, .panel h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(130px, 1fr));
+      gap: 10px;
+    }
+
+    .kpi {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 72px;
+      background: #fcfdff;
+    }
+
+    .kpi span {
+      color: var(--muted);
+      display: block;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .kpi strong {
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .figures {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 12px;
+    }
+
+    img {
+      width: 100%;
+      height: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 13px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px;
+      text-align: right;
+      vertical-align: top;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: var(--panel);
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 650;
+      background: #f8fafc;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .bar-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: minmax(95px, 130px) 1fr 70px;
+      gap: 8px;
+      align-items: center;
+      margin: 8px 0;
+    }
+
+    .bar-track {
+      height: 12px;
+      background: #edf1f7;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      background: var(--blue);
+      min-width: 1px;
+    }
+
+    .bar.fps { background: var(--green); }
+    .bar.latency { background: var(--orange); }
+    .bar.loss { background: var(--red); }
+
+    .chart {
+      width: 100%;
+      min-height: 300px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .markdown {
+      line-height: 1.55;
+    }
+
+    .markdown h1 { font-size: 20px; margin: 0 0 10px; }
+    .markdown h2 { font-size: 16px; margin: 18px 0 8px; }
+    .markdown h3 { font-size: 14px; margin: 16px 0 8px; }
+    .markdown pre {
+      overflow: auto;
+      background: #0f1720;
+      color: #eef4ff;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    a:hover { text-decoration: underline; }
+
+    .empty {
+      color: var(--muted);
+      padding: 24px;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      aside {
+        position: static;
+        max-height: none;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .kpis { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ESP32-S3 Bandwidth Report Browser</h1>
+    <div class="meta" id="indexMeta">Loading index...</div>
+  </header>
+  <div class="layout">
+    <aside>
+      <input id="filter" type="search" placeholder="Filter by label, ID, condition, timestamp">
+      <div class="tabs">
+        <button id="reportsTab" class="active" type="button">Reports</button>
+        <button id="comparisonsTab" type="button">Comparisons</button>
+      </div>
+      <div id="reportList" class="list"></div>
+    </aside>
+    <main>
+      <div class="toolbar">
+        <div>
+          <strong id="viewTitle">Latest Report</strong>
+          <div class="meta" id="viewSub"></div>
+        </div>
+        <div class="links">
+          <button id="selectLatest" type="button">Select Latest 4</button>
+          <button id="clearSelected" type="button">Clear Compare</button>
+        </div>
+      </div>
+      <section id="detail"></section>
+      <section class="panel">
+        <h2>Selected Report Comparison</h2>
+        <div id="comparison"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="report_index.js"></script>
+  <script>
+    const data = window.REPORT_INDEX || { reports: [], comparisons: [], generatedAt: "" };
+    const state = {
+      mode: "reports",
+      activeStamp: data.reports[0]?.stamp || "",
+      selected: new Set(data.reports.slice(0, 4).map((report) => report.stamp)),
+      filter: ""
+    };
+
+    const metrics = [
+      ["fps_mean", "Mean FPS", "", 2],
+      ["rate_kib_s_mean", "Mean throughput", " KiB/s", 2],
+      ["loss_rate_max", "Max loss", "%", 4, 100],
+      ["crc_errors_total", "CRC errors", "", 0],
+      ["latency_p95_ms", "P95 latency", " ms", 1],
+      ["interval_jitter_ms_mean", "Mean jitter", " ms", 1],
+      ["frame_count", "Frames", "", 0],
+      ["duration_s", "Duration", " s", 1]
+    ];
+
+    function n(value) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function fmt(value, digits = 2, suffix = "", scale = 1) {
+      const parsed = n(value);
+      if (parsed === null) return "n/a";
+      return `${(parsed * scale).toFixed(digits)}${suffix}`;
+    }
+
+    function esc(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function reportTitle(report) {
+      return report.label || report.summary?.experiment_id || report.stamp;
+    }
+
+    function searchable(report) {
+      return [
+        report.stamp,
+        report.label,
+        report.summary?.experiment_id,
+        report.summary?.condition_label,
+        report.summary?.time_filter
+      ].join(" ").toLowerCase();
+    }
+
+    function filteredReports() {
+      const needle = state.filter.trim().toLowerCase();
+      return data.reports.filter((report) => !needle || searchable(report).includes(needle));
+    }
+
+    function renderList() {
+      const list = document.getElementById("reportList");
+      if (state.mode === "comparisons") {
+        list.innerHTML = data.comparisons.map((comparison) => `
+          <article class="item ${comparison.stamp === state.activeStamp ? "selected" : ""}" data-comparison="${esc(comparison.stamp)}">
+            <div class="item-title">Comparison ${esc(comparison.stamp)}</div>
+            <div class="item-sub">${comparison.rows.length} runs</div>
+            <div class="quick">
+              <span>${esc(comparison.csvPath)}</span>
+              <span>${comparison.images.length} figures</span>
+            </div>
+          </article>
+        `).join("") || `<div class="empty">No comparison reports found.</div>`;
+        list.querySelectorAll("[data-comparison]").forEach((item) => {
+          item.addEventListener("click", () => {
+            state.activeStamp = item.dataset.comparison;
+            render();
+          });
+        });
+        return;
+      }
+
+      list.innerHTML = filteredReports().map((report) => `
+        <article class="item ${report.stamp === state.activeStamp ? "selected" : ""}" data-report="${esc(report.stamp)}">
+          <div class="item-head">
+            <input type="checkbox" data-select="${esc(report.stamp)}" ${state.selected.has(report.stamp) ? "checked" : ""} aria-label="Select for comparison">
+            <div>
+              <div class="item-title">${esc(reportTitle(report))}</div>
+              <div class="item-sub">${esc(report.stamp)} · ${esc(report.summary?.time_filter || "")}</div>
+            </div>
+          </div>
+          <div class="quick">
+            <span>${fmt(report.summary?.rate_kib_s_mean, 2, " KiB/s")}</span>
+            <span>${fmt(report.summary?.latency_p95_ms, 0, " ms P95")}</span>
+          </div>
+        </article>
+      `).join("") || `<div class="empty">No reports match the filter.</div>`;
+
+      list.querySelectorAll("[data-report]").forEach((item) => {
+        item.addEventListener("click", (event) => {
+          if (event.target.matches("input")) return;
+          state.activeStamp = item.dataset.report;
+          render();
+        });
+      });
+      list.querySelectorAll("[data-select]").forEach((checkbox) => {
+        checkbox.addEventListener("change", () => {
+          checkbox.checked ? state.selected.add(checkbox.dataset.select) : state.selected.delete(checkbox.dataset.select);
+          renderComparison();
+        });
+      });
+    }
+
+    function kpis(report) {
+      return `<div class="kpis">` + metrics.map(([key, label, suffix, digits, scale]) => `
+        <div class="kpi">
+          <span>${label}</span>
+          <strong>${fmt(report.summary?.[key], digits, suffix, scale || 1)}</strong>
+        </div>
+      `).join("") + `</div>`;
+    }
+
+    function renderMarkdown(markdown, basePath = "") {
+      if (!markdown) return `<div class="empty">No Markdown content available.</div>`;
+      const lines = markdown.split(/\r?\n/);
+      let html = "";
+      let inCode = false;
+      let table = [];
+
+      function flushTable() {
+        if (!table.length) return;
+        const rows = table.filter((row) => !/^\|\s*-+/.test(row));
+        html += `<div class="table-wrap"><table>`;
+        rows.forEach((row, index) => {
+          const cells = row.split("|").slice(1, -1).map((cell) => cell.trim());
+          html += `<tr>${cells.map((cell) => index === 0 ? `<th>${esc(cell)}</th>` : `<td>${esc(cell)}</td>`).join("")}</tr>`;
+        });
+        html += `</table></div>`;
+        table = [];
+      }
+
+      for (const line of lines) {
+        if (line.startsWith("```")) {
+          flushTable();
+          html += inCode ? `</code></pre>` : `<pre><code>`;
+          inCode = !inCode;
+          continue;
+        }
+        if (inCode) {
+          html += `${esc(line)}\n`;
+          continue;
+        }
+        if (line.startsWith("|")) {
+          table.push(line);
+          continue;
+        }
+        flushTable();
+        if (line.startsWith("# ")) html += `<h1>${esc(line.slice(2))}</h1>`;
+        else if (line.startsWith("## ")) html += `<h2>${esc(line.slice(3))}</h2>`;
+        else if (line.startsWith("### ")) html += `<h3>${esc(line.slice(4))}</h3>`;
+        else if (line.startsWith("- ")) html += `<p>• ${esc(line.slice(2))}</p>`;
+        else if (/^!\[.*\]\((.*)\)/.test(line)) {
+          const match = line.match(/^!\[(.*)\]\((.*)\)/);
+          const src = /^(https?:|data:|\/)/.test(match[2]) ? match[2] : `${basePath}${match[2]}`;
+          html += `<img src="${esc(src)}" alt="${esc(match[1])}">`;
+        } else if (line.trim()) html += `<p>${esc(line)}</p>`;
+      }
+      flushTable();
+      return html;
+    }
+
+    function renderReportDetail() {
+      const report = data.reports.find((item) => item.stamp === state.activeStamp) || data.reports[0];
+      if (!report) {
+        document.getElementById("detail").innerHTML = `<section class="panel"><div class="empty">No reports found. Run the report generator first.</div></section>`;
+        return;
+      }
+      state.activeStamp = report.stamp;
+      document.getElementById("viewTitle").textContent = reportTitle(report);
+      document.getElementById("viewSub").textContent = `${report.stamp} · ${report.summary?.capture_start_utc || "n/a"} to ${report.summary?.capture_end_utc || "n/a"}`;
+      document.getElementById("detail").innerHTML = `
+        <section class="panel">
+          ${kpis(report)}
+          <div class="links">
+            ${report.reportPath ? `<a href="${esc(report.reportPath)}">Open Markdown</a>` : ""}
+            <a href="${esc(report.summaryPath)}">Open CSV</a>
+          </div>
+        </section>
+        ${report.figures.length ? `<section class="panel"><h2>Figures</h2><div class="figures">${report.figures.map((src) => `<img src="${esc(src)}" alt="${esc(src)}">`).join("")}</div></section>` : ""}
+        <section class="panel markdown">
+          ${renderMarkdown(report.markdown)}
+        </section>
+      `;
+    }
+
+    function renderComparisonDetail() {
+      const comparison = data.comparisons.find((item) => item.stamp === state.activeStamp) || data.comparisons[0];
+      document.getElementById("viewTitle").textContent = comparison ? `Comparison ${comparison.stamp}` : "Comparisons";
+      document.getElementById("viewSub").textContent = comparison ? `${comparison.rows.length} runs · ${comparison.csvPath}` : "";
+      document.getElementById("detail").innerHTML = comparison ? `
+        <section class="panel">
+          <div class="links">
+            ${comparison.reportPath ? `<a href="${esc(comparison.reportPath)}">Open Markdown</a>` : ""}
+            <a href="${esc(comparison.csvPath)}">Open CSV</a>
+          </div>
+        </section>
+        ${comparison.images.length ? `<section class="panel"><h2>Generated Comparison Figures</h2><div class="figures">${comparison.images.map((src) => `<img src="${esc(src)}" alt="${esc(src)}">`).join("")}</div></section>` : ""}
+        <section class="panel markdown">${renderMarkdown(comparison.markdown, "comparisons/")}</section>
+      ` : `<section class="panel"><div class="empty">No comparison reports found.</div></section>`;
+    }
+
+    function selectedReports() {
+      return data.reports.filter((report) => state.selected.has(report.stamp));
+    }
+
+    function metricBars(rows, key, title, suffix, digits, cls, scale = 1) {
+      const max = Math.max(...rows.map((row) => n(row.summary?.[key]) ?? 0).map((value) => value * scale), 0.000001);
+      return `<div><h3>${title}</h3>` + rows.map((row) => {
+        const value = (n(row.summary?.[key]) ?? 0) * scale;
+        return `<div class="bar-row">
+          <span>${esc(reportTitle(row))}</span>
+          <div class="bar-track"><div class="bar ${cls}" style="width:${Math.max(1, value / max * 100)}%"></div></div>
+          <strong>${value.toFixed(digits)}${suffix}</strong>
+        </div>`;
+      }).join("") + `</div>`;
+    }
+
+    function scatter(rows) {
+      const points = rows.map((row) => ({
+        label: reportTitle(row),
+        x: n(row.summary?.rate_kib_s_mean),
+        y: n(row.summary?.latency_p95_ms)
+      })).filter((point) => point.x !== null && point.y !== null);
+      if (!points.length) return `<div class="empty">No throughput/latency points available.</div>`;
+      const width = 720, height = 320, pad = 48;
+      const maxX = Math.max(...points.map((point) => point.x)) * 1.1;
+      const maxY = Math.max(...points.map((point) => point.y)) * 1.1;
+      const dot = (point) => {
+        const x = pad + point.x / maxX * (width - pad * 1.6);
+        const y = height - pad - point.y / maxY * (height - pad * 1.4);
+        return `<g><circle cx="${x}" cy="${y}" r="6" fill="#2364aa"></circle><text x="${x + 8}" y="${y - 7}" font-size="12" fill="#17212b">${esc(point.label)}</text></g>`;
+      };
+      return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Throughput latency tradeoff">
+        <line x1="${pad}" y1="${height - pad}" x2="${width - 24}" y2="${height - pad}" stroke="#66717f"></line>
+        <line x1="${pad}" y1="24" x2="${pad}" y2="${height - pad}" stroke="#66717f"></line>
+        <text x="${width / 2}" y="${height - 10}" text-anchor="middle" font-size="12" fill="#66717f">Mean throughput KiB/s</text>
+        <text x="14" y="${height / 2}" transform="rotate(-90 14 ${height / 2})" text-anchor="middle" font-size="12" fill="#66717f">P95 latency ms</text>
+        ${points.map(dot).join("")}
+      </svg>`;
+    }
+
+    function renderComparison() {
+      const rows = selectedReports();
+      const target = document.getElementById("comparison");
+      if (!rows.length) {
+        target.innerHTML = `<div class="empty">Select reports in the sidebar to compare them.</div>`;
+        return;
+      }
+      target.innerHTML = `
+        <div class="bar-grid">
+          ${metricBars(rows, "rate_kib_s_mean", "Mean Throughput", " KiB/s", 2, "")}
+          ${metricBars(rows, "fps_mean", "Mean FPS", "", 2, "fps")}
+          ${metricBars(rows, "latency_p95_ms", "P95 Latency", " ms", 0, "latency")}
+          ${metricBars(rows, "loss_rate_max", "Max Loss", "%", 4, "loss", 100)}
+        </div>
+        <h3>Throughput vs Latency</h3>
+        ${scatter(rows)}
+        <div class="table-wrap">
+          <table>
+            <tr><th>Run</th><th>FPS</th><th>Throughput</th><th>Max loss</th><th>CRC</th><th>P95 latency</th><th>Jitter</th></tr>
+            ${rows.map((row) => `<tr>
+              <td>${esc(reportTitle(row))}</td>
+              <td>${fmt(row.summary?.fps_mean, 2)}</td>
+              <td>${fmt(row.summary?.rate_kib_s_mean, 2, " KiB/s")}</td>
+              <td>${fmt(row.summary?.loss_rate_max, 4, "%", 100)}</td>
+              <td>${fmt(row.summary?.crc_errors_total, 0)}</td>
+              <td>${fmt(row.summary?.latency_p95_ms, 1, " ms")}</td>
+              <td>${fmt(row.summary?.interval_jitter_ms_mean, 1, " ms")}</td>
+            </tr>`).join("")}
+          </table>
+        </div>
+      `;
+    }
+
+    function render() {
+      document.getElementById("indexMeta").textContent = `${data.reports.length} reports · ${data.comparisons.length} comparisons · index ${data.generatedAt || "not generated"}`;
+      document.getElementById("reportsTab").classList.toggle("active", state.mode === "reports");
+      document.getElementById("comparisonsTab").classList.toggle("active", state.mode === "comparisons");
+      renderList();
+      state.mode === "reports" ? renderReportDetail() : renderComparisonDetail();
+      renderComparison();
+    }
+
+    document.getElementById("filter").addEventListener("input", (event) => {
+      state.filter = event.target.value;
+      renderList();
+    });
+    document.getElementById("reportsTab").addEventListener("click", () => {
+      state.mode = "reports";
+      state.activeStamp = data.reports[0]?.stamp || "";
+      render();
+    });
+    document.getElementById("comparisonsTab").addEventListener("click", () => {
+      state.mode = "comparisons";
+      state.activeStamp = data.comparisons[0]?.stamp || "";
+      render();
+    });
+    document.getElementById("selectLatest").addEventListener("click", () => {
+      state.selected = new Set(data.reports.slice(0, 4).map((report) => report.stamp));
+      render();
+    });
+    document.getElementById("clearSelected").addEventListener("click", () => {
+      state.selected.clear();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
