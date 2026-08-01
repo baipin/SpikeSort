@@ -10,6 +10,7 @@ from pathlib import Path
 DEFAULT_DB = Path("captures") / "bandwidth_capture.sqlite3"
 TARGET_FPS = 20.0
 TARGET_RATE_KIB_S = 20.0 * 4110.0 / 1024.0
+MAX_LATENCY_HIST_SAMPLES = 100000
 
 
 def percentile(values, pct):
@@ -95,6 +96,15 @@ def quality_gates(summary):
     return gates
 
 
+def cutoff_from_db(db, last_minutes):
+    if last_minutes is None:
+        return None
+    max_recv_ns = db.execute("SELECT MAX(recv_time_ns) FROM frames").fetchone()[0]
+    if max_recv_ns is None:
+        return 0
+    return max_recv_ns - int(last_minutes * 60 * 1_000_000_000)
+
+
 def summarize(db_path, last_minutes=None):
     with sqlite3.connect(db_path) as db:
         if not table_exists(db, "frames") or not table_exists(db, "metrics"):
@@ -103,13 +113,7 @@ def summarize(db_path, last_minutes=None):
         frame_cols = column_names(db, "frames")
         metric_cols = column_names(db, "metrics")
 
-        max_recv_ns = db.execute("SELECT MAX(recv_time_ns) FROM frames").fetchone()[0]
-        cutoff_ns = None
-        if last_minutes is not None:
-            if max_recv_ns is None:
-                cutoff_ns = 0
-            else:
-                cutoff_ns = max_recv_ns - int(last_minutes * 60 * 1_000_000_000)
+        cutoff_ns = cutoff_from_db(db, last_minutes)
 
         frame_where = "WHERE recv_time_ns >= ?" if cutoff_ns is not None else ""
         metric_where = "WHERE window_end_ns >= ?" if cutoff_ns is not None else ""
@@ -221,6 +225,128 @@ def summarize(db_path, last_minutes=None):
     }
 
 
+def load_metric_series(db_path, last_minutes=None):
+    with sqlite3.connect(db_path) as db:
+        cutoff_ns = cutoff_from_db(db, last_minutes)
+        metric_where = "WHERE window_end_ns >= ?" if cutoff_ns is not None else ""
+        params = (cutoff_ns,) if cutoff_ns is not None else ()
+        metric_cols = column_names(db, "metrics")
+        latency_cols = [
+            col for col in ("latency_avg_ms", "latency_p50_ms", "latency_p95_ms", "latency_p99_ms")
+            if col in metric_cols
+        ]
+        select_cols = [
+            "window_end_ns", "fps", "rate_kib_s", "missing_frames", "loss_rate",
+            "crc_errors", "avg_interval_ms", "interval_jitter_ms", "bandwidth_jitter_kib_s",
+        ] + latency_cols
+        rows = db.execute(
+            f"SELECT {', '.join(select_cols)} FROM metrics {metric_where} ORDER BY window_end_ns",
+            params,
+        ).fetchall()
+        if not rows:
+            return []
+        first_ns = rows[0][0]
+        series = []
+        for row in rows:
+            item = {col: row[idx] for idx, col in enumerate(select_cols)}
+            item["t_s"] = (item["window_end_ns"] - first_ns) / 1_000_000_000.0
+            series.append(item)
+        return series
+
+
+def load_latency_samples(db_path, last_minutes=None):
+    with sqlite3.connect(db_path) as db:
+        if "latency_ms" not in column_names(db, "frames"):
+            return []
+        cutoff_ns = cutoff_from_db(db, last_minutes)
+        where = "WHERE latency_ms IS NOT NULL"
+        params = []
+        if cutoff_ns is not None:
+            where += " AND recv_time_ns >= ?"
+            params.append(cutoff_ns)
+        rows = db.execute(
+            f"""
+            SELECT latency_ms
+            FROM frames
+            {where}
+            ORDER BY recv_time_ns DESC
+            LIMIT ?
+            """,
+            (*params, MAX_LATENCY_HIST_SAMPLES),
+        ).fetchall()
+        return [row[0] for row in rows]
+
+
+def write_plots(summary, db_path, out_dir, stamp, last_minutes=None):
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    series = load_metric_series(db_path, last_minutes)
+    if not series:
+        return []
+
+    figure_dir = out_dir / "figures"
+    figure_dir.mkdir(parents=True, exist_ok=True)
+    t = [row["t_s"] / 60.0 for row in series]
+
+    fig, axes = plt.subplots(2, 2, figsize=(12, 7), constrained_layout=True)
+    fig.suptitle("ESP32-S3 Neural Stream Metrics", fontsize=14, fontweight="bold")
+
+    axes[0, 0].plot(t, [row["rate_kib_s"] for row in series], color="#1f77b4", linewidth=1.8, label="observed")
+    axes[0, 0].axhline(TARGET_RATE_KIB_S, color="#444444", linestyle="--", linewidth=1.0, label="target")
+    axes[0, 0].set_title("Throughput")
+    axes[0, 0].set_ylabel("KiB/s")
+    axes[0, 0].legend(loc="best", fontsize=8)
+
+    axes[0, 1].plot(t, [row["fps"] for row in series], color="#2ca02c", linewidth=1.8)
+    axes[0, 1].axhline(TARGET_FPS, color="#444444", linestyle="--", linewidth=1.0)
+    axes[0, 1].set_title("Frame Rate")
+    axes[0, 1].set_ylabel("fps")
+
+    axes[1, 0].plot(t, [(row["loss_rate"] or 0.0) * 100.0 for row in series], color="#d62728", linewidth=1.6, label="loss")
+    axes[1, 0].bar(t, [row["crc_errors"] or 0 for row in series], width=0.025, alpha=0.25, color="#7f7f7f", label="CRC errors")
+    axes[1, 0].set_title("Loss and Parser Integrity")
+    axes[1, 0].set_ylabel("loss % / CRC count")
+    axes[1, 0].legend(loc="best", fontsize=8)
+
+    axes[1, 1].plot(t, [row["interval_jitter_ms"] for row in series], color="#9467bd", linewidth=1.6, label="arrival jitter")
+    if "latency_p95_ms" in series[0]:
+        axes[1, 1].plot(t, [row.get("latency_p95_ms") for row in series], color="#ff7f0e", linewidth=1.6, label="latency P95")
+    axes[1, 1].set_title("Timing Stability")
+    axes[1, 1].set_ylabel("ms")
+    axes[1, 1].legend(loc="best", fontsize=8)
+
+    for ax in axes.flat:
+        ax.set_xlabel("minutes")
+        ax.grid(True, alpha=0.25)
+
+    timeseries_path = figure_dir / f"bandwidth_timeseries_{stamp}.png"
+    fig.savefig(timeseries_path, dpi=160)
+    plt.close(fig)
+
+    written = [timeseries_path]
+    latencies = load_latency_samples(db_path, last_minutes)
+    if latencies:
+        fig, ax = plt.subplots(figsize=(8, 4.5), constrained_layout=True)
+        ax.hist(latencies, bins=60, color="#1f77b4", alpha=0.85)
+        ax.axvline(summary["latency_p50_ms"], color="#2ca02c", linestyle="--", linewidth=1.5, label="P50")
+        ax.axvline(summary["latency_p95_ms"], color="#ff7f0e", linestyle="--", linewidth=1.5, label="P95")
+        ax.axvline(summary["latency_p99_ms"], color="#d62728", linestyle="--", linewidth=1.5, label="P99")
+        ax.set_title("End-to-End Latency Distribution")
+        ax.set_xlabel("latency (ms)")
+        ax.set_ylabel("frames")
+        ax.grid(True, alpha=0.25)
+        ax.legend(loc="best")
+        latency_path = figure_dir / f"latency_histogram_{stamp}.png"
+        fig.savefig(latency_path, dpi=160)
+        plt.close(fig)
+        written.append(latency_path)
+
+    return written
+
+
 def write_summary_csv(summary, path):
     csv_summary = dict(summary)
     csv_summary.pop("db_metadata", None)
@@ -230,7 +356,19 @@ def write_summary_csv(summary, path):
         writer.writerow(csv_summary)
 
 
-def write_markdown(summary, manifest, path):
+def attach_manifest_fields(summary, manifest):
+    metadata = {}
+    metadata.update(summary.get("db_metadata") or {})
+    metadata.update(manifest or {})
+    condition = metadata.get("condition") if isinstance(metadata.get("condition"), dict) else {}
+    summary["experiment_id"] = metadata.get("experiment_id", "")
+    summary["condition_label"] = metadata.get("condition_label", "")
+    summary["read_limit_kib_s"] = metadata.get("read_limit_kib_s", condition.get("receiver_read_limit_kib_s", ""))
+    summary["distance_m"] = condition.get("distance_m", "")
+    return summary
+
+
+def write_markdown(summary, manifest, path, figure_paths=None):
     metadata = {}
     metadata.update(summary.get("db_metadata") or {})
     metadata.update(manifest or {})
@@ -239,6 +377,15 @@ def write_markdown(summary, manifest, path):
         f"| {gate['gate']} | {gate['status']} | {gate['value']} | {gate['criterion']} |"
         for gate in quality_gates(summary)
     )
+    figures = ""
+    if figure_paths:
+        figure_lines = ["## Figures", ""]
+        for figure_path in figure_paths:
+            rel_path = figure_path.relative_to(path.parent).as_posix()
+            title = figure_path.stem.replace("_", " ").title()
+            figure_lines.append(f"![{title}]({rel_path})")
+            figure_lines.append("")
+        figures = "\n".join(figure_lines)
     content = f"""# ESP32-S3 Neural Stream Bandwidth Experiment Report
 
 Generated at: `{summary['generated_at']}`
@@ -284,6 +431,8 @@ This report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surroga
 | --- | --- | ---: | --- |
 {gate_rows}
 
+{figures}
+
 ## Interpretation Notes
 
 - A healthy run should keep loss rate and CRC/resync errors at zero for the current 20 fps x 4 KiB workload.
@@ -311,6 +460,7 @@ def parse_args():
         type=float,
         help="Only summarize the most recent N minutes in the SQLite database",
     )
+    parser.add_argument("--no-plots", action="store_true", help="Skip matplotlib PNG figures")
     return parser.parse_args()
 
 
@@ -322,11 +472,13 @@ def main():
 
     summary = summarize(db_path, args.last_minutes)
     manifest = load_manifest(args.manifest)
+    summary = attach_manifest_fields(summary, manifest)
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     md_path = out_dir / f"bandwidth_report_{stamp}.md"
     csv_path = out_dir / f"bandwidth_summary_{stamp}.csv"
+    figure_paths = [] if args.no_plots else write_plots(summary, db_path, out_dir, stamp, args.last_minutes)
 
-    write_markdown(summary, manifest, md_path)
+    write_markdown(summary, manifest, md_path, figure_paths)
     write_summary_csv(summary, csv_path)
     print(f"Wrote {md_path}")
     print(f"Wrote {csv_path}")

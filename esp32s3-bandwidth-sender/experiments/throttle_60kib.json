@@ -1,0 +1,29 @@
+{
+  "experiment_id": "throttle-60kib-001",
+  "condition_label": "throttle-60kib",
+  "operator": "",
+  "started_at_local": "",
+  "application_context": {
+    "workload": "spike_stream_surrogate",
+    "downstream_task": "receiver-side bottleneck emulation for neural stream stability",
+    "notes": "Receiver read limit is below the nominal 80 KiB/s stream target. This should expose TCP backpressure, jitter, and possible sender-side frame drops."
+  },
+  "network": {
+    "ssid": "Dennis",
+    "receiver_ip": "192.168.137.1",
+    "receiver_port": 5001,
+    "hotspot_device": "Windows laptop mobile hotspot"
+  },
+  "stream": {
+    "transport": "WiFi + TCP",
+    "target_fps": 20,
+    "payload_bytes": 4096,
+    "frame_bytes": 4110,
+    "nominal_rate_kib_s": 80.27
+  },
+  "condition": {
+    "receiver_read_limit_kib_s": 60,
+    "duration_min": 10,
+    "purpose": "moderate bottleneck below target throughput"
+  }
+}

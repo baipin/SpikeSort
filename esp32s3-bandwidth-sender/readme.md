@@ -211,3 +211,27 @@ python tools\generate_report.py --db captures\bandwidth_capture.sqlite3 --out re
 ```
 
 This writes a Markdown report and CSV summary under `reports/`.
+
+The report also writes PNG figures under `reports/figures/`.
+
+## Multi-Condition Experiments
+
+For receiver-side bottleneck emulation:
+
+```powershell
+python -u receiver.py --manifest experiments\throttle_60kib.json --experiment-id throttle-60kib-001 --condition throttle-60kib --read-limit-kib-s 60
+```
+
+Generate a report after stopping the receiver:
+
+```powershell
+python tools\generate_report.py --db captures\bandwidth_capture.sqlite3 --out reports --manifest experiments\throttle_60kib.json --last-minutes 10
+```
+
+Compare several generated summaries:
+
+```powershell
+python tools\compare_reports.py --summaries reports\bandwidth_summary_*.csv --out reports\comparisons
+```
+
+The latest multi-condition short validation is summarized in `STAGE6_EXPERIMENTS_AND_REPORTING.md`. The generated comparison report and figures are under `reports/comparisons/`.

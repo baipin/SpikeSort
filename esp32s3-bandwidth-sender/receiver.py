@@ -571,6 +571,12 @@ def parse_args():
     parser.add_argument("--condition", default=os.environ.get("BANDWIDTH_CONDITION"))
     parser.add_argument("--notes", default=os.environ.get("BANDWIDTH_NOTES"))
     parser.add_argument("--manifest", help="Optional experiment JSON manifest to bind to this capture run")
+    parser.add_argument(
+        "--read-limit-kib-s",
+        type=float,
+        default=float(os.environ.get("BANDWIDTH_READ_LIMIT_KIB_S", "0")),
+        help="Throttle receiver socket reads to this KiB/s. Use 0 for no artificial limit.",
+    )
     return parser.parse_args()
 
 
@@ -585,6 +591,8 @@ def load_run_metadata(args):
         metadata["condition_label"] = args.condition
     if args.notes:
         metadata["operator_notes"] = args.notes
+    if args.read_limit_kib_s > 0:
+        metadata["read_limit_kib_s"] = args.read_limit_kib_s
     metadata.setdefault("receiver_started_at_local", datetime.now().isoformat(timespec="seconds"))
     return metadata
 
@@ -605,6 +613,9 @@ def run_receiver(args, store: CaptureStore, broadcaster, influx_writer: InfluxWr
                 f"InfluxDB output: {args.influx_url} org={args.influx_org} bucket={args.influx_bucket}",
                 flush=True,
             )
+        read_limit_bytes_s = args.read_limit_kib_s * 1024.0 if args.read_limit_kib_s > 0 else 0.0
+        if read_limit_bytes_s > 0:
+            print(f"Artificial receiver read limit: {args.read_limit_kib_s:.1f} KiB/s", flush=True)
 
         while True:
             conn, addr = server.accept()
@@ -615,6 +626,7 @@ def run_receiver(args, store: CaptureStore, broadcaster, influx_writer: InfluxWr
                 stats = WindowStats()
                 invalid_scan_bytes = 0
                 close_connection = False
+                read_deadline = time.monotonic()
 
                 while True:
                     try:
@@ -626,6 +638,12 @@ def run_receiver(args, store: CaptureStore, broadcaster, influx_writer: InfluxWr
                     if not data:
                         print("Disconnected", flush=True)
                         break
+
+                    if read_limit_bytes_s > 0:
+                        read_deadline = max(read_deadline, time.monotonic()) + len(data) / read_limit_bytes_s
+                        sleep_s = read_deadline - time.monotonic()
+                        if sleep_s > 0:
+                            time.sleep(sleep_s)
 
                     buffer.extend(data)
 
@@ -722,6 +740,7 @@ def main():
         {
             "experiment_id": run_metadata.get("experiment_id"),
             "condition": run_metadata.get("condition_label"),
+            "read_limit_kib_s": run_metadata.get("read_limit_kib_s"),
         },
     )
 

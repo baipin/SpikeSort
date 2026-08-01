@@ -82,8 +82,75 @@ Start with these runs:
 | Run | Payload | FPS | Condition | Purpose |
 | --- | ---: | ---: | --- | --- |
 | baseline-near | 4096 B | 20 | laptop hotspot, board within 1 m | verify clean link and latency baseline |
+| throttle-100kib | 4096 B | 20 | receiver read limit 100 KiB/s | verify read-limit instrumentation while staying above target |
+| throttle-60kib | 4096 B | 20 | receiver read limit 60 KiB/s | emulate moderate throughput bottleneck below target |
+| throttle-40kib | 4096 B | 20 | receiver read limit 40 KiB/s | emulate severe bottleneck and force backlog/drop behavior |
 | distance-mid | 4096 B | 20 | 5-10 m | measure WiFi/TCP jitter increase |
 | obstructed | 4096 B | 20 | wall or body obstruction | observe loss and backlog behavior |
 | long-run | 4096 B | 20 | stable placement, 30+ min | check drift and monitoring durability |
 
 For neural-stream studies, repeat the matrix when payload size changes to represent a new compression ratio or channel count.
+
+## Throughput-Limit Experiments
+
+Windows Mobile Hotspot does not provide a simple reliable per-client WiFi PHY-rate cap. For repeatable bottleneck tests, the receiver supports an artificial TCP read limit:
+
+```powershell
+python -u receiver.py --manifest experiments\throttle_60kib.json --experiment-id throttle-60kib-001 --condition throttle-60kib --read-limit-kib-s 60
+```
+
+This emulates an end-to-end bottleneck by reading from the TCP socket more slowly. It is not a pure radio-layer cap, but it creates TCP backpressure and is useful for observing frame cadence, sender timeout drops, latency growth, and parser integrity under constrained bandwidth.
+
+Suggested commands:
+
+```powershell
+python -u receiver.py --manifest experiments\baseline_near.json --experiment-id baseline-near-001 --condition baseline-near
+python -u receiver.py --manifest experiments\throttle_100kib.json --experiment-id throttle-100kib-001 --condition throttle-100kib --read-limit-kib-s 100
+python -u receiver.py --manifest experiments\throttle_60kib.json --experiment-id throttle-60kib-001 --condition throttle-60kib --read-limit-kib-s 60
+python -u receiver.py --manifest experiments\throttle_40kib.json --experiment-id throttle-40kib-001 --condition throttle-40kib --read-limit-kib-s 40
+```
+
+Run only one receiver command at a time. Stop each run with `Ctrl+C`, then generate a report for that run window:
+
+```powershell
+python tools\generate_report.py --db captures\bandwidth_capture.sqlite3 --out reports --manifest experiments\throttle_60kib.json --last-minutes 10
+```
+
+The report now also writes PNG figures under `reports\figures\`.
+
+## Compare Multiple Conditions
+
+After generating one summary CSV per condition, compare them:
+
+```powershell
+python tools\compare_reports.py --summaries reports\bandwidth_summary_*.csv --out reports\comparisons
+```
+
+This creates:
+
+- `reports\comparisons\comparison_summary_<timestamp>.csv`
+- `reports\comparisons\comparison_report_<timestamp>.md`
+- comparison PNG figures for throughput, FPS, loss, latency, and throughput-vs-latency tradeoff
+
+## 2026-08-01 Short Validation Runs
+
+Four short receiver-side bottleneck tests were run against the ESP32-S3 on the Windows Mobile Hotspot. Each run was stopped after roughly 45 seconds, so treat these as engineering checks rather than final statistical evidence. For formal reporting, repeat each condition for 10-30 minutes.
+
+| Condition | Receiver read limit | Mean FPS | Mean throughput | Max loss | CRC errors | P95 latency | Note |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| baseline-near | none | 19.99 | 80.24 KiB/s | 0.0000% | 0 | 1280.27 ms | Meets the 20 fps x 4 KiB target. |
+| throttle-100kib | 100 KiB/s | 17.54 | 70.40 KiB/s | 0.0000% | 0 | 3196.42 ms | TCP backpressure appears even above the nominal stream rate. |
+| throttle-60kib | 60 KiB/s | 11.65 | 46.76 KiB/s | 0.0000% | 0 | 4727.93 ms | Moderate bottleneck; latency grows to several seconds. |
+| throttle-40kib | 40 KiB/s | 8.82 | 35.42 KiB/s | 0.0000% | 0 | 6522.09 ms | Severe bottleneck; repeated reconnects and high queueing delay. |
+
+Generated outputs:
+
+- `reports\bandwidth_report_20260801_110508.md`
+- `reports\bandwidth_report_20260801_110606.md`
+- `reports\bandwidth_report_20260801_110704.md`
+- `reports\bandwidth_report_20260801_110804.md`
+- `reports\comparisons\comparison_report_20260801_110814.md`
+- `reports\comparisons\comparison_summary_20260801_110814.png`
+- `reports\comparisons\throughput_latency_tradeoff_20260801_110814.png`
+
+Interpretation: the constrained runs preserved parser integrity and delivered every accepted frame without CRC errors, but the effective application throughput fell below the target and end-to-end latency increased sharply. This is consistent with TCP backpressure and receiver-side queueing. The `--read-limit-kib-s` option is therefore useful for repeatable bottleneck studies, but it should be described as application/TCP bottleneck emulation rather than a pure WiFi PHY-rate limit.
