@@ -2308,6 +2308,13 @@ window.REPORT_INDEX = {
         .replaceAll('"', "&quot;");
     }
 
+    function assetUrl(path) {
+      if (!path || /^(https?:|data:|\/)/.test(path)) return path;
+      const normalized = String(path).replace(/\\/g, "/").replace(/^\.\//, "");
+      if (normalized.startsWith("esp32-reports/")) return normalized;
+      return `esp32-reports/${normalized}`;
+    }
+
     function reportTitle(report) {
       return report.label || report.summary?.experiment_id || report.stamp;
     }
@@ -2430,7 +2437,7 @@ window.REPORT_INDEX = {
         else if (line.startsWith("- ")) html += `<p>鈥?${esc(line.slice(2))}</p>`;
         else if (/^!\[.*\]\((.*)\)/.test(line)) {
           const match = line.match(/^!\[(.*)\]\((.*)\)/);
-          const src = /^(https?:|data:|\/)/.test(match[2]) ? match[2] : `${basePath}${match[2]}`;
+          const src = assetUrl(/^(https?:|data:|\/)/.test(match[2]) ? match[2] : `${basePath}${match[2]}`);
           html += `<img src="${esc(src)}" alt="${esc(match[1])}">`;
         } else if (line.trim()) html += `<p>${esc(line)}</p>`;
       }
@@ -2455,7 +2462,7 @@ window.REPORT_INDEX = {
             <a href="${esc(report.summaryPath)}">Open CSV</a>
           </div>
         </section>
-        ${report.figures.length ? `<section class="panel"><h2>Figures</h2><div class="figures">${report.figures.map((src) => `<img src="${esc(src)}" alt="${esc(src)}">`).join("")}</div></section>` : ""}
+        ${report.figures.length ? `<section class="panel"><h2>Figures</h2><div class="figures">${report.figures.map((src) => `<img src="${esc(assetUrl(src))}" alt="${esc(src)}">`).join("")}</div></section>` : ""}
         <section class="panel markdown">
           ${renderMarkdown(report.markdown)}
         </section>
@@ -2473,7 +2480,7 @@ window.REPORT_INDEX = {
             <a href="${esc(comparison.csvPath)}">Open CSV</a>
           </div>
         </section>
-        ${comparison.images.length ? `<section class="panel"><h2>Generated Comparison Figures</h2><div class="figures">${comparison.images.map((src) => `<img src="${esc(src)}" alt="${esc(src)}">`).join("")}</div></section>` : ""}
+        ${comparison.images.length ? `<section class="panel"><h2>Generated Comparison Figures</h2><div class="figures">${comparison.images.map((src) => `<img src="${esc(assetUrl(src))}" alt="${esc(src)}">`).join("")}</div></section>` : ""}
         <section class="panel markdown">${renderMarkdown(comparison.markdown, "comparisons/")}</section>
       ` : `<section class="panel"><div class="empty">No comparison reports found.</div></section>`;
     }
