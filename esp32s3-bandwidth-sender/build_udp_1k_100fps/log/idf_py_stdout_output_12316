@@ -1,0 +1,547 @@
+Command: C:\Users\baipi\.espressif\python_env\idf6.0_py3.13_env\Scripts\python.exe E:\esp\v6.0.2\esp-idf\tools/idf_monitor.py -p COM7 -b 115200 --toolchain-prefix xtensa-esp32s3-elf- --target esp32s3 --revision 0 G:\ACADEMIC\esp32s3-bandwidth-sender\build_udp_1k_100fps\esp32s3-bandwidth-sender.elf G:\ACADEMIC\esp32s3-bandwidth-sender\build_udp_1k_100fps\bootloader\bootloader.elf --force-color -m 'C:\Users\baipi\.espressif\python_env\idf6.0_py3.13_env\Scripts\python.exe' 'E:\esp\v6.0.2\esp-idf\tools\idf.py' '-p' 'COM7' '-B' 'build_udp_1k_100fps'
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0x15 (USB_UART_CHIP_RESET),boot:0x8 (SPI_FAST_FLASH_BOOT)
+Saved PC:0x4037b4ea
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x1548
+load:0x403c8700,len:0xd68
+load:0x403cb700,len:0x2f5c
+entry 0x403c8904
+[0;32mI (24) boot: ESP-IDF v6.0.2 2nd stage bootloader[0m
+[0;32mI (24) boot: compile time Aug 10 2026 22:47:20[0m
+[0;32mI (25) boot: Multicore bootloader[0m
+[0;32mI (25) boot: chip revision: v0.2[0m
+[0;32mI (25) boot: efuse block revision: v1.4[0m
+[0;32mI (25) boot.esp32s3: Boot SPI Speed : 80MHz[0m
+[0;32mI (25) boot.esp32s3: SPI Mode       : DIO[0m
+[0;32mI (26) boot.esp32s3: SPI Flash Size : 8MB[0m
+[0;32mI (26) boot: Enabling RNG early entropy source...[0m
+[0;32mI (26) boot: Partition Table:[0m
+[0;32mI (26) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (27) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (27) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (27) boot:  2 factory          factory app      00 00 00010000 00200000[0m
+[0;32mI (28) boot: End of partition table[0m
+[0;32mI (28) esp_image: segment 0: paddr=00010020 vaddr=3c090020 size=1b8c8h (112840) map[0m
+[0;32mI (49) esp_image: segment 1: paddr=0002b8f0 vaddr=3fc98900 size=04728h ( 18216) load[0m
+[0;32mI (53) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=8af08h (569096) map[0m
+[0;32mI (158) esp_image: segment 3: paddr=000baf30 vaddr=3fc9d028 size=00b70h (  2928) load[0m
+[0;32mI (159) esp_image: segment 4: paddr=000bbaa8 vaddr=40374000 size=14850h ( 84048) load[0m
+[0;32mI (178) esp_image: segment 5: paddr=000d0300 vaddr=50000000 size=00024h (    36) load[0m
+[0;32mI (187) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (188) boot: Disabling RNG early entropy source...[0m
+[0;32mI (189) octal_psram: vendor id    : 0x0d (AP)[0m
+[0;32mI (189) octal_psram: dev id       : 0x02 (generation 3)[0m
+[0;32mI (189) octal_psram: density      : 0x03 (64 Mbit)[0m
+[0;32mI (189) octal_psram: good-die     : 0x01 (Pass)[0m
+[0;32mI (189) octal_psram: Latency      : 0x01 (Fixed)[0m
+[0;32mI (190) octal_psram: VCC          : 0x01 (3V)[0m
+[0;32mI (190) octal_psram: SRF          : 0x01 (Fast Refresh)[0m
+[0;32mI (190) octal_psram: BurstType    : 0x01 (Hybrid Wrap)[0m
+[0;32mI (190) octal_psram: BurstLen     : 0x01 (32 Byte)[0m
+[0;32mI (190) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)[0m
+[0;32mI (191) octal_psram: DriveStrength: 0x00 (1/1)[0m
+[0;32mI (191) esp_psram: Found 8MB PSRAM device[0m
+[0;32mI (191) esp_psram: Speed: 40MHz[0m
+[0;32mI (191) cpu_start: Multicore app[0m
+[0;32mI (923) esp_psram: SPI SRAM memory test OK[0m
+[0;32mI (932) cpu_start: Pro cpu start user code[0m
+[0;32mI (932) cpu_start: cpu freq: 240000000 Hz[0m
+[0;32mI (932) app_init: Application information:[0m
+[0;32mI (932) app_init: Project name:     esp32s3-bandwidth-sender[0m
+[0;32mI (932) app_init: App version:      197ce06-dirty[0m
+[0;32mI (932) app_init: Compile time:     Aug 10 2026 22:46:48[0m
+[0;32mI (932) app_init: ELF file SHA256:  9a1099f6a...[0m
+[0;32mI (932) app_init: ESP-IDF:          v6.0.2[0m
+[0;32mI (933) efuse_init: Min chip rev:     v0.0[0m
+[0;32mI (933) efuse_init: Max chip rev:     v0.99 [0m
+[0;32mI (933) efuse_init: Chip rev:         v0.2[0m
+[0;32mI (933) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (933) heap_init: At 3FCA1FE0 len 00047730 (285 KiB): RAM[0m
+[0;32mI (934) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM[0m
+[0;32mI (934) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM[0m
+[0;32mI (934) heap_init: At 600FE000 len 00001FE8 (7 KiB): RTCRAM[0m
+[0;32mI (934) esp_psram: Adding pool of 8192K of PSRAM memory to heap allocator[0m
+[0;32mI (935) spi_flash: detected chip: gd[0m
+[0;32mI (935) spi_flash: flash io: dio[0m
+[0;32mI (936) sleep_gpio: Configure to isolate all GPIO pins in sleep state[0m
+[0;32mI (936) sleep_gpio: Enable automatic switching of GPIO sleep configuration[0m
+[0;32mI (937) main_task: Started on CPU0[0m
+[0;32mI (938) esp_psram: Reserving pool of 32K of internal memory for DMA/internal allocations[0m
+[0;32mI (938) main_task: Calling app_main()[0m
+[0;32mI (938) bandwidth_sender: Starting ESP32-S3 bandwidth sender[0m
+[0;32mI (938) sender: Sender module initialized[0m
+[0;32mI (954) pp: pp rom version: e7ae62f[0m
+[0;32mI (954) net80211: net80211 rom version: e7ae62f[0m
+[0;32mI (955) main_task: Returned from app_main()[0m
+[0;32mI (956) wifi:wifi driver task: 3fceeb78, prio:23, stack:6656, core=0[0m
+[0;32mI (964) wifi:wifi firmware version: 00ad238[0m
+[0;32mI (964) wifi:wifi certification version: v7.0[0m
+[0;32mI (965) wifi:config NVS flash: enabled[0m
+[0;32mI (965) wifi:config nano formatting: disabled[0m
+[0;32mI (965) wifi:Init data frame dynamic rx buffer num: 32[0m
+[0;32mI (965) wifi:Init static rx mgmt buffer num: 5[0m
+[0;32mI (965) wifi:Init management short buffer num: 32[0m
+[0;32mI (965) wifi:Init dynamic tx buffer num: 32[0m
+[0;32mI (966) wifi:Init static tx FG buffer num: 2[0m
+[0;32mI (966) wifi:Init static rx buffer size: 1600[0m
+[0;32mI (966) wifi:Init static rx buffer num: 10[0m
+[0;32mI (966) wifi:Init dynamic rx buffer num: 32[0m
+[0;32mI (967) wifi_init: rx ba win: 6[0m
+[0;32mI (967) wifi_init: accept mbox: 6[0m
+[0;32mI (968) wifi_init: tcpip mbox: 32[0m
+[0;32mI (968) wifi_init: udp mbox: 6[0m
+[0;32mI (968) wifi_init: tcp mbox: 6[0m
+[0;32mI (968) wifi_init: tcp tx win: 5760[0m
+[0;32mI (968) wifi_init: tcp rx win: 5760[0m
+[0;32mI (968) wifi_init: tcp mss: 1440[0m
+[0;32mI (968) wifi_init: WiFi IRAM OP enabled[0m
+[0;32mI (968) wifi_init: WiFi RX IRAM OP enabled[0m
+[0;32mI (970) phy_init: phy_version 712,87e8c20e,Apr 13 2026,18:51:10[0m
+[0;32mI (1003) phy_init: Saving new calibration data due to checksum failure or outdated calibration data, mode(0)[0m
+[0;32mI (1013) wifi:mode : sta (ac:27:6e:d5:05:a8)[0m
+[0;32mI (1013) wifi:enable tsf[0m
+[0;32mI (1014) sender: Connecting to WiFi SSID: Dennis[0m
+[0;33mW (3427) sender: WiFi disconnected, retrying (1/10)[0m
+[0;33mW (5838) sender: WiFi disconnected, retrying (2/10)[0m
+[0;33mW (8250) sender: WiFi disconnected, retrying (3/10)[0m
+[0;33mW (10662) sender: WiFi disconnected, retrying (4/10)[0m
+[0;33mW (13074) sender: WiFi disconnected, retrying (5/10)[0m
+[0;33mW (15486) sender: WiFi disconnected, retrying (6/10)[0m
+[0;33mW (17897) sender: WiFi disconnected, retrying (7/10)[0m
+[0;33mW (20309) sender: WiFi disconnected, retrying (8/10)[0m
+[0;33mW (22721) sender: WiFi disconnected, retrying (9/10)[0m
+[0;33mW (25133) sender: WiFi disconnected, retrying (10/10)[0m
+[1;31mE (27544) sender: Failed to connect to WiFi SSID: Dennis[0m
+[1;31mE (27544) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (29545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (31545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (33545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (35545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (37545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (39545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (41545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (43545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (45545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (47545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (49545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (51545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (53545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (55545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (57545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (59545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (61545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (63545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (65545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (67545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (69545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (71545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (73545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (75545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (77545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (79545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (81545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (83545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (85545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (87545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (89545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (91545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (93545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (95545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (97545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (99545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (101545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (103545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (105545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (107545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (109545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (111545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (113545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (115545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (117545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (119545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (121545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (123545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (125545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (127545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (129545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (131545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (133545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (135545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (137545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (139545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (141545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (143545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (145545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (147545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (149545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (151545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (153545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (155545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (157545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (159545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (161545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (163545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (165545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (167545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (169545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (171545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (173545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (175545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (177545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (179545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (181545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (183545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (185545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (187545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (189545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (191545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (193545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (195545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (197545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (199545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (201545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (203545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (205545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (207545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (209545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (211545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (213545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (215545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (217545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (219545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (221545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (223545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (225545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (227545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (229545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (231545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (233545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (235545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (237545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (239545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (241545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (243545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (245545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (247545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (249545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (251545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (253545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (255545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (257545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (259545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (261545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (263545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (265545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (267545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (269545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (271545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (273545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (275545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (277545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (279545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (281545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (283545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (285545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (287545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (289545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (291545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (293545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (295545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (297545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (299545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (301545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (303545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (305545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (307545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (309545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (311545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (313545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (315545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (317545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (319545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (321545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (323545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (325545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (327545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (329545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (331545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (333545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (335545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (337545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (339545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (341545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (343545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (345545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (347545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (349545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (351545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (353545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (355545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (357545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (359545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (361545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (363545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (365545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (367545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (369545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (371545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (373545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (375545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (377545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (379545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (381545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (383545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (385545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (387545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (389545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (391545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (393545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (395545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (397545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (399545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (401545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (403545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (405545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (407545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (409545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (411545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (413545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (415545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (417545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (419545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (421545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (423545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (425545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (427545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (429545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (431545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (433545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (435545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (437545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (439545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (441545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (443545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (445545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (447545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (449545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (451545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (453545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (455545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (457545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (459545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (461545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (463545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (465545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (467545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (469545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (471545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (473545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (475545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (477545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (479545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (481545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (483545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (485545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (487545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (489545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (491545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (493545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (495545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (497545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (499545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (501545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (503545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (505545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (507545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (509545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (511545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (513545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (515545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (517545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (519545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (521545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (523545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (525545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (527545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (529545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (531545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (533545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (535545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (537545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (539545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (541545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (543545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (545545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (547545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (549545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (551545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (553545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (555545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (557545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (559545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (561545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (563545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (565545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (567545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (569545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (571545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (573545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (575545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (577545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (579545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (581545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (583545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (585545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (587545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (589545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (591545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (593545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (595545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (597545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (599545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (601545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (603545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (605545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (607545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (609545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (611545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (613545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (615545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (617545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (619545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (621545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (623545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (625545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (627545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (629545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (631545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (633545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (635545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (637545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (639545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (641545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (643545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (645545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (647545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (649545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (651545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (653545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (655545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (657545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (659545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (661545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (663545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (665545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (667545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (669545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (671545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (673545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (675545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (677545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (679545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (681545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (683545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (685545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (687545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (689545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (691545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (693545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (695545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (697545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (699545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (701545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (703545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (705545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (707545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (709545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (711545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (713545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (715545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (717545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (719545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (721545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (723545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (725545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (727545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (729545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (731545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (733545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (735545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (737545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (739545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (741545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (743545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (745545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (747545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (749545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (751545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (753545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (755545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (757545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (759545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (761545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (763545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (765545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (767545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (769545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (771545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (773545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (775545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (777545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (779545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (781545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (783545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (785545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (787545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (789545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (791545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (793545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (795545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (797545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (799545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (801545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (803545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (805545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (807545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (809545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (811545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (813545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (815545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (817545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (819545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (821545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (823545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (825545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (827545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (829545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (831545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (833545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (835545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (837545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (839545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (841545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (843545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (845545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (847545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (849545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (851545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (853545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (855545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (857545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (859545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (861545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (863545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (865545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (867545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (869545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (871545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (873545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (875545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (877545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (879545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (881545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (883545) sender: WiFi setup failed; reset the board or check SSID/password/hotspot[0m
+[1;31mE (885545) sender: WiFi setup failed; reset the boar

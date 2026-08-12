@@ -1,0 +1,29 @@
+{
+  "experiment_id": "udp-1k-1000fps-001",
+  "condition_label": "udp-1k-1000fps",
+  "operator": "",
+  "started_at_local": "",
+  "transport": "udp",
+  "application_context": {
+    "workload": "spike_stream_surrogate",
+    "downstream_task": "UDP maximum-throughput search for neural stream transport",
+    "notes": "Use this point to test whether the ESP32-S3 can sustain approximately 1 MiB/s UDP delivery over the laptop hotspot."
+  },
+  "network": {
+    "ssid": "Dennis",
+    "receiver_ip": "192.168.137.1",
+    "receiver_port": 5001,
+    "hotspot_device": "Windows laptop mobile hotspot"
+  },
+  "stream": {
+    "transport": "WiFi + UDP",
+    "target_fps": 1000,
+    "payload_bytes": 1024,
+    "frame_bytes": 1038,
+    "nominal_rate_kib_s": 1013.67
+  },
+  "condition": {
+    "duration_min": 10,
+    "purpose": "near-1MiB/s UDP throughput point"
+  }
+}

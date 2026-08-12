@@ -12,18 +12,31 @@ menu "Bandwidth Sender"
         help
             Password for the WiFi network.
 
+    choice BANDWIDTH_TRANSPORT
+        prompt "Transport protocol"
+        default BANDWIDTH_TRANSPORT_TCP
+        help
+            Select TCP for reliable byte-stream testing or UDP for packet-loss and maximum-throughput testing.
+
+        config BANDWIDTH_TRANSPORT_TCP
+            bool "TCP"
+
+        config BANDWIDTH_TRANSPORT_UDP
+            bool "UDP"
+    endchoice
+
     config BANDWIDTH_SERVER_IP
-        string "TCP server IPv4 address"
+        string "Receiver IPv4 address"
         default "192.168.137.1"
         help
             Laptop IP address reachable from the ESP32-S3.
 
     config BANDWIDTH_SERVER_PORT
-        int "TCP server port"
+        int "Receiver port"
         default 5001
         range 1 65535
         help
-            TCP port listened on by the laptop receiver.
+            TCP or UDP port listened on by the laptop receiver.
 
     config BANDWIDTH_PAYLOAD_BYTES
         int "Payload bytes per frame"
@@ -35,9 +48,16 @@ menu "Bandwidth Sender"
     config BANDWIDTH_FPS
         int "Frames per second"
         default 20
-        range 1 1000
+        range 1 5000
         help
             Target frame cadence for the sender task.
+
+    config BANDWIDTH_UNLIMITED_SEND
+        bool "Send as fast as possible"
+        default n
+        help
+            Disable frame pacing and send the next frame immediately after the previous send call returns. Use this for
+            UDP maximum-throughput experiments instead of controlled-FPS sweeps.
 
     config BANDWIDTH_SEND_TIMEOUT_MS
         int "Per-frame send timeout in milliseconds"
@@ -47,11 +67,11 @@ menu "Bandwidth Sender"
             Drop the current application frame if non-blocking send cannot finish in this time.
 
     config BANDWIDTH_SOCKET_SNDBUF
-        int "TCP socket send buffer bytes"
+        int "Socket send buffer bytes"
         default 16384
         range 0 1048576
         help
-            Requested SO_SNDBUF size. Set 0 to keep the lwIP default.
+            Requested SO_SNDBUF size for the selected transport. Set 0 to keep the lwIP default.
 
     config BANDWIDTH_SNTP_ENABLE
         bool "Enable SNTP clock sync"
@@ -73,5 +93,13 @@ menu "Bandwidth Sender"
         depends on BANDWIDTH_SNTP_ENABLE
         help
             Maximum time to wait for SNTP synchronization before falling back to monotonic uptime timestamps.
+
+    config BANDWIDTH_REQUIRE_SNTP
+        bool "Require SNTP before streaming"
+        default y
+        depends on BANDWIDTH_SNTP_ENABLE
+        help
+            Keep retrying SNTP synchronization before sending frames. This prevents formal latency experiments from
+            silently falling back to monotonic timestamps, which cannot be used for receiver-side latency estimates.
 
 endmenu

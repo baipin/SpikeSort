@@ -118,6 +118,81 @@ python tools\generate_report.py --db captures\bandwidth_capture.sqlite3 --out re
 
 The report now also writes PNG figures under `reports\figures\`.
 
+## UDP Packet-Loss And Maximum-Throughput Experiments
+
+UDP tests use the same numbered frame format as the TCP sender:
+
+```text
+seq_u32 + send_timestamp_u64 + payload + crc16
+```
+
+The receiver treats each UDP datagram as one frame. Packet loss is estimated from sequence gaps, while late lower-numbered packets are counted as old/duplicate frames. Unlike TCP, UDP does not retransmit missing datagrams, so these tests expose packet loss directly.
+
+Recommended first sweep:
+
+| Run | Transport | Payload | FPS | Nominal rate | Purpose |
+| --- | --- | ---: | ---: | ---: | --- |
+| udp-1k-100fps | UDP | 1024 B | 100 | 101.37 KiB/s | sanity check |
+| udp-1k-250fps | UDP | 1024 B | 250 | 253.42 KiB/s | moderate throughput |
+| udp-1k-500fps | UDP | 1024 B | 500 | 506.84 KiB/s | high throughput |
+| udp-1k-800fps | UDP | 1024 B | 800 | 810.94 KiB/s | aggressive throughput search |
+
+Use 1 KiB payload first because it keeps each UDP datagram below common WiFi/Ethernet MTU limits. Testing 4 KiB or 16 KiB UDP datagrams is possible, but it adds IP fragmentation and may measure fragmentation loss rather than only application packet cadence.
+
+For each point, rebuild and flash firmware with UDP enabled and matching payload/FPS. The provided UDP defaults are complete defaults files:
+
+```powershell
+sdkconfig.defaults.udp_1k_100fps
+sdkconfig.defaults.udp_1k_250fps
+sdkconfig.defaults.udp_1k_500fps
+sdkconfig.defaults.udp_1k_800fps
+```
+
+The active firmware options must include:
+
+```text
+CONFIG_BANDWIDTH_TRANSPORT_UDP=y
+CONFIG_BANDWIDTH_PAYLOAD_BYTES=1024
+CONFIG_BANDWIDTH_FPS=<100|250|500|800>
+```
+
+Use a separate build directory so the existing TCP `sdkconfig` does not override the UDP defaults:
+
+```powershell
+idf.py -B build_udp_1k_250fps -DSDKCONFIG_DEFAULTS=sdkconfig.defaults.udp_1k_250fps build flash monitor
+```
+
+Repeat with the matching defaults file and build directory for each sweep point.
+
+Start the UDP receiver before resetting the board:
+
+```powershell
+python -u udp_receiver.py --manifest experiments\udp_1k_250fps.json --experiment-id udp-1k-250fps-001 --condition udp-1k-250fps --payload-bytes 1024 --target-fps 250
+```
+
+Suggested receiver commands:
+
+```powershell
+python -u udp_receiver.py --manifest experiments\udp_1k_100fps.json --experiment-id udp-1k-100fps-001 --condition udp-1k-100fps --payload-bytes 1024 --target-fps 100
+python -u udp_receiver.py --manifest experiments\udp_1k_250fps.json --experiment-id udp-1k-250fps-001 --condition udp-1k-250fps --payload-bytes 1024 --target-fps 250
+python -u udp_receiver.py --manifest experiments\udp_1k_500fps.json --experiment-id udp-1k-500fps-001 --condition udp-1k-500fps --payload-bytes 1024 --target-fps 500
+python -u udp_receiver.py --manifest experiments\udp_1k_800fps.json --experiment-id udp-1k-800fps-001 --condition udp-1k-800fps --payload-bytes 1024 --target-fps 800
+```
+
+After each run, generate a report for the recent window:
+
+```powershell
+python tools\generate_report.py --db captures\bandwidth_capture.sqlite3 --out reports --manifest experiments\udp_1k_250fps.json --last-minutes 10
+```
+
+Compare all UDP points:
+
+```powershell
+python tools\compare_reports.py --summaries reports\bandwidth_summary_<udp100>.csv reports\bandwidth_summary_<udp250>.csv reports\bandwidth_summary_<udp500>.csv reports\bandwidth_summary_<udp800>.csv --out reports\comparisons
+```
+
+Choose the maximum-throughput operating point as the highest FPS/rate condition that still has acceptable loss, CRC errors, and P95/P99 latency. For neural-stream use, prefer the fastest point before the loss curve sharply increases, not the absolute highest one-second throughput spike.
+
 ## Compare Multiple Conditions
 
 After generating one summary CSV per condition, compare them:

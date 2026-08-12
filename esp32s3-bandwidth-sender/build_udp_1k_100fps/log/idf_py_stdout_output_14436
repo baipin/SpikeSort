@@ -1,0 +1,216 @@
+Command: C:\Users\baipi\.espressif\python_env\idf6.0_py3.13_env\Scripts\python.exe E:\esp\v6.0.2\esp-idf\tools/idf_monitor.py -p COM7 -b 115200 --toolchain-prefix xtensa-esp32s3-elf- --target esp32s3 --revision 0 G:\ACADEMIC\esp32s3-bandwidth-sender\build_udp_1k_100fps\esp32s3-bandwidth-sender.elf G:\ACADEMIC\esp32s3-bandwidth-sender\build_udp_1k_100fps\bootloader\bootloader.elf --force-color -m 'C:\Users\baipi\.espressif\python_env\idf6.0_py3.13_env\Scripts\python.exe' 'E:\esp\v6.0.2\esp-idf\tools\idf.py' '-p' 'COM7' '-b' '115200' '-B' 'build_udp_1k_100fps' '-D' 'SDKCONFIG=build_udp_1k_100fps/sdkconfig' '-D' 'SDKCONFIG_DEFAULTS=sdkconfig.defaults.udp_1k_100fps'
+[0;32mI (158) esp_image: segment 3: paddr=000baf30 vaddr=3fc9d028 sizeESP-ROM:esp32s3-20210327[0m
+Build:Mar 27 2021
+rst:0x15 (USB_UART_CHIP_RESET),boot:0x8 (SPI_FAST_FLASH_BOOT)
+Saved PC:0x42008d1f
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x1548
+load:0x403c8700,len:0xd68
+load:0x403cb700,len:0x2f5c
+entry 0x403c8904
+[0;32mI (24) boot: ESP-IDF v6.0.2 2nd stage bootloader[0m
+[0;32mI (24) boot: compile time Aug 10 2026 22:47:20[0m
+[0;32mI (25) boot: Multicore bootloader[0m
+[0;32mI (25) boot: chip revision: v0.2[0m
+[0;32mI (25) boot: efuse block revision: v1.4[0m
+[0;32mI (25) boot.esp32s3: Boot SPI Speed : 80MHz[0m
+[0;32mI (25) boot.esp32s3: SPI Mode       : DIO[0m
+[0;32mI (26) boot.esp32s3: SPI Flash Size : 8MB[0m
+[0;32mI (26) boot: Enabling RNG early entropy source...[0m
+[0;32mI (26) boot: Partition Table:[0m
+[0;32mI (26) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (27) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (27) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (27) boot:  2 factory          factory app      00 00 00010000 00200000[0m
+[0;32mI (28) boot: End of partition table[0m
+[0;32mI (28) esp_image: segment 0: paddr=00010020 vaddr=3c090020 size=1b8c8h (112840) map[0m
+[0;32mI (49) esp_image: segment 1: paddr=0002b8f0 vaddr=3fc98900 size=04728h ( 18216) load[0m
+[0;32mI (53) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=8af08h (569096) map[0m
+[0;32mI (158) esp_image: segment 3: paddr=000baf30 vaddr=3fc9d028 size=00b70h (  2928) load[0m
+[0;32mI (159) esp_image: segment 4: paddr=000bbaa8 vaddr=40374000 size=14850h ( 84048) load[0m
+[0;32mI (178) esp_image: segment 5: paddr=000d0300 vaddr=50000000 size=00024h (    36) load[0m
+[0;32mI (187) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (187) boot: Disabling RNG early entropy source...[0m
+[0;32mI (189) octal_psram: vendor id    : 0x0d (AP)[0m
+[0;32mI (189) octal_psram: dev id       : 0x02 (generation 3)[0m
+[0;32mI (189) octal_psram: density      : 0x03 (64 Mbit)[0m
+[0;32mI (189) octal_psram: good-die     : 0x01 (Pass)[0m
+[0;32mI (189) octal_psram: Latency      : 0x01 (Fixed)[0m
+[0;32mI (190) octal_psram: VCC          : 0x01 (3V)[0m
+[0;32mI (190) octal_psram: SRF          : 0x01 (Fast Refresh)[0m
+[0;32mI (190) octal_psram: BurstType    : 0x01 (Hybrid Wrap)[0m
+[0;32mI (190) octal_psram: BurstLen     : 0x01 (32 Byte)[0m
+[0;32mI (190) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)[0m
+[0;32mI (191) octal_psram: DriveStrength: 0x00 (1/1)[0m
+[0;32mI (191) esp_psram: Found 8MB PSRAM device[0m
+[0;32mI (191) esp_psram: Speed: 40MHz[0m
+[0;32mI (191) cpu_start: Multicore app[0m
+[0;32mI (923) esp_psram: SPI SRAM memory test OK[0m
+[0;32mI (932) cpu_start: Pro cpu start user code[0m
+[0;32mI (932) cpu_start: cpu freq: 240000000 Hz[0m
+[0;32mI (932) app_init: Application information:[0m
+[0;32mI (932) app_init: Project name:     esp32s3-bandwidth-sender[0m
+[0;32mI (932) app_init: App version:      197ce06-dirty[0m
+[0;32mI (932) app_init: Compile time:     Aug 10 2026 22:46:48[0m
+[0;32mI (932) app_init: ELF file SHA256:  9a1099f6a...[0m
+[0;32mI (932) app_init: ESP-IDF:          v6.0.2[0m
+[0;32mI (933) efuse_init: Min chip rev:     v0.0[0m
+[0;32mI (933) efuse_init: Max chip rev:     v0.99 [0m
+[0;32mI (933) efuse_init: Chip rev:         v0.2[0m
+[0;32mI (933) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (933) heap_init: At 3FCA1FE0 len 00047730 (285 KiB): RAM[0m
+[0;32mI (933) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM[0m
+[0;32mI (934) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM[0m
+[0;32mI (934) heap_init: At 600FE000 len 00001FE8 (7 KiB): RTCRAM[0m
+[0;32mI (934) esp_psram: Adding pool of 8192K of PSRAM memory to heap allocator[0m
+[0;32mI (935) spi_flash: detected chip: gd[0m
+[0;32mI (935) spi_flash: flash io: dio[0m
+[0;32mI (936) sleep_gpio: Configure to isolate all GPIO pins in sleep state[0m
+[0;32mI (936) sleep_gpio: Enable automatic switching of GPIO sleep configuration[0m
+[0;32mI (937) main_task: Started on CPU0[0m
+[0;32mI (938) esp_psram: Reserving pool of 32K of internal memory for DMA/internal allocations[0m
+[0;32mI (938) main_task: Calling app_main()[0m
+[0;32mI (938) bandwidth_sender: Starting ESP32-S3 bandwidth sender[0m
+[0;32mI (938) sender: Sender module initialized[0m
+[0;32mI (954) pp: pp rom version: e7ae62f[0m
+[0;32mI (954) net80211: net80211 rom version: e7ae62f[0m
+[0;32mI (955) main_task: Returned from app_main()[0m
+[0;32mI (956) wifi:wifi driver task: 3fceeb78, prio:23, stack:6656, core=0[0m
+[0;32mI (964) wifi:wifi firmware version: 00ad238[0m
+[0;32mI (964) wifi:wifi certification version: v7.0[0m
+[0;32mI (964) wifi:config NVS flash: enabled[0m
+[0;32mI (965) wifi:config nano formatting: disabled[0m
+[0;32mI (965) wifi:Init data frame dynamic rx buffer num: 32[0m
+[0;32mI (965) wifi:Init static rx mgmt buffer num: 5[0m
+[0;32mI (965) wifi:Init management short buffer num: 32[0m
+[0;32mI (965) wifi:Init dynamic tx buffer num: 32[0m
+[0;32mI (966) wifi:Init static tx FG buffer num: 2[0m
+[0;32mI (966) wifi:Init static rx buffer size: 1600[0m
+[0;32mI (966) wifi:Init static rx buffer num: 10[0m
+[0;32mI (966) wifi:Init dynamic rx buffer num: 32[0m
+[0;32mI (967) wifi_init: rx ba win: 6[0m
+[0;32mI (967) wifi_init: accept mbox: 6[0m
+[0;32mI (968) wifi_init: tcpip mbox: 32[0m
+[0;32mI (968) wifi_init: udp mbox: 6[0m
+[0;32mI (968) wifi_init: tcp mbox: 6[0m
+[0;32mI (968) wifi_init: tcp tx win: 5760[0m
+[0;32mI (968) wifi_init: tcp rx win: 5760[0m
+[0;32mI (968) wifi_init: tcp mss: 1440[0m
+[0;32mI (968) wifi_init: WiFi IRAM OP enabled[0m
+[0;32mI (968) wifi_init: WiFi RX IRAM OP enabled[0m
+[0;32mI (970) phy_init: phy_version 712,87e8c20e,Apr 13 2026,18:51:10[0m
+[0;32mI (1004) wifi:mode : sta (ac:27:6e:d5:05:a8)[0m
+[0;32mI (1005) wifi:enable tsf[0m
+[0;32mI (1005) sender: Connecting to WiFi SSID: Dennis[0m
+[0;32mI (1136) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (1140) wifi:state: auth -> assoc (0x0)[0m
+[0;32mI (1148) wifi:state: assoc -> run (0x10)[0m
+[0;32mI (1182) wifi:connected with Dennis, aid = 1, channel 1, BW20, bssid = ae:19:8e:f9:d8:64[0m
+[0;32mI (1182) wifi:security: WPA2-PSK, phy: bgn, rssi: -50, cipher(pairwise:0x3, group:0x3), pmf:0[0m
+[0;32mI (1224) wifi:pm start, type: 1[0m
+
+[0;32mI (1225) wifi:dp: 1, bi: 102400, li: 3, scale listen interval from 307200 us to 307200 us[0m
+[0;32mI (1225) wifi:set rx beacon pti, rx_bcn_pti: 0, bcn_timeout: 25000, mt_pti: 0, mt_time: 10000[0m
+[0;32mI (1226) wifi:AP's beacon interval = 102400 us, DTIM period = 3[0m
+[0;32mI (2272) esp_netif_handlers: sta ip: 192.168.137.73, mask: 255.255.255.0, gw: 192.168.137.1[0m
+[0;32mI (2273) sender: WiFi connected, got IP: 192.168.137.73[0m
+[0;32mI (3468) sender: SNTP synchronized with pool.ntp.org; frame timestamps are Unix epoch microseconds[0m
+[0;32mI (3469) sender: Phase 5 calibrated sender: transport=udp, payload=1024 bytes, frame=1038 bytes, fps=100, timeout=100 ms, timestamp=epoch_us[0m
+[0;33mW (3470) sender: Failed to set UDP SO_SNDBUF=65536: errno 109[0m
+[0;32mI (3470) sender: UDP target ready: 192.168.137.1:5001[0m
+[0;32mI (4155) wifi:<ba-add>idx:0 (ifx:0, ae:19:8e:f9:d8:64), tid:0, ssn:7, winSize:64[0m
+[0;32mI (4472) sender: stats sent=101 dropped=0 total_seq=101 rate=102.0 KiB/s[0m
+[0;32mI (5482) sender: stats sent=101 dropped=0 total_seq=202 rate=101.5 KiB/s[0m
+[0;32mI (6492) sender: stats sent=101 dropped=0 total_seq=303 rate=101.4 KiB/s[0m
+[0;32mI (7502) sender: stats sent=101 dropped=0 total_seq=404 rate=101.4 KiB/s[0m
+[0;32mI (8512) sender: stats sent=101 dropped=0 total_seq=505 rate=101.5 KiB/s[0m
+[0;32mI (9522) sender: stats sent=101 dropped=0 total_seq=606 rate=101.4 KiB/s[0m
+[0;32mI (10532) sender: stats sent=101 dropped=0 total_seq=707 rate=101.4 KiB/s[0m
+[0;32mI (11542) sender: stats sent=101 dropped=0 total_seq=808 rate=101.5 KiB/s[0m
+[0;32mI (12552) sender: stats sent=101 dropped=0 total_seq=909 rate=101.5 KiB/s[0m
+[0;32mI (13562) sender: stats sent=101 dropped=0 total_seq=1010 rate=101.4 KiB/s[0m
+[0;32mI (14572) sender: stats sent=101 dropped=0 total_seq=1111 rate=101.4 KiB/s[0m
+[0;32mI (15582) sender: stats sent=101 dropped=0 total_seq=1212 rate=101.5 KiB/s[0m
+[0;32mI (16592) sender: stats sent=101 dropped=0 total_seq=1313 rate=101.5 KiB/s[0m
+[0;32mI (17602) sender: stats sent=101 dropped=0 total_seq=1414 rate=101.4 KiB/s[0m
+[0;32mI (18612) sender: stats sent=101 dropped=0 total_seq=1515 rate=101.5 KiB/s[0m
+[0;32mI (19622) sender: stats sent=101 dropped=0 total_seq=1616 rate=101.4 KiB/s[0m
+[0;32mI (20632) sender: stats sent=101 dropped=0 total_seq=1717 rate=101.5 KiB/s[0m
+[0;32mI (21642) sender: stats sent=101 dropped=0 total_seq=1818 rate=101.4 KiB/s[0m
+[0;32mI (22652) sender: stats sent=101 dropped=0 total_seq=1919 rate=101.4 KiB/s[0m
+[0;32mI (23662) sender: stats sent=101 dropped=0 total_seq=2020 rate=101.5 KiB/s[0m
+[0;32mI (24672) sender: stats sent=101 dropped=0 total_seq=2121 rate=101.4 KiB/s[0m
+[0;32mI (25682) sender: stats sent=101 dropped=0 total_seq=2222 rate=101.5 KiB/s[0m
+[0;32mI (26692) sender: stats sent=101 dropped=0 total_seq=2323 rate=101.5 KiB/s[0m
+[0;32mI (27702) sender: stats sent=101 dropped=0 total_seq=2424 rate=101.4 KiB/s[0m
+[0;32mI (28712) sender: stats sent=101 dropped=0 total_seq=2525 rate=101.4 KiB/s[0m
+[0;32mI (29722) sender: stats sent=101 dropped=0 total_seq=2626 rate=101.4 KiB/s[0m
+[0;32mI (30732) sender: stats sent=101 dropped=0 total_seq=2727 rate=101.5 KiB/s[0m
+[0;32mI (31742) sender: stats sent=101 dropped=0 total_seq=2828 rate=101.5 KiB/s[0m
+[0;32mI (32752) sender: stats sent=101 dropped=0 total_seq=2929 rate=101.5 KiB/s[0m
+[0;32mI (33762) sender: stats sent=101 dropped=0 total_seq=3030 rate=101.5 KiB/s[0m
+[0;32mI (34772) sender: stats sent=101 dropped=0 total_seq=3131 rate=101.4 KiB/s[0m
+[0;32mI (35782) sender: stats sent=101 dropped=0 total_seq=3232 rate=101.5 KiB/s[0m
+[0;32mI (36792) sender: stats sent=101 dropped=0 total_seq=3333 rate=101.4 KiB/s[0m
+[0;32mI (37802) sender: stats sent=101 dropped=0 total_seq=3434 rate=101.5 KiB/s[0m
+[0;32mI (38812) sender: stats sent=101 dropped=0 total_seq=3535 rate=101.4 KiB/s[0m
+[0;32mI (39822) sender: stats sent=101 dropped=0 total_seq=3636 rate=101.5 KiB/s[0m
+[0;32mI (40832) sender: stats sent=101 dropped=0 total_seq=3737 rate=101.5 KiB/s[0m
+[0;32mI (41842) sender: stats sent=101 dropped=0 total_seq=3838 rate=101.4 KiB/s[0m
+[0;32mI (42852) sender: stats sent=101 dropped=0 total_seq=3939 rate=101.5 KiB/s[0m
+[0;32mI (43862) sender: stats sent=101 dropped=0 total_seq=4040 rate=101.4 KiB/s[0m
+[0;32mI (44872) sender: stats sent=101 dropped=0 total_seq=4141 rate=101.5 KiB/s[0m
+[0;32mI (45882) sender: stats sent=101 dropped=0 total_seq=4242 rate=101.5 KiB/s[0m
+[0;32mI (46892) sender: stats sent=101 dropped=0 total_seq=4343 rate=101.4 KiB/s[0m
+[0;32mI (47902) sender: stats sent=101 dropped=0 total_seq=4444 rate=101.5 KiB/s[0m
+[0;32mI (48912) sender: stats sent=101 dropped=0 total_seq=4545 rate=101.4 KiB/s[0m
+[0;32mI (49922) sender: stats sent=101 dropped=0 total_seq=4646 rate=101.4 KiB/s[0m
+[0;32mI (50932) sender: stats sent=101 dropped=0 total_seq=4747 rate=101.4 KiB/s[0m
+[0;32mI (51942) sender: stats sent=101 dropped=0 total_seq=4848 rate=101.4 KiB/s[0m
+[0;32mI (52952) sender: stats sent=101 dropped=0 total_seq=4949 rate=101.4 KiB/s[0m
+[0;32mI (53962) sender: stats sent=101 dropped=0 total_seq=5050 rate=101.4 KiB/s[0m
+[0;32mI (54972) sender: stats sent=101 dropped=0 total_seq=5151 rate=101.4 KiB/s[0m
+[0;32mI (55982) sender: stats sent=101 dropped=0 total_seq=5252 rate=101.4 KiB/s[0m
+[0;32mI (56992) sender: stats sent=101 dropped=0 total_seq=5353 rate=101.5 KiB/s[0m
+[0;32mI (58002) sender: stats sent=101 dropped=0 total_seq=5454 rate=101.5 KiB/s[0m
+[0;32mI (59012) sender: stats sent=101 dropped=0 total_seq=5555 rate=101.4 KiB/s[0m
+[0;32mI (60022) sender: stats sent=101 dropped=0 total_seq=5656 rate=101.4 KiB/s[0m
+[0;32mI (61032) sender: stats sent=101 dropped=0 total_seq=5757 rate=101.4 KiB/s[0m
+[0;32mI (62042) sender: stats sent=101 dropped=0 total_seq=5858 rate=101.5 KiB/s[0m
+[0;32mI (63052) sender: stats sent=101 dropped=0 total_seq=5959 rate=101.4 KiB/s[0m
+[0;32mI (64062) sender: stats sent=101 dropped=0 total_seq=6060 rate=101.4 KiB/s[0m
+[0;32mI (65072) sender: stats sent=101 dropped=0 total_seq=6161 rate=101.5 KiB/s[0m
+[0;32mI (66082) sender: stats sent=101 dropped=0 total_seq=6262 rate=101.4 KiB/s[0m
+[0;32mI (67092) sender: stats sent=101 dropped=0 total_seq=6363 rate=101.4 KiB/s[0m
+[0;32mI (68102) sender: stats sent=101 dropped=0 total_seq=6464 rate=101.5 KiB/s[0m
+[0;32mI (69112) sender: stats sent=101 dropped=0 total_seq=6565 rate=101.4 KiB/s[0m
+[0;32mI (70122) sender: stats sent=101 dropped=0 total_seq=6666 rate=101.4 KiB/s[0m
+[0;32mI (71132) sender: stats sent=101 dropped=0 total_seq=6767 rate=101.5 KiB/s[0m
+[0;32mI (72142) sender: stats sent=101 dropped=0 total_seq=6868 rate=101.4 KiB/s[0m
+[0;32mI (73152) sender: stats sent=101 dropped=0 total_seq=6969 rate=101.5 KiB/s[0m
+[0;32mI (74162) sender: stats sent=101 dropped=0 total_seq=7070 rate=101.4 KiB/s[0m
+[0;32mI (75172) sender: stats sent=101 dropped=0 total_seq=7171 rate=101.5 KiB/s[0m
+[0;32mI (76182) sender: stats sent=101 dropped=0 total_seq=7272 rate=101.5 KiB/s[0m
+[0;32mI (77192) sender: stats sent=101 dropped=0 total_seq=7373 rate=101.5 KiB/s[0m
+[0;32mI (78202) sender: stats sent=101 dropped=0 total_seq=7474 rate=101.5 KiB/s[0m
+[0;32mI (79212) sender: stats sent=101 dropped=0 total_seq=7575 rate=101.5 KiB/s[0m
+[0;32mI (80222) sender: stats sent=101 dropped=0 total_seq=7676 rate=101.4 KiB/s[0m
+[0;32mI (81232) sender: stats sent=101 dropped=0 total_seq=7777 rate=101.5 KiB/s[0m
+[0;32mI (82242) sender: stats sent=101 dropped=0 total_seq=7878 rate=101.5 KiB/s[0m
+[0;32mI (83252) sender: stats sent=101 dropped=0 total_seq=7979 rate=101.4 KiB/s[0m
+[0;32mI (84262) sender: stats sent=101 dropped=0 total_seq=8080 rate=101.4 KiB/s[0m
+[0;32mI (85272) sender: stats sent=101 dropped=0 total_seq=8181 rate=101.5 KiB/s[0m
+[0;32mI (86282) sender: stats sent=101 dropped=0 total_seq=8282 rate=101.4 KiB/s[0m
+[0;32mI (87292) sender: stats sent=101 dropped=0 total_seq=8383 rate=101.5 KiB/s[0m
+[0;32mI (88302) sender: stats sent=101 dropped=0 total_seq=8484 rate=101.4 KiB/s[0m
+[0;32mI (89312) sender: stats sent=101 dropped=0 total_seq=8585 rate=101.5 KiB/s[0m
+[0;32mI (90322) sender: stats sent=101 dropped=0 total_seq=8686 rate=101.5 KiB/s[0m
+[0;32mI (91332) sender: stats sent=101 dropped=0 total_seq=8787 rate=101.4 KiB/s[0m
+[0;32mI (92342) sender: stats sent=101 dropped=0 total_seq=8888 rate=101.5 KiB/s[0m
+[0;32mI (93352) sender: stats sent=101 dropped=0 total_seq=8989 rate=101.5 KiB/s[0m
+[0;32mI (94362) sender: stats sent=101 dropped=0 total_seq=9090 rate=101.5 KiB/s[0m
+[0;32mI (95372) sender: stats sent=101 dropped=0 total_seq=9191 rate=101.4 KiB/s[0m
+[0;32mI (96382) sender: stats sent=101 dropped=0 total_seq=9292 rate=101.4 KiB/s[0m
+[0;32mI (97392) sender: stats sent=101 dropped=0 total_seq=9393 rate=101.5 KiB/s[0m
+[0;32mI (98402) sender: stats sent=101 dropped=0 total_seq=9494 rate

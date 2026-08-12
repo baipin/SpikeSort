@@ -2,6 +2,8 @@ const state = {
   eidRows: [],
   regionRows: [],
   filteredRows: [],
+  page: 1,
+  pageSize: 50,
 };
 
 const els = {
@@ -21,6 +23,12 @@ const els = {
   detailContent: document.getElementById("detailContent"),
   closeDetail: document.getElementById("closeDetail"),
   downloadFiltered: document.getElementById("downloadFiltered"),
+  pageSizeSelect: document.getElementById("pageSizeSelect"),
+  pageStatus: document.getElementById("pageStatus"),
+  firstPageButton: document.getElementById("firstPageButton"),
+  prevPageButton: document.getElementById("prevPageButton"),
+  nextPageButton: document.getElementById("nextPageButton"),
+  lastPageButton: document.getElementById("lastPageButton"),
   loading: document.getElementById("loading"),
 };
 
@@ -160,12 +168,19 @@ function renderStats(rows) {
 }
 
 function renderTable(rows) {
-  if (!rows.length) {
+  const pageCount = Math.max(1, Math.ceil(rows.length / state.pageSize));
+  state.page = Math.min(Math.max(1, state.page), pageCount);
+  const start = (state.page - 1) * state.pageSize;
+  const pageRows = rows.slice(start, start + state.pageSize);
+
+  renderPagination(rows.length, pageCount, start, pageRows.length);
+
+  if (!pageRows.length) {
     els.resultsBody.innerHTML = `<tr><td class="empty" colspan="9">No matching eid records.</td></tr>`;
     return;
   }
 
-  els.resultsBody.innerHTML = rows
+  els.resultsBody.innerHTML = pageRows
     .map((row) => {
       const regions = splitList(row.brain_region_acronyms);
       const visibleRegions = regions.slice(0, 8).join(", ");
@@ -186,11 +201,29 @@ function renderTable(rows) {
     .join("");
 }
 
-function applyFilters() {
+function renderPagination(totalRows, pageCount, start, shownRows) {
+  const from = totalRows ? start + 1 : 0;
+  const to = start + shownRows;
+  els.pageStatus.textContent = `Page ${state.page} of ${pageCount} - showing ${formatNumber(from)}-${formatNumber(to)} of ${formatNumber(totalRows)}`;
+  els.firstPageButton.disabled = state.page <= 1;
+  els.prevPageButton.disabled = state.page <= 1;
+  els.nextPageButton.disabled = state.page >= pageCount;
+  els.lastPageButton.disabled = state.page >= pageCount;
+}
+
+function applyFilters(options = {}) {
+  if (options.resetPage !== false) {
+    state.page = 1;
+  }
   const rows = sortRows(state.eidRows.filter(rowMatches));
   state.filteredRows = rows;
   renderStats(rows);
   renderTable(rows);
+}
+
+function renderCurrentPage() {
+  renderStats(state.filteredRows);
+  renderTable(state.filteredRows);
 }
 
 function renderDetail(eid) {
@@ -301,6 +334,32 @@ function bindEvents() {
     els.minGoodClusters.value = "";
     els.sortSelect.value = "n_good_clusters_total:desc";
     applyFilters();
+  });
+
+  els.pageSizeSelect.addEventListener("change", () => {
+    state.pageSize = Number(els.pageSizeSelect.value);
+    state.page = 1;
+    renderCurrentPage();
+  });
+
+  els.firstPageButton.addEventListener("click", () => {
+    state.page = 1;
+    renderCurrentPage();
+  });
+
+  els.prevPageButton.addEventListener("click", () => {
+    state.page -= 1;
+    renderCurrentPage();
+  });
+
+  els.nextPageButton.addEventListener("click", () => {
+    state.page += 1;
+    renderCurrentPage();
+  });
+
+  els.lastPageButton.addEventListener("click", () => {
+    state.page = Math.max(1, Math.ceil(state.filteredRows.length / state.pageSize));
+    renderCurrentPage();
   });
 
   els.resultsBody.addEventListener("click", (event) => {

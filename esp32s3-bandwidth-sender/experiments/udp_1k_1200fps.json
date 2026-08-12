@@ -1,0 +1,29 @@
+{
+  "experiment_id": "udp-1k-1200fps-001",
+  "condition_label": "udp-1k-1200fps",
+  "operator": "",
+  "started_at_local": "",
+  "transport": "udp",
+  "application_context": {
+    "workload": "spike_stream_surrogate",
+    "downstream_task": "UDP maximum-throughput search for neural stream transport",
+    "notes": "Use this overload point to identify the packet-loss slope beyond the stable UDP operating region."
+  },
+  "network": {
+    "ssid": "Dennis",
+    "receiver_ip": "192.168.137.1",
+    "receiver_port": 5001,
+    "hotspot_device": "Windows laptop mobile hotspot"
+  },
+  "stream": {
+    "transport": "WiFi + UDP",
+    "target_fps": 1200,
+    "payload_bytes": 1024,
+    "frame_bytes": 1038,
+    "nominal_rate_kib_s": 1216.41
+  },
+  "condition": {
+    "duration_min": 10,
+    "purpose": "overload UDP throughput point"
+  }
+}

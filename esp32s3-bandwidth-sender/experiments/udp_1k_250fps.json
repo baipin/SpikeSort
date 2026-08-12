@@ -1,0 +1,29 @@
+{
+  "experiment_id": "udp-1k-250fps-001",
+  "condition_label": "udp-1k-250fps",
+  "operator": "",
+  "started_at_local": "",
+  "transport": "udp",
+  "application_context": {
+    "workload": "spike_stream_surrogate",
+    "downstream_task": "UDP throughput sweep for neural stream transport",
+    "notes": "Increase packet cadence while keeping datagrams close to MTU-safe size."
+  },
+  "network": {
+    "ssid": "Dennis",
+    "receiver_ip": "192.168.137.1",
+    "receiver_port": 5001,
+    "hotspot_device": "Windows laptop mobile hotspot"
+  },
+  "stream": {
+    "transport": "WiFi + UDP",
+    "target_fps": 250,
+    "payload_bytes": 1024,
+    "frame_bytes": 1038,
+    "nominal_rate_kib_s": 253.42
+  },
+  "condition": {
+    "duration_min": 10,
+    "purpose": "moderate UDP throughput point"
+  }
+}

@@ -172,33 +172,56 @@ static esp_err_t wifi_init_sta(void)
 static void sync_wall_clock_time(void)
 {
 #if CONFIG_BANDWIDTH_SNTP_ENABLE
-    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG(CONFIG_BANDWIDTH_SNTP_SERVER);
-    config.start = true;
+    bool sntp_started = false;
 
-    esp_err_t ret = esp_netif_sntp_init(&config);
-    if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
-        ESP_LOGW(TAG, "SNTP init failed (%s); using monotonic timestamps", esp_err_to_name(ret));
-        wall_clock_time_valid = false;
-        return;
-    }
+    while (true) {
+        if (!sntp_started) {
+            esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG(CONFIG_BANDWIDTH_SNTP_SERVER);
+            config.start = true;
 
-    ret = esp_netif_sntp_sync_wait(pdMS_TO_TICKS(CONFIG_BANDWIDTH_SNTP_SYNC_TIMEOUT_MS));
-    if (ret == ESP_OK) {
-        struct timeval now;
-        gettimeofday(&now, NULL);
-        if (now.tv_sec > 1600000000L) {
-            wall_clock_time_valid = true;
-            ESP_LOGI(TAG,
-                     "SNTP synchronized with %s; frame timestamps are Unix epoch microseconds",
-                     CONFIG_BANDWIDTH_SNTP_SERVER);
-            return;
+            esp_err_t init_ret = esp_netif_sntp_init(&config);
+            if (init_ret == ESP_OK || init_ret == ESP_ERR_INVALID_STATE) {
+                sntp_started = true;
+            } else {
+                ESP_LOGW(TAG, "SNTP init failed (%s)", esp_err_to_name(init_ret));
+#if CONFIG_BANDWIDTH_REQUIRE_SNTP
+                ESP_LOGW(TAG, "SNTP is required for this firmware; retrying in 5 seconds");
+                vTaskDelay(pdMS_TO_TICKS(5000));
+                continue;
+#else
+                ESP_LOGW(TAG, "Using monotonic timestamps");
+                wall_clock_time_valid = false;
+                return;
+#endif
+            }
         }
-    }
 
-    wall_clock_time_valid = false;
-    ESP_LOGW(TAG,
-             "SNTP sync did not complete within %d ms; using monotonic timestamps",
-             CONFIG_BANDWIDTH_SNTP_SYNC_TIMEOUT_MS);
+        const esp_err_t sync_ret = esp_netif_sntp_sync_wait(pdMS_TO_TICKS(CONFIG_BANDWIDTH_SNTP_SYNC_TIMEOUT_MS));
+        if (sync_ret == ESP_OK) {
+            struct timeval now;
+            gettimeofday(&now, NULL);
+            if (now.tv_sec > 1600000000L) {
+                wall_clock_time_valid = true;
+                ESP_LOGI(TAG,
+                         "SNTP synchronized with %s; frame timestamps are Unix epoch microseconds",
+                         CONFIG_BANDWIDTH_SNTP_SERVER);
+                return;
+            }
+        }
+
+        wall_clock_time_valid = false;
+#if CONFIG_BANDWIDTH_REQUIRE_SNTP
+        ESP_LOGW(TAG,
+                 "SNTP sync did not complete within %d ms; waiting before streaming",
+                 CONFIG_BANDWIDTH_SNTP_SYNC_TIMEOUT_MS);
+        vTaskDelay(pdMS_TO_TICKS(5000));
+#else
+        ESP_LOGW(TAG,
+                 "SNTP sync did not complete within %d ms; using monotonic timestamps",
+                 CONFIG_BANDWIDTH_SNTP_SYNC_TIMEOUT_MS);
+        return;
+#endif
+    }
 #else
     wall_clock_time_valid = false;
     ESP_LOGI(TAG, "SNTP disabled; using monotonic timestamps");
@@ -248,6 +271,46 @@ static int connect_tcp_server(void)
     return sock;
 }
 
+static int connect_udp_receiver(void)
+{
+    struct sockaddr_in dest_addr = {
+        .sin_family = AF_INET,
+        .sin_port = htons(CONFIG_BANDWIDTH_SERVER_PORT),
+    };
+
+    if (inet_pton(AF_INET, CONFIG_BANDWIDTH_SERVER_IP, &dest_addr.sin_addr) != 1) {
+        ESP_LOGE(TAG, "Invalid receiver IP: %s", CONFIG_BANDWIDTH_SERVER_IP);
+        return -1;
+    }
+
+    const int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (sock < 0) {
+        ESP_LOGE(TAG, "Unable to create UDP socket: errno %d", errno);
+        return -1;
+    }
+
+    if (CONFIG_BANDWIDTH_SOCKET_SNDBUF > 0) {
+        const int send_buffer_bytes = CONFIG_BANDWIDTH_SOCKET_SNDBUF;
+        if (setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &send_buffer_bytes, sizeof(send_buffer_bytes)) != 0) {
+            ESP_LOGW(TAG, "Failed to set UDP SO_SNDBUF=%d: errno %d", send_buffer_bytes, errno);
+        }
+    }
+
+    if (connect(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr)) != 0) {
+        ESP_LOGE(TAG, "UDP connect failed: errno %d", errno);
+        close(sock);
+        return -1;
+    }
+
+    const int flags = fcntl(sock, F_GETFL, 0);
+    if (flags >= 0 && fcntl(sock, F_SETFL, flags | O_NONBLOCK) != 0) {
+        ESP_LOGW(TAG, "Failed to set UDP socket non-blocking: errno %d", errno);
+    }
+
+    ESP_LOGI(TAG, "UDP target ready: %s:%d", CONFIG_BANDWIDTH_SERVER_IP, CONFIG_BANDWIDTH_SERVER_PORT);
+    return sock;
+}
+
 static send_frame_result_t send_frame_with_timeout(int sock, const uint8_t *frame, size_t frame_len)
 {
     size_t sent_total = 0;
@@ -267,6 +330,12 @@ static send_frame_result_t send_frame_with_timeout(int sock, const uint8_t *fram
             vTaskDelay(pdMS_TO_TICKS(1));
             continue;
         }
+
+#if CONFIG_BANDWIDTH_TRANSPORT_UDP
+        if (sent < 0 && sent_total == 0 && (errno == ENOBUFS || errno == ENOMEM)) {
+            return SEND_FRAME_DROPPED;
+        }
+#endif
 
         ESP_LOGE(TAG, "send failed after %u/%u bytes: errno %d",
                  (unsigned)sent_total,
@@ -313,15 +382,29 @@ static void sender_task(void *arg)
     int64_t next_frame_us = stats_start_us;
 
     ESP_LOGI(TAG,
-             "Phase 5 calibrated sender: payload=%d bytes, frame=%u bytes, fps=%d, timeout=%d ms, timestamp=%s",
+             "Phase 5 calibrated sender: transport=%s, payload=%d bytes, frame=%u bytes, mode=%s, fps=%d, timeout=%d ms, timestamp=%s",
+#if CONFIG_BANDWIDTH_TRANSPORT_UDP
+             "udp",
+#else
+             "tcp",
+#endif
              CONFIG_BANDWIDTH_PAYLOAD_BYTES,
              (unsigned)FRAME_BYTES,
+#if CONFIG_BANDWIDTH_UNLIMITED_SEND
+             "unlimited",
+#else
+             "paced",
+#endif
              CONFIG_BANDWIDTH_FPS,
              CONFIG_BANDWIDTH_SEND_TIMEOUT_MS,
              wall_clock_time_valid ? "epoch_us" : "monotonic_us");
 
     while (true) {
+#if CONFIG_BANDWIDTH_TRANSPORT_UDP
+        int sock = connect_udp_receiver();
+#else
         int sock = connect_tcp_server();
+#endif
         if (sock < 0) {
             vTaskDelay(pdMS_TO_TICKS(2000));
             continue;
@@ -329,12 +412,14 @@ static void sender_task(void *arg)
         next_frame_us = esp_timer_get_time();
 
         while (true) {
+#if !CONFIG_BANDWIDTH_UNLIMITED_SEND
             const int64_t now_us = esp_timer_get_time();
             if (now_us < next_frame_us) {
                 const int64_t sleep_ms = (next_frame_us - now_us) / 1000;
                 vTaskDelay(pdMS_TO_TICKS(sleep_ms > 0 ? sleep_ms : 1));
                 continue;
             }
+#endif
 
             fill_frame(frame, seq);
             const send_frame_result_t send_result = send_frame_with_timeout(sock, frame, FRAME_BYTES);
@@ -351,7 +436,11 @@ static void sender_task(void *arg)
             }
 
             seq++;
+#if CONFIG_BANDWIDTH_UNLIMITED_SEND
+            next_frame_us = esp_timer_get_time();
+#else
             next_frame_us += FRAME_INTERVAL_US;
+#endif
 
             const int64_t stats_elapsed_us = esp_timer_get_time() - stats_start_us;
             if (stats_elapsed_us >= 1000000) {
@@ -367,9 +456,17 @@ static void sender_task(void *arg)
             }
         }
 
+#if CONFIG_BANDWIDTH_TRANSPORT_TCP
         shutdown(sock, SHUT_RDWR);
+#endif
         close(sock);
-        ESP_LOGW(TAG, "TCP disconnected, retrying in 2 seconds");
+        ESP_LOGW(TAG, "%s disconnected, retrying in 2 seconds",
+#if CONFIG_BANDWIDTH_TRANSPORT_UDP
+                 "UDP socket"
+#else
+                 "TCP"
+#endif
+        );
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }

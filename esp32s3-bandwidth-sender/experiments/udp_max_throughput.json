@@ -1,0 +1,31 @@
+{
+  "experiment_id": "udp-max-throughput-001",
+  "condition_label": "udp-max-throughput",
+  "operator": "",
+  "started_at_local": "",
+  "transport": "udp",
+  "target_fps": "unlimited",
+  "application_context": {
+    "workload": "spike_stream_surrogate",
+    "downstream_task": "UDP maximum-throughput search for neural stream transport",
+    "notes": "The ESP32-S3 sender disables FPS pacing and sends numbered 1 KiB UDP datagrams as fast as the socket path allows."
+  },
+  "network": {
+    "ssid": "Dennis",
+    "receiver_ip": "192.168.137.1",
+    "receiver_port": 5001,
+    "hotspot_device": "Windows laptop mobile hotspot"
+  },
+  "stream": {
+    "transport": "WiFi + UDP",
+    "target_fps": "unlimited",
+    "payload_bytes": 1024,
+    "frame_bytes": 1038,
+    "nominal_rate_kib_s": null,
+    "pacing": "disabled"
+  },
+  "condition": {
+    "duration_min": 2,
+    "purpose": "unpaced UDP maximum-throughput measurement with per-packet sequence logging"
+  }
+}

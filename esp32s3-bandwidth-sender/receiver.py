@@ -13,7 +13,7 @@ import time
 import urllib.error
 import urllib.request
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -186,9 +186,11 @@ class CaptureStore:
         self.run_id = self.run_metadata.get("experiment_id") or started_at
         self.frame_csv_path = output_dir / f"frames_{started_at}.csv"
         self.metrics_csv_path = output_dir / f"metrics_{started_at}.csv"
+        self.packet_log_path = output_dir / f"packet_log_{started_at}.csv"
         self.sqlite_path = output_dir / "bandwidth_capture.sqlite3"
         self.frame_csv_file = self.frame_csv_path.open("w", newline="", encoding="utf-8")
         self.metrics_csv_file = self.metrics_csv_path.open("w", newline="", encoding="utf-8")
+        self.packet_log_file = self.packet_log_path.open("w", newline="", encoding="utf-8")
         self.frame_writer = csv.DictWriter(
             self.frame_csv_file,
             fieldnames=[
@@ -224,18 +226,48 @@ class CaptureStore:
             ],
             extrasaction="ignore",
         )
+        self.packet_log_writer = csv.DictWriter(
+            self.packet_log_file,
+            fieldnames=[
+                "seq",
+                "recv_time_utc_ms",
+                "recv_epoch_ms",
+                "recv_time_ns",
+                "send_ts_us",
+                "timestamp_mode",
+                "latency_ms",
+            ],
+            extrasaction="ignore",
+        )
         self.frame_writer.writeheader()
         self.metrics_writer.writeheader()
+        self.packet_log_writer.writeheader()
         self.db = sqlite3.connect(self.sqlite_path)
         self._init_db()
 
     def close(self):
         self.frame_csv_file.close()
         self.metrics_csv_file.close()
+        self.packet_log_file.close()
         self.db.close()
 
     def record_frame(self, row):
         self.frame_writer.writerow(row)
+        recv_epoch_ms = row["recv_time_ns"] // 1_000_000
+        self.packet_log_writer.writerow(
+            {
+                "seq": row["seq"],
+                "recv_time_utc_ms": datetime.fromtimestamp(
+                    recv_epoch_ms / 1000.0,
+                    tz=timezone.utc,
+                ).isoformat(timespec="milliseconds"),
+                "recv_epoch_ms": recv_epoch_ms,
+                "recv_time_ns": row["recv_time_ns"],
+                "send_ts_us": row["send_ts_us"],
+                "timestamp_mode": row["timestamp_mode"],
+                "latency_ms": row["latency_ms"],
+            }
+        )
         self.db.execute(
             """
             INSERT INTO frames
@@ -258,6 +290,7 @@ class CaptureStore:
         self.metrics_writer.writerow(row)
         self.frame_csv_file.flush()
         self.metrics_csv_file.flush()
+        self.packet_log_file.flush()
         self.db.execute(
             """
             INSERT INTO metrics

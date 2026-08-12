@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+G:/ACADEMIC/esp32s3-bandwidth-sender/build_udp_1k_500fps/CMakeFiles/bootloader
+G:/ACADEMIC/esp32s3-bandwidth-sender/build_udp_1k_500fps/CMakeFiles/bootloader.rule
+G:/ACADEMIC/esp32s3-bandwidth-sender/build_udp_1k_500fps/CMakeFiles/bootloader-complete.rule
+G:/ACADEMIC/esp32s3-bandwidth-sender/build_udp_1k_500fps/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+G:/ACADEMIC/esp32s3-bandwidth-sender/build_udp_1k_500fps/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+G:/ACADEMIC/esp32s3-bandwidth-sender/build_udp_1k_500fps/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+G:/ACADEMIC/esp32s3-bandwidth-sender/build_udp_1k_500fps/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+G:/ACADEMIC/esp32s3-bandwidth-sender/build_udp_1k_500fps/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+G:/ACADEMIC/esp32s3-bandwidth-sender/build_udp_1k_500fps/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+G:/ACADEMIC/esp32s3-bandwidth-sender/build_udp_1k_500fps/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule

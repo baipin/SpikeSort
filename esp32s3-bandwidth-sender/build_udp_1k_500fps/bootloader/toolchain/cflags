@@ -1,0 +1,5 @@
+"-specs=G:/ACADEMIC/esp32s3-bandwidth-sender/build_udp_1k_500fps/bootloader/specs/picolibc.specs"
+-mlongcalls
+-fno-builtin-memcpy
+-fno-builtin-memset
+-fno-builtin-bzero

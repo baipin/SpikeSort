@@ -1,0 +1,25 @@
+Command: cmake -G Ninja -B G:\ACADEMIC\esp32s3-bandwidth-sender\build_udp_1k_100fps -DPYTHON_DEPS_CHECKED=1 -DPYTHON=E:\Espressif\tools\python\v6.0.2\venv\Scripts\python.exe -DESP_PLATFORM=1 -DSDKCONFIG_DEFAULTS=sdkconfig.defaults.udp_1k_100fps -DCCACHE_ENABLE=True G:\ACADEMIC\esp32s3-bandwidth-sender
+Loading defaults file G:/ACADEMIC/esp32s3-bandwidth-sender/sdkconfig.defaults.udp_1k_100fps...
+Configuration Report                                                           
++-----------------------------------------------------------------------------+
+|  Parser Version: 1                                                          |
+|  Verbosity: default                                                         |
+|  Defaults policy: sdkconfig                                                 |
+|  Status: Finished with notifications                                        |
+|                                                                             |
+| Miscellaneous                                                               |
+| +-------------------------------------------------------------------------+ |
+| | * BT_NIMBLE_MESH_PROVISIONER (defined at                                | |
+| | E:/esp/v6.0.2/esp-idf/components/bt/host/nimble/Kconfig.in:1421):       | |
+| | 'default 0' is not a valid bool value (only 'y' and 'n' are allowed).   | |
+| | Value is treated as 'n'.                                                | |
+| | * FATFS_PRINT_LLI (defined at                                           | |
+| | E:/esp/v6.0.2/esp-idf/components/fatfs/Kconfig:230): 'default 0' is not | |
+| | a valid bool value (only 'y' and 'n' are allowed). Value is treated as  | |
+| | 'n'.                                                                    | |
+| | * FATFS_PRINT_FLOAT (defined at                                         | |
+| | E:/esp/v6.0.2/esp-idf/components/fatfs/Kconfig:235): 'default 0' is not | |
+| | a valid bool value (only 'y' and 'n' are allowed). Value is treated as  | |
+| | 'n'.                                                                    | |
+| +-------------------------------------------------------------------------+ |
++-----------------------------------------------------------------------------+

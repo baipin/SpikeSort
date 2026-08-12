@@ -1,0 +1,29 @@
+{
+  "experiment_id": "udp-1k-500fps-001",
+  "condition_label": "udp-1k-500fps",
+  "operator": "",
+  "started_at_local": "",
+  "transport": "udp",
+  "application_context": {
+    "workload": "spike_stream_surrogate",
+    "downstream_task": "UDP maximum-throughput search for neural stream transport",
+    "notes": "This point pushes ESP32-S3 UDP packet cadence while measuring receiver sequence gaps."
+  },
+  "network": {
+    "ssid": "Dennis",
+    "receiver_ip": "192.168.137.1",
+    "receiver_port": 5001,
+    "hotspot_device": "Windows laptop mobile hotspot"
+  },
+  "stream": {
+    "transport": "WiFi + UDP",
+    "target_fps": 500,
+    "payload_bytes": 1024,
+    "frame_bytes": 1038,
+    "nominal_rate_kib_s": 506.84
+  },
+  "condition": {
+    "duration_min": 10,
+    "purpose": "high UDP throughput point"
+  }
+}

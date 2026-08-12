@@ -21,7 +21,8 @@ def read_csv_rows(path):
         return list(csv.DictReader(handle))
 
 
-def rel(path, base=REPORTS_DIR):
+def rel(path, base=None):
+    base = REPORTS_DIR if base is None else base
     return Path(path).resolve().relative_to(base.resolve()).as_posix()
 
 
@@ -44,13 +45,14 @@ def figures_for_stamp(stamp):
     ]
 
 
-def comparison_images_for_stamp(stamp):
+def comparison_images_for_stamp(stamp, search_dir=None):
     comparison_dir = REPORTS_DIR / "comparisons"
     if not comparison_dir.exists():
         return []
+    search_root = Path(search_dir) if search_dir else comparison_dir
     return [
         rel(path)
-        for path in sorted(comparison_dir.glob(f"*_{stamp}.png"))
+        for path in sorted(search_root.glob(f"*_{stamp}.png"))
     ]
 
 
@@ -80,15 +82,15 @@ def collect_comparisons():
         return []
 
     comparisons = []
-    for csv_path in sorted(comparison_dir.glob("comparison_summary_*.csv"), reverse=True):
+    for csv_path in sorted(comparison_dir.rglob("comparison_summary_*.csv"), reverse=True):
         stamp = stamp_from_name(csv_path, "comparison_summary")
-        md_path = comparison_dir / f"comparison_report_{stamp}.md"
+        md_path = csv_path.parent / f"comparison_report_{stamp}.md"
         comparisons.append(
             {
                 "stamp": stamp,
                 "csvPath": rel(csv_path),
                 "reportPath": rel(md_path) if md_path.exists() else "",
-                "images": comparison_images_for_stamp(stamp),
+                "images": comparison_images_for_stamp(stamp, csv_path.parent),
                 "markdown": md_path.read_text(encoding="utf-8") if md_path.exists() else "",
                 "rows": read_csv_rows(csv_path),
             }

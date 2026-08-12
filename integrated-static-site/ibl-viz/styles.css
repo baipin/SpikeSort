@@ -145,6 +145,57 @@ select {
   border-bottom: 1px solid var(--line);
 }
 
+.pagination {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+  background: #fbfcfe;
+}
+
+.page-size label {
+  display: grid;
+  grid-template-columns: auto 86px;
+  gap: 8px;
+  align-items: center;
+}
+
+.page-size label span,
+.page-status {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.page-status {
+  text-align: center;
+  text-transform: none;
+}
+
+.page-buttons {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.page-buttons button {
+  min-width: 64px;
+}
+
+button:disabled {
+  border-color: var(--line);
+  background: #eef2f6;
+  color: #98a2b3;
+  cursor: not-allowed;
+}
+
+button:disabled:hover {
+  background: #eef2f6;
+}
+
 .table-wrap {
   overflow: auto;
   max-height: calc(100vh - 300px);
@@ -331,8 +382,26 @@ tbody tr:hover {
   }
 
   .controls,
-  .stats {
+  .stats,
+  .pagination {
     grid-template-columns: 1fr;
+  }
+
+  .page-size label {
+    grid-template-columns: 1fr;
+  }
+
+  .page-status {
+    text-align: left;
+  }
+
+  .page-buttons {
+    justify-content: stretch;
+  }
+
+  .page-buttons button {
+    flex: 1;
+    min-width: 0;
   }
 
   .table-wrap {

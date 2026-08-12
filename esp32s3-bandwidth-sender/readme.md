@@ -236,6 +236,50 @@ python tools\compare_reports.py --summaries reports\bandwidth_summary_*.csv --ou
 
 The latest multi-condition short validation is summarized in `STAGE6_EXPERIMENTS_AND_REPORTING.md`. The generated comparison report and figures are under `reports/comparisons/`.
 
+## UDP Packet-Loss Experiments
+
+The firmware can also be built in UDP mode for packet-loss and maximum-throughput sweeps. UDP sends one numbered frame per datagram, and `udp_receiver.py` estimates loss from sequence gaps.
+
+Example receiver command:
+
+```powershell
+python -u udp_receiver.py --manifest experiments\udp_1k_250fps.json --experiment-id udp-1k-250fps-001 --condition udp-1k-250fps --payload-bytes 1024 --target-fps 250
+```
+
+The matching firmware configuration must use:
+
+```text
+CONFIG_BANDWIDTH_TRANSPORT_UDP=y
+CONFIG_BANDWIDTH_PAYLOAD_BYTES=1024
+CONFIG_BANDWIDTH_FPS=250
+```
+
+Build it with a separate build directory, for example:
+
+```powershell
+idf.py -B build_udp_1k_250fps -DSDKCONFIG_DEFAULTS=sdkconfig.defaults.udp_1k_250fps build flash monitor
+```
+
+See `STAGE6_EXPERIMENTS_AND_REPORTING.md` for the full UDP sweep matrix and reporting commands.
+
+## Visualize UDP Packet Logs
+
+For UDP maximum-throughput experiments, `udp_receiver.py` writes a packet-level CSV log under the matching capture folder. Each row records one received packet with its sequence number and receive timestamp. The visualization helper can turn this raw log into PNG figures:
+
+```powershell
+python tools\visualize_packet_log.py captures\udp_max_throughput_20260812_130124\packet_log_20260812_130127.csv --out-dir captures\udp_max_throughput_20260812_130124\figures
+```
+
+For the current run, this generates:
+
+```text
+captures\udp_max_throughput_20260812_130124\figures\packet_log_20260812_130127_overview.png
+captures\udp_max_throughput_20260812_130124\figures\packet_log_20260812_130127_timing.png
+captures\udp_max_throughput_20260812_130124\figures\packet_log_20260812_130127_latency.png
+```
+
+The overview figure shows received packet rate, received throughput, missing sequence numbers, loss percentage, and sequence progression over time. The timing figure shows packet inter-arrival intervals. The latency figure is generated when the packet log contains usable sender timestamps.
+
 ## Browse Reports In HTML
 
 Open `reports/index.html` in a browser to view generated Markdown reports, figures, key metrics, and selected-report comparisons.

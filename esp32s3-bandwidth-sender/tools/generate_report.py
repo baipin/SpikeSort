@@ -36,6 +36,15 @@ def fmt(value, digits=3, suffix=""):
     return f"{value:.{digits}f}{suffix}"
 
 
+def parse_optional_float(value):
+    if value in (None, "", "None", "n/a", "unlimited"):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def table_exists(db, table):
     row = db.execute(
         "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
@@ -77,6 +86,8 @@ def load_latest_db_metadata(db):
 
 def quality_gates(summary):
     gates = []
+    target_fps = parse_optional_float(summary.get("target_fps"))
+    target_rate_kib_s = parse_optional_float(summary.get("target_rate_kib_s"))
 
     def add(name, passed, value, criterion):
         gates.append(
@@ -90,8 +101,10 @@ def quality_gates(summary):
 
     add("CRC / parser integrity", summary["crc_errors_total"] == 0, summary["crc_errors_total"], "crc_errors == 0")
     add("Application loss", (summary["loss_rate_max"] or 0.0) <= 0.001, fmt((summary["loss_rate_max"] or 0.0) * 100, 4, "%"), "max loss <= 0.1%")
-    add("Mean frame rate", summary["fps_mean"] is not None and summary["fps_mean"] >= TARGET_FPS * 0.95, fmt(summary["fps_mean"], 2), "mean fps >= 95% target")
-    add("Mean throughput", summary["rate_kib_s_mean"] is not None and summary["rate_kib_s_mean"] >= TARGET_RATE_KIB_S * 0.95, fmt(summary["rate_kib_s_mean"], 2, " KiB/s"), "mean throughput >= 95% target")
+    if target_fps is not None:
+        add("Mean frame rate", summary["fps_mean"] is not None and summary["fps_mean"] >= target_fps * 0.95, fmt(summary["fps_mean"], 2), "mean fps >= 95% target")
+    if target_rate_kib_s is not None:
+        add("Mean throughput", summary["rate_kib_s_mean"] is not None and summary["rate_kib_s_mean"] >= target_rate_kib_s * 0.95, fmt(summary["rate_kib_s_mean"], 2, " KiB/s"), "mean throughput >= 95% target")
     add("Latency availability", summary["latency_count"] > 0, summary["latency_count"], "SNTP latency samples present")
     return gates
 
@@ -286,6 +299,8 @@ def write_plots(summary, db_path, out_dir, stamp, last_minutes=None):
     series = load_metric_series(db_path, last_minutes)
     if not series:
         return []
+    target_fps = parse_optional_float(summary.get("target_fps"))
+    target_rate_kib_s = parse_optional_float(summary.get("target_rate_kib_s"))
 
     figure_dir = out_dir / "figures"
     figure_dir.mkdir(parents=True, exist_ok=True)
@@ -295,13 +310,15 @@ def write_plots(summary, db_path, out_dir, stamp, last_minutes=None):
     fig.suptitle("ESP32-S3 Neural Stream Metrics", fontsize=14, fontweight="bold")
 
     axes[0, 0].plot(t, [row["rate_kib_s"] for row in series], color="#1f77b4", linewidth=1.8, label="observed")
-    axes[0, 0].axhline(TARGET_RATE_KIB_S, color="#444444", linestyle="--", linewidth=1.0, label="target")
+    if target_rate_kib_s is not None:
+        axes[0, 0].axhline(target_rate_kib_s, color="#444444", linestyle="--", linewidth=1.0, label="target")
     axes[0, 0].set_title("Throughput")
     axes[0, 0].set_ylabel("KiB/s")
     axes[0, 0].legend(loc="best", fontsize=8)
 
     axes[0, 1].plot(t, [row["fps"] for row in series], color="#2ca02c", linewidth=1.8)
-    axes[0, 1].axhline(TARGET_FPS, color="#444444", linestyle="--", linewidth=1.0)
+    if target_fps is not None:
+        axes[0, 1].axhline(target_fps, color="#444444", linestyle="--", linewidth=1.0)
     axes[0, 1].set_title("Frame Rate")
     axes[0, 1].set_ylabel("fps")
 
@@ -363,6 +380,15 @@ def attach_manifest_fields(summary, manifest):
     condition = metadata.get("condition") if isinstance(metadata.get("condition"), dict) else {}
     summary["experiment_id"] = metadata.get("experiment_id", "")
     summary["condition_label"] = metadata.get("condition_label", "")
+    summary["transport"] = metadata.get("transport", metadata.get("stream", {}).get("transport", ""))
+    summary["payload_bytes"] = metadata.get("payload_bytes", metadata.get("stream", {}).get("payload_bytes", ""))
+    summary["frame_bytes"] = metadata.get("frame_bytes", metadata.get("stream", {}).get("frame_bytes", ""))
+    summary["target_fps"] = metadata.get("target_fps", metadata.get("stream", {}).get("target_fps", ""))
+    target_fps = parse_optional_float(summary["target_fps"])
+    if summary["frame_bytes"] not in ("", None) and target_fps is not None:
+        summary["target_rate_kib_s"] = float(summary["frame_bytes"]) * target_fps / 1024.0
+    else:
+        summary["target_rate_kib_s"] = ""
     summary["read_limit_kib_s"] = metadata.get("read_limit_kib_s", condition.get("receiver_read_limit_kib_s", ""))
     summary["distance_m"] = condition.get("distance_m", "")
     return summary
@@ -372,6 +398,29 @@ def write_markdown(summary, manifest, path, figure_paths=None):
     metadata = {}
     metadata.update(summary.get("db_metadata") or {})
     metadata.update(manifest or {})
+    transport_value = str(summary.get("transport") or metadata.get("transport") or "").lower()
+    is_udp = "udp" in transport_value
+    transport_name = "UDP" if is_udp else "TCP"
+    payload_label = f"{summary.get('target_fps') or 'configured'} fps x {summary.get('payload_bytes') or 'configured'} byte"
+    if is_udp:
+        context_text = (
+            "This report summarizes an ESP32-S3 WiFi/UDP stream used as a neural-data surrogate for downstream "
+            "spike-sorting and compression experiments. The main engineering question is how much packetized "
+            "throughput the wireless link can sustain while keeping sequence-gap loss, CRC errors, jitter, and "
+            "end-to-end latency within an acceptable range."
+        )
+        jitter_note = (
+            "Arrival jitter captures UDP datagram cadence variability; sequence gaps represent application-visible "
+            "packet loss rather than TCP backpressure."
+        )
+    else:
+        context_text = (
+            "This report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surrogate for downstream "
+            "spike-sorting and compression experiments. The main engineering question is whether the wireless link "
+            "can sustain the configured stream rate while keeping application frame loss, parser errors, jitter, "
+            "and end-to-end latency within an acceptable range."
+        )
+        jitter_note = "Arrival jitter captures WiFi/TCP cadence variability even when TCP eventually delivers every byte."
     manifest_text = json.dumps(metadata, indent=2) if metadata else "No manifest or DB run metadata supplied."
     gate_rows = "\n".join(
         f"| {gate['gate']} | {gate['status']} | {gate['value']} | {gate['criterion']} |"
@@ -392,7 +441,7 @@ Generated at: `{summary['generated_at']}`
 
 ## Experiment Context
 
-This report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is whether the wireless link can sustain the configured stream rate while keeping application frame loss, parser errors, jitter, and end-to-end latency within an acceptable range.
+{context_text}
 
 ## Key Results
 
@@ -403,6 +452,11 @@ This report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surroga
 | Capture end UTC | {summary['capture_end_utc'] or 'n/a'} |
 | Captured frames | {summary['frame_count']} |
 | Capture duration | {fmt(summary['duration_s'], 2, ' s')} |
+| Transport | {summary.get('transport') or 'n/a'} |
+| Payload bytes | {summary.get('payload_bytes') or 'n/a'} |
+| Frame bytes | {summary.get('frame_bytes') or 'n/a'} |
+| Target FPS | {summary.get('target_fps') or 'n/a'} |
+| Target throughput | {fmt(parse_optional_float(summary.get('target_rate_kib_s')), 2, ' KiB/s')} |
 | Mean FPS | {fmt(summary['fps_mean'], 2)} |
 | FPS range | {fmt(summary['fps_min'], 2)} - {fmt(summary['fps_max'], 2)} |
 | Mean throughput | {fmt(summary['rate_kib_s_mean'], 2, ' KiB/s')} |
@@ -435,8 +489,8 @@ This report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surroga
 
 ## Interpretation Notes
 
-- A healthy run should keep loss rate and CRC/resync errors at zero for the current 20 fps x 4 KiB workload.
-- Arrival jitter captures WiFi/TCP cadence variability even when TCP eventually delivers every byte.
+- A healthy {transport_name} run should keep loss rate and CRC/resync errors at zero for the current {payload_label} workload.
+- {jitter_note}
 - Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.
 - If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.
 - Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.
@@ -451,6 +505,8 @@ This report summarizes an ESP32-S3 WiFi/TCP stream used as a neural-data surroga
 
 
 def refresh_report_browser(out_dir):
+    if Path(out_dir).name != "reports":
+        return
     try:
         from build_report_browser import build_index
 

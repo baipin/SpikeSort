@@ -29,7 +29,8 @@ def write_combined_csv(rows, path):
     fieldnames = sorted({key for row in rows for key in row.keys()})
     preferred = [
         "label", "time_filter", "capture_start_utc", "capture_end_utc",
-        "experiment_id", "condition_label", "read_limit_kib_s", "distance_m",
+        "experiment_id", "condition_label", "transport", "payload_bytes",
+        "frame_bytes", "target_fps", "target_rate_kib_s", "read_limit_kib_s", "distance_m",
         "fps_mean", "rate_kib_s_mean", "loss_rate_max", "crc_errors_total",
         "interval_jitter_ms_mean", "latency_p95_ms", "latency_p99_ms",
         "longest_missing_run", "summary_path",
@@ -103,8 +104,10 @@ def write_plots(rows, out_dir, stamp):
 
 def write_markdown(rows, csv_path, figure_paths, path):
     table_rows = "\n".join(
-        "| {label} | {rate} | {fps} | {loss} | {crc} | {jitter} | {latency} |".format(
+        "| {label} | {transport} | {payload} | {rate} | {fps} | {loss} | {crc} | {jitter} | {latency} |".format(
             label=row["label"],
+            transport=row.get("transport", ""),
+            payload=row.get("payload_bytes", ""),
             rate=row.get("rate_kib_s_mean", ""),
             fps=row.get("fps_mean", ""),
             loss=row.get("loss_rate_max", ""),
@@ -119,8 +122,8 @@ def write_markdown(rows, csv_path, figure_paths, path):
 
 Combined CSV: `{csv_path.relative_to(path.parent).as_posix()}`
 
-| Run | Mean throughput KiB/s | Mean FPS | Max loss rate | CRC errors | Mean jitter ms | P95 latency ms |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Run | Transport | Payload bytes | Mean throughput KiB/s | Mean FPS | Max loss rate | CRC errors | Mean jitter ms | P95 latency ms |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 {table_rows}
 
 ## Figures

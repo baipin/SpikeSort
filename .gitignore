@@ -31,6 +31,9 @@ week8_partial_dct_kilosort_runs/
 
 # Build/runtime output from the ESP32 monitoring project.
 esp32s3-bandwidth-sender/build/
+esp32s3-bandwidth-sender/build_*/
+esp32s3-bandwidth-sender/captures/
+esp32s3-bandwidth-sender/reports/udp_latex_report/
 esp32s3-bandwidth-sender/*.log
 esp32s3-bandwidth-sender/*.err.log
 esp32s3-bandwidth-sender/__pycache__/

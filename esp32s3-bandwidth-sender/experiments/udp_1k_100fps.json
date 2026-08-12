@@ -1,0 +1,29 @@
+{
+  "experiment_id": "udp-1k-100fps-001",
+  "condition_label": "udp-1k-100fps",
+  "operator": "",
+  "started_at_local": "",
+  "transport": "udp",
+  "application_context": {
+    "workload": "spike_stream_surrogate",
+    "downstream_task": "UDP packet-loss baseline for neural stream transport",
+    "notes": "Each UDP datagram carries one numbered frame. Use sequence gaps at the receiver to estimate packet loss."
+  },
+  "network": {
+    "ssid": "Dennis",
+    "receiver_ip": "192.168.137.1",
+    "receiver_port": 5001,
+    "hotspot_device": "Windows laptop mobile hotspot"
+  },
+  "stream": {
+    "transport": "WiFi + UDP",
+    "target_fps": 100,
+    "payload_bytes": 1024,
+    "frame_bytes": 1038,
+    "nominal_rate_kib_s": 101.37
+  },
+  "condition": {
+    "duration_min": 10,
+    "purpose": "low-stress UDP packet-loss sanity check"
+  }
+}

@@ -1,0 +1,2 @@
+source G:/ACADEMIC/esp32s3-bandwidth-sender/build_udp_1k_800fps/bootloader/gdbinit/symbols
+source G:/ACADEMIC/esp32s3-bandwidth-sender/build_udp_1k_800fps/bootloader/gdbinit/connect
