@@ -6,12 +6,32 @@
 *.dat
 *.npy
 *.npz
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.onnx
+*.zarr/
 *.ap.bin
 *.ap.cbin
 *.sqlite3
 *.sqlite3-*
 
-# Ignore example data folder
+# Local environment, editor, and OS noise.
+.env
+.env.*
+.venv/
+venv/
+env/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Notebook and test data folders.
 .test_data/
 .ipynb_checkpoints/
 
@@ -28,17 +48,37 @@ week8_kilosort4/
 week8_kilosort4_runs/
 week8_partial_kilosort4_runs/
 week8_partial_dct_kilosort_runs/
+week8_population_sensitivity/
+week9_predictor_recommender_outputs/
+outputs/caches/
 
 # Build/runtime output from the ESP32 monitoring project.
 esp32s3-bandwidth-sender/build/
 esp32s3-bandwidth-sender/build_*/
 esp32s3-bandwidth-sender/captures/
 esp32s3-bandwidth-sender/reports/udp_latex_report/
+esp32s3-bandwidth-sender/managed_components/
+esp32s3-bandwidth-sender/sdkconfig.old
+esp32s3-bandwidth-sender/dependencies.lock
 esp32s3-bandwidth-sender/*.log
 esp32s3-bandwidth-sender/*.err.log
 esp32s3-bandwidth-sender/__pycache__/
+esp32s3-bandwidth-sender/**/__pycache__/
 
 # Python caches and local logs.
 __pycache__/
 *.pyc
+*.pyo
 logs/
+
+# Generated document build byproducts.
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
