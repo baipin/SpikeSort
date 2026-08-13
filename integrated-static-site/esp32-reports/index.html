@@ -2981,7 +2981,8 @@ window.REPORT_INDEX = {
             <input type="checkbox" data-select="${esc(report.stamp)}" ${state.selected.has(report.stamp) ? "checked" : ""} aria-label="Select for comparison">
             <div>
               <div class="item-title">${esc(reportTitle(report))}</div>
-              <div class="item-sub">${esc(report.stamp)} · ${esc(report.summary?.time_filter || "")}</div>`r`n              ${report.setup?.note || report.setup?.hardware ? `<div class="item-sub">${esc([report.setup?.hardware, report.setup?.power, report.setup?.placement, report.setup?.distance, report.setup?.note].filter(Boolean).join(" · "))}</div>` : ""}
+              <div class="item-sub">${esc(report.stamp)} · ${esc(report.summary?.time_filter || "")}</div>
+              ${report.setup?.note || report.setup?.hardware ? `<div class="item-sub">${esc([report.setup?.hardware, report.setup?.power, report.setup?.placement, report.setup?.distance, report.setup?.note].filter(Boolean).join(" · "))}</div>` : ""}
             </div>
           </div>
           <div class="quick">
