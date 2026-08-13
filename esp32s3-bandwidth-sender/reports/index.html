@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ESP32-S3 Bandwidth Report Browser</title>
+  <title>ESP32 / ESP32-S3 Bandwidth Report Browser</title>
   <style>
     :root {
       color-scheme: light;
@@ -200,6 +200,32 @@
       line-height: 1.2;
     }
 
+    .setup-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .setup-field {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+      background: #fcfdff;
+    }
+
+    .setup-field span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+
+    .setup-field strong {
+      font-size: 13px;
+      line-height: 1.25;
+    }
+
     .figures {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -336,7 +362,7 @@
 </head>
 <body>
   <header>
-    <h1>ESP32-S3 Bandwidth Report Browser</h1>
+    <h1>ESP32 / ESP32-S3 Bandwidth Report Browser</h1>
     <div class="meta" id="indexMeta">Loading index...</div>
   </header>
   <div class="layout">
@@ -417,7 +443,12 @@
         report.label,
         report.summary?.experiment_id,
         report.summary?.condition_label,
-        report.summary?.time_filter
+        report.summary?.time_filter,
+        report.setup?.hardware,
+        report.setup?.power,
+        report.setup?.placement,
+        report.setup?.distance,
+        report.setup?.note
       ].join(" ").toLowerCase();
     }
 
@@ -454,7 +485,7 @@
             <input type="checkbox" data-select="${esc(report.stamp)}" ${state.selected.has(report.stamp) ? "checked" : ""} aria-label="Select for comparison">
             <div>
               <div class="item-title">${esc(reportTitle(report))}</div>
-              <div class="item-sub">${esc(report.stamp)} · ${esc(report.summary?.time_filter || "")}</div>
+              <div class="item-sub">${esc(report.stamp)} · ${esc(report.summary?.time_filter || "")}</div>`r`n              ${report.setup?.note || report.setup?.hardware ? `<div class="item-sub">${esc([report.setup?.hardware, report.setup?.power, report.setup?.placement, report.setup?.distance, report.setup?.note].filter(Boolean).join(" · "))}</div>` : ""}
             </div>
           </div>
           <div class="quick">
@@ -486,6 +517,26 @@
           <strong>${fmt(report.summary?.[key], digits, suffix, scale || 1)}</strong>
         </div>
       `).join("") + `</div>`;
+    }
+
+    function setupText(report) {
+      return [report.setup?.hardware, report.setup?.power, report.setup?.placement, report.setup?.distance, report.setup?.note]
+        .filter(Boolean)
+        .join(" · ");
+    }
+
+    function runSetup(report) {
+      const fields = [
+        ["Hardware", report.setup?.hardware],
+        ["Power", report.setup?.power],
+        ["Placement", report.setup?.placement],
+        ["Distance", report.setup?.distance],
+        ["Note", report.setup?.note]
+      ].filter(([, value]) => value);
+      if (!fields.length) return "";
+      return `<section class="panel"><h2>Run Setup</h2><div class="setup-grid">${fields.map(([label, value]) => `
+        <div class="setup-field"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>
+      `).join("")}</div></section>`;
     }
 
     function renderMarkdown(markdown, basePath = "") {
@@ -526,7 +577,7 @@
         if (line.startsWith("# ")) html += `<h1>${esc(line.slice(2))}</h1>`;
         else if (line.startsWith("## ")) html += `<h2>${esc(line.slice(3))}</h2>`;
         else if (line.startsWith("### ")) html += `<h3>${esc(line.slice(4))}</h3>`;
-        else if (line.startsWith("- ")) html += `<p>• ${esc(line.slice(2))}</p>`;
+        else if (line.startsWith("- ")) html += `<p>- ${esc(line.slice(2))}</p>`;
         else if (/^!\[.*\]\((.*)\)/.test(line)) {
           const match = line.match(/^!\[(.*)\]\((.*)\)/);
           const src = /^(https?:|data:|\/)/.test(match[2]) ? match[2] : `${basePath}${match[2]}`;
@@ -554,6 +605,7 @@
             <a href="${esc(report.summaryPath)}">Open CSV</a>
           </div>
         </section>
+        ${runSetup(report)}
         ${report.figures.length ? `<section class="panel"><h2>Figures</h2><div class="figures">${report.figures.map((src) => `<img src="${esc(src)}" alt="${esc(src)}">`).join("")}</div></section>` : ""}
         <section class="panel markdown">
           ${renderMarkdown(report.markdown)}
@@ -635,9 +687,10 @@
         ${scatter(rows)}
         <div class="table-wrap">
           <table>
-            <tr><th>Run</th><th>FPS</th><th>Throughput</th><th>Max loss</th><th>CRC</th><th>P95 latency</th><th>Jitter</th></tr>
+            <tr><th>Run</th><th>Setup</th><th>FPS</th><th>Throughput</th><th>Max loss</th><th>CRC</th><th>P95 latency</th><th>Jitter</th></tr>
             ${rows.map((row) => `<tr>
               <td>${esc(reportTitle(row))}</td>
+              <td>${esc(setupText(row) || "n/a")}</td>
               <td>${fmt(row.summary?.fps_mean, 2)}</td>
               <td>${fmt(row.summary?.rate_kib_s_mean, 2, " KiB/s")}</td>
               <td>${fmt(row.summary?.loss_rate_max, 4, "%", 100)}</td>
@@ -686,3 +739,6 @@
   </script>
 </body>
 </html>
+
+
+

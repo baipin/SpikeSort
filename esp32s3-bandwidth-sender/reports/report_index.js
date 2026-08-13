@@ -1,6 +1,509 @@
 window.REPORT_INDEX = {
-  "generatedAt": "2026-08-12T07:28:42.743938+00:00",
+  "generatedAt": "2026-08-13T16:59:30.052338+00:00",
   "reports": [
+    {
+      "stamp": "20260814_005926",
+      "label": "udp-max-throughput",
+      "summaryPath": "bandwidth_summary_20260814_005926.csv",
+      "reportPath": "bandwidth_report_20260814_005926.md",
+      "figures": [
+        "figures/bandwidth_timeseries_20260814_005926.png",
+        "figures/latency_histogram_20260814_005926.png"
+      ],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-08-13T16:59:26.561942+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/UDP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is how much packetized throughput the wireless link can sustain while keeping sequence-gap loss, CRC errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | all data |\n| Capture start UTC | 2026-08-13T16:58:26.119653+00:00 |\n| Capture end UTC | 2026-08-13T16:59:25.156869+00:00 |\n| Captured frames | 64854 |\n| Capture duration | 59.04 s |\n| Transport | udp |\n| Payload bytes | 1024 |\n| Frame bytes | 1038 |\n| Target FPS | unlimited |\n| Target throughput | n/a |\n| Mean FPS | 1098.52 |\n| FPS range | 854.88 - 1204.92 |\n| Mean throughput | 1113.53 KiB/s |\n| Throughput range | 866.57 - 1221.39 KiB/s |\n| Total missing frames by sequence | 9287 |\n| Missing frames by in-window gaps | 9287 |\n| Longest consecutive missing run | 222 |\n| Window missing-frame sum | 9287 |\n| Mean loss rate | 12.2350% |\n| Max loss rate | 31.0234% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 5.115 ms |\n| Max arrival jitter | 8.673 ms |\n| Mean bandwidth volatility | 64.300 KiB/s |\n| Max bandwidth volatility | 98.091 KiB/s |\n| Latency samples | 64854 |\n| Mean latency | 1721.323 ms |\n| P50 latency | 1297.569 ms |\n| P95 latency | 3547.278 ms |\n| P99 latency | 3715.778 ms |\n\n## Quality Gates\n\n| Gate | Status | Value | Criterion |\n| --- | --- | ---: | --- |\n| CRC / parser integrity | PASS | 0 | crc_errors == 0 |\n| Application loss | WARN | 31.0234% | max loss <= 0.1% |\n| Latency availability | PASS | 64854 | SNTP latency samples present |\n\n## Figures\n\n![Bandwidth Timeseries 20260814 005926](figures/bandwidth_timeseries_20260814_005926.png)\n\n![Latency Histogram 20260814 005926](figures/latency_histogram_20260814_005926.png)\n\n\n## Interpretation Notes\n\n- A healthy UDP run should keep loss rate and CRC/resync errors at zero for the current unlimited fps x 1024 byte workload.\n- Arrival jitter captures UDP datagram cadence variability; sequence gaps represent application-visible packet loss rather than TCP backpressure.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.\n\n## Experiment Manifest\n\n```json\n{\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"UDP maximum-throughput search for neural stream transport\",\n    \"notes\": \"The ESP32-S3 sender disables FPS pacing and sends numbered 1 KiB UDP datagrams as fast as the socket path allows.\"\n  },\n  \"condition\": {\n    \"duration_min\": 2,\n    \"purpose\": \"unpaced UDP maximum-throughput measurement with per-packet sequence logging\"\n  },\n  \"condition_label\": \"udp-max-throughput\",\n  \"experiment_id\": \"udp-max-throughput-001\",\n  \"frame_bytes\": 1038,\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\"\n  },\n  \"operator\": \"\",\n  \"operator_notes\": \"temporary diagnosis: ESP32-S3-PICO-1 Type-C near, CONFIG_LWIP_IRAM_OPTIMIZATION=y, baseline UDP max-throughput\",\n  \"payload_bytes\": 1024,\n  \"receiver_started_at_local\": \"2026-08-14T00:58:25\",\n  \"started_at_local\": \"\",\n  \"stream\": {\n    \"transport\": \"WiFi + UDP\",\n    \"target_fps\": \"unlimited\",\n    \"payload_bytes\": 1024,\n    \"frame_bytes\": 1038,\n    \"nominal_rate_kib_s\": null,\n    \"pacing\": \"disabled\"\n  },\n  \"target_fps\": \"unlimited\",\n  \"transport\": \"udp\",\n  \"udp_socket_rcvbuf\": 4194304\n}\n```\n",
+      "summary": {
+        "db_path": "G:\\ACADEMIC\\esp32s3-bandwidth-sender\\captures\\udp_s3-lwip-iram-udp-max_20260814_005825\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-08-13T16:59:26.561942+00:00",
+        "capture_start_utc": "2026-08-13T16:58:26.119653+00:00",
+        "capture_end_utc": "2026-08-13T16:59:25.156869+00:00",
+        "time_filter": "all data",
+        "frame_count": "64854",
+        "duration_s": "59.0372158",
+        "seq_min": "19035",
+        "seq_max": "93175",
+        "expected_frames": "74141",
+        "total_missing_by_seq": "9287",
+        "missing_frames_by_gaps": "9287",
+        "longest_missing_run": "222",
+        "missing_frames_window_sum": "9287",
+        "loss_rate_mean": "0.12234963980220036",
+        "loss_rate_max": "0.31023368251410155",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "1098.515351159173",
+        "fps_min": "854.8791679222973",
+        "fps_max": "1204.915414938167",
+        "rate_kib_s_mean": "1113.5341157258022",
+        "rate_kib_s_min": "866.5669690462349",
+        "rate_kib_s_max": "1221.3888678767748",
+        "interval_jitter_ms_mean": "5.114773346906626",
+        "interval_jitter_ms_max": "8.672831845599513",
+        "bandwidth_jitter_kib_s_mean": "64.30003297632446",
+        "bandwidth_jitter_kib_s_max": "98.09147248893797",
+        "latency_count": "64854",
+        "latency_avg_ms": "1721.3230796296298",
+        "latency_p50_ms": "1297.5691",
+        "latency_p95_ms": "3547.277915",
+        "latency_p99_ms": "3715.777843",
+        "latency_window_p95_max_ms": "3769.596365",
+        "experiment_id": "udp-max-throughput-001",
+        "condition_label": "udp-max-throughput",
+        "transport": "udp",
+        "payload_bytes": "1024",
+        "frame_bytes": "1038",
+        "target_fps": "unlimited",
+        "target_rate_kib_s": "",
+        "read_limit_kib_s": "",
+        "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)",
+        "note": "temporary diagnosis: ESP32-S3-PICO-1 Type-C near, CONFIG_LWIP_IRAM_OPTIMIZATION=y, baseline UDP max-throughput"
+      }
+    },
+    {
+      "stamp": "20260814_005018",
+      "label": "udp-max-throughput",
+      "summaryPath": "bandwidth_summary_20260814_005018.csv",
+      "reportPath": "bandwidth_report_20260814_005018.md",
+      "figures": [
+        "figures/bandwidth_timeseries_20260814_005018.png"
+      ],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-08-13T16:50:18.143394+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/UDP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is how much packetized throughput the wireless link can sustain while keeping sequence-gap loss, CRC errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | all data |\n| Capture start UTC | 2026-08-13T16:49:17.425129+00:00 |\n| Capture end UTC | 2026-08-13T16:50:16.785028+00:00 |\n| Captured frames | 53622 |\n| Capture duration | 59.36 s |\n| Transport | udp |\n| Payload bytes | 1024 |\n| Frame bytes | 1038 |\n| Target FPS | unlimited |\n| Target throughput | n/a |\n| Mean FPS | 903.34 |\n| FPS range | 854.69 - 985.65 |\n| Mean throughput | 915.69 KiB/s |\n| Throughput range | 866.37 - 999.12 KiB/s |\n| Total missing frames by sequence | 0 |\n| Missing frames by in-window gaps | 0 |\n| Longest consecutive missing run | 0 |\n| Window missing-frame sum | 0 |\n| Mean loss rate | 0.0000% |\n| Max loss rate | 0.0000% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 5.400 ms |\n| Max arrival jitter | 10.132 ms |\n| Mean bandwidth volatility | 26.990 KiB/s |\n| Max bandwidth volatility | 51.992 KiB/s |\n| Latency samples | 0 |\n| Mean latency | n/a |\n| P50 latency | n/a |\n| P95 latency | n/a |\n| P99 latency | n/a |\n\n## Quality Gates\n\n| Gate | Status | Value | Criterion |\n| --- | --- | ---: | --- |\n| CRC / parser integrity | PASS | 0 | crc_errors == 0 |\n| Application loss | PASS | 0.0000% | max loss <= 0.1% |\n| Latency availability | WARN | 0 | SNTP latency samples present |\n\n## Figures\n\n![Bandwidth Timeseries 20260814 005018](figures/bandwidth_timeseries_20260814_005018.png)\n\n\n## Interpretation Notes\n\n- A healthy UDP run should keep loss rate and CRC/resync errors at zero for the current unlimited fps x 1024 byte workload.\n- Arrival jitter captures UDP datagram cadence variability; sequence gaps represent application-visible packet loss rather than TCP backpressure.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.\n\n## Experiment Manifest\n\n```json\n{\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"UDP maximum-throughput search for neural stream transport\",\n    \"notes\": \"The ESP32-S3 sender disables FPS pacing and sends numbered 1 KiB UDP datagrams as fast as the socket path allows.\"\n  },\n  \"condition\": {\n    \"duration_min\": 2,\n    \"purpose\": \"unpaced UDP maximum-throughput measurement with per-packet sequence logging\"\n  },\n  \"condition_label\": \"udp-max-throughput\",\n  \"experiment_id\": \"udp-max-throughput-001\",\n  \"frame_bytes\": 1038,\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\"\n  },\n  \"operator\": \"\",\n  \"operator_notes\": \"temporary diagnosis: ESP32-S3-PICO-1 Type-C near, disable 802.11b, request HT40, continue if HT setting rejected\",\n  \"payload_bytes\": 1024,\n  \"receiver_started_at_local\": \"2026-08-14T00:49:16\",\n  \"started_at_local\": \"\",\n  \"stream\": {\n    \"transport\": \"WiFi + UDP\",\n    \"target_fps\": \"unlimited\",\n    \"payload_bytes\": 1024,\n    \"frame_bytes\": 1038,\n    \"nominal_rate_kib_s\": null,\n    \"pacing\": \"disabled\"\n  },\n  \"target_fps\": \"unlimited\",\n  \"transport\": \"udp\",\n  \"udp_socket_rcvbuf\": 4194304\n}\n```\n",
+      "summary": {
+        "db_path": "G:\\ACADEMIC\\esp32s3-bandwidth-sender\\captures\\udp_s3-11gn-ht40-fallback-udp-max_20260814_004916\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-08-13T16:50:18.143394+00:00",
+        "capture_start_utc": "2026-08-13T16:49:17.425129+00:00",
+        "capture_end_utc": "2026-08-13T16:50:16.785028+00:00",
+        "time_filter": "all data",
+        "frame_count": "53622",
+        "duration_s": "59.3598992",
+        "seq_min": "4613",
+        "seq_max": "58234",
+        "expected_frames": "53622",
+        "total_missing_by_seq": "0",
+        "missing_frames_by_gaps": "0",
+        "longest_missing_run": "0",
+        "missing_frames_window_sum": "0",
+        "loss_rate_mean": "0.0",
+        "loss_rate_max": "0.0",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "903.3416099890129",
+        "fps_min": "854.6863301163761",
+        "fps_max": "985.6464486196719",
+        "rate_kib_s_mean": "915.6919835630814",
+        "rate_kib_s_min": "866.3714947859359",
+        "rate_kib_s_max": "999.122083659394",
+        "interval_jitter_ms_mean": "5.400122304030263",
+        "interval_jitter_ms_max": "10.132228477865992",
+        "bandwidth_jitter_kib_s_mean": "26.989634252383492",
+        "bandwidth_jitter_kib_s_max": "51.99175440567406",
+        "latency_count": "0",
+        "latency_avg_ms": "",
+        "latency_p50_ms": "",
+        "latency_p95_ms": "",
+        "latency_p99_ms": "",
+        "latency_window_p95_max_ms": "",
+        "experiment_id": "udp-max-throughput-001",
+        "condition_label": "udp-max-throughput",
+        "transport": "udp",
+        "payload_bytes": "1024",
+        "frame_bytes": "1038",
+        "target_fps": "unlimited",
+        "target_rate_kib_s": "",
+        "read_limit_kib_s": "",
+        "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)",
+        "note": "temporary diagnosis: ESP32-S3-PICO-1 Type-C near, disable 802.11b, request HT40, continue if HT setting rejected"
+      }
+    },
+    {
+      "stamp": "20260813_231959",
+      "label": "udp-max-throughput",
+      "summaryPath": "bandwidth_summary_20260813_231959.csv",
+      "reportPath": "bandwidth_report_20260813_231959.md",
+      "figures": [
+        "figures/bandwidth_timeseries_20260813_231959.png",
+        "figures/latency_histogram_20260813_231959.png"
+      ],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-08-13T15:19:59.491244+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/UDP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is how much packetized throughput the wireless link can sustain while keeping sequence-gap loss, CRC errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | all data |\n| Capture start UTC | 2026-08-13T14:52:43.571535+00:00 |\n| Capture end UTC | 2026-08-13T14:57:42.831698+00:00 |\n| Captured frames | 208983 |\n| Capture duration | 299.26 s |\n| Transport | udp |\n| Payload bytes | 1024 |\n| Frame bytes | 1038 |\n| Target FPS | unlimited |\n| Target throughput | n/a |\n| Mean FPS | 698.33 |\n| FPS range | 433.72 - 744.78 |\n| Mean throughput | 707.87 KiB/s |\n| Throughput range | 439.65 - 754.96 KiB/s |\n| Total missing frames by sequence | 980 |\n| Missing frames by in-window gaps | 980 |\n| Longest consecutive missing run | 30 |\n| Window missing-frame sum | 980 |\n| Mean loss rate | 0.4863% |\n| Max loss rate | 14.3984% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 7.328 ms |\n| Max arrival jitter | 13.437 ms |\n| Mean bandwidth volatility | 20.964 KiB/s |\n| Max bandwidth volatility | 53.600 KiB/s |\n| Latency samples | 208983 |\n| Mean latency | 413.894 ms |\n| P50 latency | 383.064 ms |\n| P95 latency | 553.406 ms |\n| P99 latency | 597.097 ms |\n\n## Quality Gates\n\n| Gate | Status | Value | Criterion |\n| --- | --- | ---: | --- |\n| CRC / parser integrity | PASS | 0 | crc_errors == 0 |\n| Application loss | WARN | 14.3984% | max loss <= 0.1% |\n| Latency availability | PASS | 208983 | SNTP latency samples present |\n\n## Figures\n\n![Bandwidth Timeseries 20260813 231959](figures/bandwidth_timeseries_20260813_231959.png)\n\n![Latency Histogram 20260813 231959](figures/latency_histogram_20260813_231959.png)\n\n\n## Interpretation Notes\n\n- A healthy UDP run should keep loss rate and CRC/resync errors at zero for the current unlimited fps x 1024 byte workload.\n- Arrival jitter captures UDP datagram cadence variability; sequence gaps represent application-visible packet loss rather than TCP backpressure.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.\n\n## Experiment Manifest\n\n```json\n{\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"UDP maximum-throughput search for neural stream transport\",\n    \"notes\": \"The ESP32-S3 sender disables FPS pacing and sends numbered 1 KiB UDP datagrams as fast as the socket path allows.\"\n  },\n  \"condition\": {\n    \"duration_min\": 2,\n    \"purpose\": \"unpaced UDP maximum-throughput measurement with per-packet sequence logging\"\n  },\n  \"condition_label\": \"udp-max-throughput\",\n  \"experiment_id\": \"udp-max-throughput-001\",\n  \"frame_bytes\": 1038,\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\"\n  },\n  \"operator\": \"\",\n  \"operator_notes\": \"Hardware: ESP32-WROOM-32E; Power: battery; Placement: on-head; Distance: near (<1 m); Note: on-head, with-head-roration\",\n  \"payload_bytes\": 1024,\n  \"receiver_started_at_local\": \"2026-08-13T22:52:40\",\n  \"started_at_local\": \"\",\n  \"stream\": {\n    \"transport\": \"WiFi + UDP\",\n    \"target_fps\": \"unlimited\",\n    \"payload_bytes\": 1024,\n    \"frame_bytes\": 1038,\n    \"nominal_rate_kib_s\": null,\n    \"pacing\": \"disabled\"\n  },\n  \"target_fps\": \"unlimited\",\n  \"transport\": \"udp\",\n  \"udp_socket_rcvbuf\": 4194304\n}\n```\n",
+      "summary": {
+        "db_path": "G:\\ACADEMIC\\esp32s3-bandwidth-sender\\captures\\udp_wroom-battery-on-head-near-with-head-rotation_20260813_225240\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-08-13T15:19:59.491244+00:00",
+        "capture_start_utc": "2026-08-13T14:52:43.571535+00:00",
+        "capture_end_utc": "2026-08-13T14:57:42.831698+00:00",
+        "time_filter": "all data",
+        "frame_count": "208983",
+        "duration_s": "299.2601638",
+        "seq_min": "92763",
+        "seq_max": "302725",
+        "expected_frames": "209963",
+        "total_missing_by_seq": "980",
+        "missing_frames_by_gaps": "980",
+        "longest_missing_run": "30",
+        "missing_frames_window_sum": "980",
+        "loss_rate_mean": "0.004863248065612486",
+        "loss_rate_max": "0.14398422090729784",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "698.327428043014",
+        "fps_min": "433.7231978554626",
+        "fps_max": "744.7771626722717",
+        "rate_kib_s_mean": "707.8748733482895",
+        "rate_kib_s_min": "439.65300720114277",
+        "rate_kib_s_max": "754.9596629431818",
+        "interval_jitter_ms_mean": "7.327764779280541",
+        "interval_jitter_ms_max": "13.436646961694537",
+        "bandwidth_jitter_kib_s_mean": "20.964326891960077",
+        "bandwidth_jitter_kib_s_max": "53.5997782777998",
+        "latency_count": "208983",
+        "latency_avg_ms": "413.89435140274566",
+        "latency_p50_ms": "383.0638",
+        "latency_p95_ms": "553.40607",
+        "latency_p99_ms": "597.0967119999999",
+        "latency_window_p95_max_ms": "724.99148",
+        "experiment_id": "udp-max-throughput-001",
+        "condition_label": "udp-max-throughput",
+        "transport": "udp",
+        "payload_bytes": "1024",
+        "frame_bytes": "1038",
+        "target_fps": "unlimited",
+        "target_rate_kib_s": "",
+        "read_limit_kib_s": "",
+        "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)",
+        "note": "Hardware: ESP32-WROOM-32E; Power: battery; Placement: on-head; Distance: near (<1 m); Note: on-head, with-head-roration"
+      }
+    },
+    {
+      "stamp": "20260813_231047",
+      "label": "udp-max-throughput",
+      "summaryPath": "bandwidth_summary_20260813_231047.csv",
+      "reportPath": "bandwidth_report_20260813_231047.md",
+      "figures": [
+        "figures/bandwidth_timeseries_20260813_231047.png",
+        "figures/latency_histogram_20260813_231047.png"
+      ],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-08-13T15:10:47.175647+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/UDP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is how much packetized throughput the wireless link can sustain while keeping sequence-gap loss, CRC errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | all data |\n| Capture start UTC | 2026-08-13T14:52:43.571535+00:00 |\n| Capture end UTC | 2026-08-13T14:57:42.831698+00:00 |\n| Captured frames | 208983 |\n| Capture duration | 299.26 s |\n| Transport | udp |\n| Payload bytes | 1024 |\n| Frame bytes | 1038 |\n| Target FPS | unlimited |\n| Target throughput | n/a |\n| Mean FPS | 698.33 |\n| FPS range | 433.72 - 744.78 |\n| Mean throughput | 707.87 KiB/s |\n| Throughput range | 439.65 - 754.96 KiB/s |\n| Total missing frames by sequence | 980 |\n| Missing frames by in-window gaps | 980 |\n| Longest consecutive missing run | 30 |\n| Window missing-frame sum | 980 |\n| Mean loss rate | 0.4863% |\n| Max loss rate | 14.3984% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 7.328 ms |\n| Max arrival jitter | 13.437 ms |\n| Mean bandwidth volatility | 20.964 KiB/s |\n| Max bandwidth volatility | 53.600 KiB/s |\n| Latency samples | 208983 |\n| Mean latency | 413.894 ms |\n| P50 latency | 383.064 ms |\n| P95 latency | 553.406 ms |\n| P99 latency | 597.097 ms |\n\n## Quality Gates\n\n| Gate | Status | Value | Criterion |\n| --- | --- | ---: | --- |\n| CRC / parser integrity | PASS | 0 | crc_errors == 0 |\n| Application loss | WARN | 14.3984% | max loss <= 0.1% |\n| Latency availability | PASS | 208983 | SNTP latency samples present |\n\n## Figures\n\n![Bandwidth Timeseries 20260813 231047](figures/bandwidth_timeseries_20260813_231047.png)\n\n![Latency Histogram 20260813 231047](figures/latency_histogram_20260813_231047.png)\n\n\n## Interpretation Notes\n\n- A healthy UDP run should keep loss rate and CRC/resync errors at zero for the current unlimited fps x 1024 byte workload.\n- Arrival jitter captures UDP datagram cadence variability; sequence gaps represent application-visible packet loss rather than TCP backpressure.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.\n\n## Experiment Manifest\n\n```json\n{\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"UDP maximum-throughput search for neural stream transport\",\n    \"notes\": \"The ESP32-S3 sender disables FPS pacing and sends numbered 1 KiB UDP datagrams as fast as the socket path allows.\"\n  },\n  \"condition\": {\n    \"duration_min\": 2,\n    \"purpose\": \"unpaced UDP maximum-throughput measurement with per-packet sequence logging\"\n  },\n  \"condition_label\": \"udp-max-throughput\",\n  \"experiment_id\": \"udp-max-throughput-001\",\n  \"frame_bytes\": 1038,\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\"\n  },\n  \"operator\": \"\",\n  \"operator_notes\": \"Hardware: ESP32-WROOM-32E; Power: battery; Placement: on-head; Distance: near (<1 m); Note: on-head, with-head-roration\",\n  \"payload_bytes\": 1024,\n  \"receiver_started_at_local\": \"2026-08-13T22:52:40\",\n  \"started_at_local\": \"\",\n  \"stream\": {\n    \"transport\": \"WiFi + UDP\",\n    \"target_fps\": \"unlimited\",\n    \"payload_bytes\": 1024,\n    \"frame_bytes\": 1038,\n    \"nominal_rate_kib_s\": null,\n    \"pacing\": \"disabled\"\n  },\n  \"target_fps\": \"unlimited\",\n  \"transport\": \"udp\",\n  \"udp_socket_rcvbuf\": 4194304\n}\n```\n",
+      "summary": {
+        "db_path": "G:\\ACADEMIC\\esp32s3-bandwidth-sender\\captures\\udp_wroom-battery-on-head-near-with-head-rotation_20260813_225240\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-08-13T15:10:47.175647+00:00",
+        "capture_start_utc": "2026-08-13T14:52:43.571535+00:00",
+        "capture_end_utc": "2026-08-13T14:57:42.831698+00:00",
+        "time_filter": "all data",
+        "frame_count": "208983",
+        "duration_s": "299.2601638",
+        "seq_min": "92763",
+        "seq_max": "302725",
+        "expected_frames": "209963",
+        "total_missing_by_seq": "980",
+        "missing_frames_by_gaps": "980",
+        "longest_missing_run": "30",
+        "missing_frames_window_sum": "980",
+        "loss_rate_mean": "0.004863248065612486",
+        "loss_rate_max": "0.14398422090729784",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "698.327428043014",
+        "fps_min": "433.7231978554626",
+        "fps_max": "744.7771626722717",
+        "rate_kib_s_mean": "707.8748733482895",
+        "rate_kib_s_min": "439.65300720114277",
+        "rate_kib_s_max": "754.9596629431818",
+        "interval_jitter_ms_mean": "7.327764779280541",
+        "interval_jitter_ms_max": "13.436646961694537",
+        "bandwidth_jitter_kib_s_mean": "20.964326891960077",
+        "bandwidth_jitter_kib_s_max": "53.5997782777998",
+        "latency_count": "208983",
+        "latency_avg_ms": "413.89435140274566",
+        "latency_p50_ms": "383.0638",
+        "latency_p95_ms": "553.40607",
+        "latency_p99_ms": "597.0967119999999",
+        "latency_window_p95_max_ms": "724.99148",
+        "experiment_id": "udp-max-throughput-001",
+        "condition_label": "udp-max-throughput",
+        "transport": "udp",
+        "payload_bytes": "1024",
+        "frame_bytes": "1038",
+        "target_fps": "unlimited",
+        "target_rate_kib_s": "",
+        "read_limit_kib_s": "",
+        "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)",
+        "note": "Hardware: ESP32-WROOM-32E; Power: battery; Placement: on-head; Distance: near (<1 m); Note: on-head, with-head-roration"
+      }
+    },
+    {
+      "stamp": "20260813_230016",
+      "label": "udp-max-throughput",
+      "summaryPath": "bandwidth_summary_20260813_230016.csv",
+      "reportPath": "bandwidth_report_20260813_230016.md",
+      "figures": [
+        "figures/bandwidth_timeseries_20260813_230016.png",
+        "figures/latency_histogram_20260813_230016.png"
+      ],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-08-13T15:00:16.905535+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/UDP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is how much packetized throughput the wireless link can sustain while keeping sequence-gap loss, CRC errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | all data |\n| Capture start UTC | 2026-08-13T14:52:43.571535+00:00 |\n| Capture end UTC | 2026-08-13T14:57:42.831698+00:00 |\n| Captured frames | 208983 |\n| Capture duration | 299.26 s |\n| Transport | udp |\n| Payload bytes | 1024 |\n| Frame bytes | 1038 |\n| Target FPS | unlimited |\n| Target throughput | n/a |\n| Mean FPS | 698.33 |\n| FPS range | 433.72 - 744.78 |\n| Mean throughput | 707.87 KiB/s |\n| Throughput range | 439.65 - 754.96 KiB/s |\n| Total missing frames by sequence | 980 |\n| Missing frames by in-window gaps | 980 |\n| Longest consecutive missing run | 30 |\n| Window missing-frame sum | 980 |\n| Mean loss rate | 0.4863% |\n| Max loss rate | 14.3984% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 7.328 ms |\n| Max arrival jitter | 13.437 ms |\n| Mean bandwidth volatility | 20.964 KiB/s |\n| Max bandwidth volatility | 53.600 KiB/s |\n| Latency samples | 208983 |\n| Mean latency | 413.894 ms |\n| P50 latency | 383.064 ms |\n| P95 latency | 553.406 ms |\n| P99 latency | 597.097 ms |\n\n## Quality Gates\n\n| Gate | Status | Value | Criterion |\n| --- | --- | ---: | --- |\n| CRC / parser integrity | PASS | 0 | crc_errors == 0 |\n| Application loss | WARN | 14.3984% | max loss <= 0.1% |\n| Latency availability | PASS | 208983 | SNTP latency samples present |\n\n## Figures\n\n![Bandwidth Timeseries 20260813 230016](figures/bandwidth_timeseries_20260813_230016.png)\n\n![Latency Histogram 20260813 230016](figures/latency_histogram_20260813_230016.png)\n\n\n## Interpretation Notes\n\n- A healthy UDP run should keep loss rate and CRC/resync errors at zero for the current unlimited fps x 1024 byte workload.\n- Arrival jitter captures UDP datagram cadence variability; sequence gaps represent application-visible packet loss rather than TCP backpressure.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.\n\n## Experiment Manifest\n\n```json\n{\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"UDP maximum-throughput search for neural stream transport\",\n    \"notes\": \"The ESP32-S3 sender disables FPS pacing and sends numbered 1 KiB UDP datagrams as fast as the socket path allows.\"\n  },\n  \"condition\": {\n    \"duration_min\": 2,\n    \"purpose\": \"unpaced UDP maximum-throughput measurement with per-packet sequence logging\"\n  },\n  \"condition_label\": \"udp-max-throughput\",\n  \"experiment_id\": \"udp-max-throughput-001\",\n  \"frame_bytes\": 1038,\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\"\n  },\n  \"operator\": \"\",\n  \"operator_notes\": \"Hardware: ESP32-WROOM-32E; Power: battery; Placement: on-head; Distance: near (<1 m); Note: on-head, with-head-roration\",\n  \"payload_bytes\": 1024,\n  \"receiver_started_at_local\": \"2026-08-13T22:52:40\",\n  \"started_at_local\": \"\",\n  \"stream\": {\n    \"transport\": \"WiFi + UDP\",\n    \"target_fps\": \"unlimited\",\n    \"payload_bytes\": 1024,\n    \"frame_bytes\": 1038,\n    \"nominal_rate_kib_s\": null,\n    \"pacing\": \"disabled\"\n  },\n  \"target_fps\": \"unlimited\",\n  \"transport\": \"udp\",\n  \"udp_socket_rcvbuf\": 4194304\n}\n```\n",
+      "summary": {
+        "db_path": "captures\\udp_wroom-battery-on-head-near-with-head-rotation_20260813_225240\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-08-13T15:00:16.905535+00:00",
+        "capture_start_utc": "2026-08-13T14:52:43.571535+00:00",
+        "capture_end_utc": "2026-08-13T14:57:42.831698+00:00",
+        "time_filter": "all data",
+        "frame_count": "208983",
+        "duration_s": "299.2601638",
+        "seq_min": "92763",
+        "seq_max": "302725",
+        "expected_frames": "209963",
+        "total_missing_by_seq": "980",
+        "missing_frames_by_gaps": "980",
+        "longest_missing_run": "30",
+        "missing_frames_window_sum": "980",
+        "loss_rate_mean": "0.004863248065612486",
+        "loss_rate_max": "0.14398422090729784",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "698.327428043014",
+        "fps_min": "433.7231978554626",
+        "fps_max": "744.7771626722717",
+        "rate_kib_s_mean": "707.8748733482895",
+        "rate_kib_s_min": "439.65300720114277",
+        "rate_kib_s_max": "754.9596629431818",
+        "interval_jitter_ms_mean": "7.327764779280541",
+        "interval_jitter_ms_max": "13.436646961694537",
+        "bandwidth_jitter_kib_s_mean": "20.964326891960077",
+        "bandwidth_jitter_kib_s_max": "53.5997782777998",
+        "latency_count": "208983",
+        "latency_avg_ms": "413.89435140274566",
+        "latency_p50_ms": "383.0638",
+        "latency_p95_ms": "553.40607",
+        "latency_p99_ms": "597.0967119999999",
+        "latency_window_p95_max_ms": "724.99148",
+        "experiment_id": "udp-max-throughput-001",
+        "condition_label": "udp-max-throughput",
+        "transport": "udp",
+        "payload_bytes": "1024",
+        "frame_bytes": "1038",
+        "target_fps": "unlimited",
+        "target_rate_kib_s": "",
+        "read_limit_kib_s": "",
+        "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)",
+        "note": "Hardware: ESP32-WROOM-32E; Power: battery; Placement: on-head; Distance: near (<1 m); Note: on-head, with-head-roration"
+      }
+    },
+    {
+      "stamp": "20260813_211810",
+      "label": "udp-max-throughput",
+      "summaryPath": "bandwidth_summary_20260813_211810.csv",
+      "reportPath": "bandwidth_report_20260813_211810.md",
+      "figures": [
+        "figures/bandwidth_timeseries_20260813_211810.png",
+        "figures/latency_histogram_20260813_211810.png"
+      ],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-08-13T13:18:10.177223+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/UDP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is how much packetized throughput the wireless link can sustain while keeping sequence-gap loss, CRC errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | all data |\n| Capture start UTC | 2026-08-13T13:13:09.863278+00:00 |\n| Capture end UTC | 2026-08-13T13:18:09.590484+00:00 |\n| Captured frames | 206800 |\n| Capture duration | 299.73 s |\n| Transport | udp |\n| Payload bytes | 1024 |\n| Frame bytes | 1038 |\n| Target FPS | unlimited |\n| Target throughput | n/a |\n| Mean FPS | 690.01 |\n| FPS range | 507.42 - 1050.70 |\n| Mean throughput | 699.45 KiB/s |\n| Throughput range | 514.36 - 1065.06 KiB/s |\n| Total missing frames by sequence | 572 |\n| Missing frames by in-window gaps | 572 |\n| Longest consecutive missing run | 43 |\n| Window missing-frame sum | 69658 |\n| Mean loss rate | 25.0386% |\n| Max loss rate | 35.8685% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 69114 |\n| Mean arrival jitter | 7.201 ms |\n| Max arrival jitter | 12.647 ms |\n| Mean bandwidth volatility | 31.197 KiB/s |\n| Max bandwidth volatility | 173.397 KiB/s |\n| Latency samples | 206800 |\n| Mean latency | 452.661 ms |\n| P50 latency | 382.216 ms |\n| P95 latency | 635.185 ms |\n| P99 latency | 1690.130 ms |\n\n## Quality Gates\n\n| Gate | Status | Value | Criterion |\n| --- | --- | ---: | --- |\n| CRC / parser integrity | PASS | 0 | crc_errors == 0 |\n| Application loss | WARN | 35.8685% | max loss <= 0.1% |\n| Latency availability | PASS | 206800 | SNTP latency samples present |\n\n## Figures\n\n![Bandwidth Timeseries 20260813 211810](figures/bandwidth_timeseries_20260813_211810.png)\n\n![Latency Histogram 20260813 211810](figures/latency_histogram_20260813_211810.png)\n\n\n## Interpretation Notes\n\n- A healthy UDP run should keep loss rate and CRC/resync errors at zero for the current unlimited fps x 1024 byte workload.\n- Arrival jitter captures UDP datagram cadence variability; sequence gaps represent application-visible packet loss rather than TCP backpressure.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.\n\n## Experiment Manifest\n\n```json\n{\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"UDP maximum-throughput search for neural stream transport\",\n    \"notes\": \"The ESP32-S3 sender disables FPS pacing and sends numbered 1 KiB UDP datagrams as fast as the socket path allows.\"\n  },\n  \"condition\": {\n    \"duration_min\": 2,\n    \"purpose\": \"unpaced UDP maximum-throughput measurement with per-packet sequence logging\"\n  },\n  \"condition_label\": \"udp-max-throughput\",\n  \"experiment_id\": \"udp-max-throughput-001\",\n  \"frame_bytes\": 1038,\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\"\n  },\n  \"operator\": \"\",\n  \"operator_notes\": \"Hardware: ESP32-WROOM-32E; Power: Type-C; Placement: in front of the device; Distance: near (<1 m); WiFi: 51*504 router; Receiver IP: 192.168.0.103\",\n  \"payload_bytes\": 1024,\n  \"receiver_started_at_local\": \"2026-08-13T21:13:09\",\n  \"started_at_local\": \"\",\n  \"stream\": {\n    \"transport\": \"WiFi + UDP\",\n    \"target_fps\": \"unlimited\",\n    \"payload_bytes\": 1024,\n    \"frame_bytes\": 1038,\n    \"nominal_rate_kib_s\": null,\n    \"pacing\": \"disabled\"\n  },\n  \"target_fps\": \"unlimited\",\n  \"transport\": \"udp\",\n  \"udp_socket_rcvbuf\": 4194304\n}\n```\n",
+      "summary": {
+        "db_path": "G:\\ACADEMIC\\esp32s3-bandwidth-sender\\captures\\udp_wroom-typec-front-near-router-51-504_20260813_211308\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-08-13T13:18:10.177223+00:00",
+        "capture_start_utc": "2026-08-13T13:13:09.863278+00:00",
+        "capture_end_utc": "2026-08-13T13:18:09.590484+00:00",
+        "time_filter": "all data",
+        "frame_count": "206800",
+        "duration_s": "299.727206",
+        "seq_min": "4894",
+        "seq_max": "212265",
+        "expected_frames": "207372",
+        "total_missing_by_seq": "572",
+        "missing_frames_by_gaps": "572",
+        "longest_missing_run": "43",
+        "missing_frames_window_sum": "69658",
+        "loss_rate_mean": "0.2503856426457755",
+        "loss_rate_max": "0.3586854460093897",
+        "crc_errors_total": "0",
+        "old_frames_total": "69114",
+        "fps_mean": "690.0131661603871",
+        "fps_min": "507.42077918015343",
+        "fps_max": "1050.69886970444",
+        "rate_kib_s_mean": "699.446939916486",
+        "rate_kib_s_min": "514.3581726455071",
+        "rate_kib_s_max": "1065.0638933136806",
+        "interval_jitter_ms_mean": "7.200767511173151",
+        "interval_jitter_ms_max": "12.647296412094324",
+        "bandwidth_jitter_kib_s_mean": "31.196851124488333",
+        "bandwidth_jitter_kib_s_max": "173.39660271596298",
+        "latency_count": "206800",
+        "latency_avg_ms": "452.6606174748549",
+        "latency_p50_ms": "382.2156",
+        "latency_p95_ms": "635.1850599999998",
+        "latency_p99_ms": "1690.1299310000004",
+        "latency_window_p95_max_ms": "1936.09991",
+        "experiment_id": "udp-max-throughput-001",
+        "condition_label": "udp-max-throughput",
+        "transport": "udp",
+        "payload_bytes": "1024",
+        "frame_bytes": "1038",
+        "target_fps": "unlimited",
+        "target_rate_kib_s": "",
+        "read_limit_kib_s": "",
+        "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-WROOM-32E",
+        "power": "Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)",
+        "note": "N/A"
+      }
+    },
+    {
+      "stamp": "20260813_192328",
+      "label": "udp-max-throughput",
+      "summaryPath": "bandwidth_summary_20260813_192328.csv",
+      "reportPath": "bandwidth_report_20260813_192328.md",
+      "figures": [
+        "figures/bandwidth_timeseries_20260813_192328.png",
+        "figures/latency_histogram_20260813_192328.png"
+      ],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-08-13T11:23:28.137310+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/UDP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is how much packetized throughput the wireless link can sustain while keeping sequence-gap loss, CRC errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | all data |\n| Capture start UTC | 2026-08-13T11:18:27.800757+00:00 |\n| Capture end UTC | 2026-08-13T11:23:27.636713+00:00 |\n| Captured frames | 211751 |\n| Capture duration | 299.84 s |\n| Transport | udp |\n| Payload bytes | 1024 |\n| Frame bytes | 1038 |\n| Target FPS | unlimited |\n| Target throughput | n/a |\n| Mean FPS | 706.22 |\n| FPS range | 672.76 - 730.45 |\n| Mean throughput | 715.88 KiB/s |\n| Throughput range | 681.96 - 740.43 KiB/s |\n| Total missing frames by sequence | 64 |\n| Missing frames by in-window gaps | 64 |\n| Longest consecutive missing run | 7 |\n| Window missing-frame sum | 64 |\n| Mean loss rate | 0.0304% |\n| Max loss rate | 1.8519% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 7.162 ms |\n| Max arrival jitter | 9.498 ms |\n| Mean bandwidth volatility | 6.170 KiB/s |\n| Max bandwidth volatility | 10.118 KiB/s |\n| Latency samples | 211751 |\n| Mean latency | 552.402 ms |\n| P50 latency | 523.581 ms |\n| P95 latency | 689.317 ms |\n| P99 latency | 724.449 ms |\n\n## Quality Gates\n\n| Gate | Status | Value | Criterion |\n| --- | --- | ---: | --- |\n| CRC / parser integrity | PASS | 0 | crc_errors == 0 |\n| Application loss | WARN | 1.8519% | max loss <= 0.1% |\n| Latency availability | PASS | 211751 | SNTP latency samples present |\n\n## Figures\n\n![Bandwidth Timeseries 20260813 192328](figures/bandwidth_timeseries_20260813_192328.png)\n\n![Latency Histogram 20260813 192328](figures/latency_histogram_20260813_192328.png)\n\n\n## Interpretation Notes\n\n- A healthy UDP run should keep loss rate and CRC/resync errors at zero for the current unlimited fps x 1024 byte workload.\n- Arrival jitter captures UDP datagram cadence variability; sequence gaps represent application-visible packet loss rather than TCP backpressure.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.\n\n## Experiment Manifest\n\n```json\n{\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"UDP maximum-throughput search for neural stream transport\",\n    \"notes\": \"The ESP32-S3 sender disables FPS pacing and sends numbered 1 KiB UDP datagrams as fast as the socket path allows.\"\n  },\n  \"condition\": {\n    \"duration_min\": 2,\n    \"purpose\": \"unpaced UDP maximum-throughput measurement with per-packet sequence logging\"\n  },\n  \"condition_label\": \"udp-max-throughput\",\n  \"experiment_id\": \"udp-max-throughput-001\",\n  \"frame_bytes\": 1038,\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\"\n  },\n  \"operator\": \"\",\n  \"operator_notes\": \"N/A\",\n  \"payload_bytes\": 1024,\n  \"receiver_started_at_local\": \"2026-08-13T19:18:27\",\n  \"started_at_local\": \"\",\n  \"stream\": {\n    \"transport\": \"WiFi + UDP\",\n    \"target_fps\": \"unlimited\",\n    \"payload_bytes\": 1024,\n    \"frame_bytes\": 1038,\n    \"nominal_rate_kib_s\": null,\n    \"pacing\": \"disabled\"\n  },\n  \"target_fps\": \"unlimited\",\n  \"transport\": \"udp\",\n  \"udp_socket_rcvbuf\": 4194304\n}\n```\n",
+      "summary": {
+        "db_path": "G:\\ACADEMIC\\esp32s3-bandwidth-sender\\captures\\udp_wroom-typec-front-near_20260813_191827\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-08-13T11:23:28.137310+00:00",
+        "capture_start_utc": "2026-08-13T11:18:27.800757+00:00",
+        "capture_end_utc": "2026-08-13T11:23:27.636713+00:00",
+        "time_filter": "all data",
+        "frame_count": "211751",
+        "duration_s": "299.8359555",
+        "seq_min": "151716",
+        "seq_max": "363530",
+        "expected_frames": "211815",
+        "total_missing_by_seq": "64",
+        "missing_frames_by_gaps": "64",
+        "longest_missing_run": "7",
+        "missing_frames_window_sum": "64",
+        "loss_rate_mean": "0.0003039937633234356",
+        "loss_rate_max": "0.018518518518518517",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "706.2226219393142",
+        "fps_min": "672.7601748629938",
+        "fps_max": "730.4454458174075",
+        "rate_kib_s_mean": "715.8780093486408",
+        "rate_kib_s_min": "681.9580678786989",
+        "rate_kib_s_max": "740.4320046469425",
+        "interval_jitter_ms_mean": "7.162482247435725",
+        "interval_jitter_ms_max": "9.497564302385024",
+        "bandwidth_jitter_kib_s_mean": "6.169568021287958",
+        "bandwidth_jitter_kib_s_max": "10.117833753844721",
+        "latency_count": "211751",
+        "latency_avg_ms": "552.4017547789621",
+        "latency_p50_ms": "523.581",
+        "latency_p95_ms": "689.31745",
+        "latency_p99_ms": "724.44925",
+        "latency_window_p95_max_ms": "769.00542",
+        "experiment_id": "udp-max-throughput-001",
+        "condition_label": "udp-max-throughput",
+        "transport": "udp",
+        "payload_bytes": "1024",
+        "frame_bytes": "1038",
+        "target_fps": "unlimited",
+        "target_rate_kib_s": "",
+        "read_limit_kib_s": "",
+        "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-WROOM-32E",
+        "power": "Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)",
+        "note": "N/A"
+      }
+    },
+    {
+      "stamp": "20260813_190121",
+      "label": "udp-max-throughput",
+      "summaryPath": "bandwidth_summary_20260813_190121.csv",
+      "reportPath": "bandwidth_report_20260813_190121.md",
+      "figures": [
+        "figures/bandwidth_timeseries_20260813_190121.png",
+        "figures/latency_histogram_20260813_190121.png"
+      ],
+      "markdown": "# ESP32-S3 Neural Stream Bandwidth Experiment Report\n\nGenerated at: `2026-08-13T11:01:21.476275+00:00`\n\n## Experiment Context\n\nThis report summarizes an ESP32-S3 WiFi/UDP stream used as a neural-data surrogate for downstream spike-sorting and compression experiments. The main engineering question is how much packetized throughput the wireless link can sustain while keeping sequence-gap loss, CRC errors, jitter, and end-to-end latency within an acceptable range.\n\n## Key Results\n\n| Metric | Value |\n| --- | ---: |\n| Time filter | all data |\n| Capture start UTC | 2026-08-13T10:56:20.766057+00:00 |\n| Capture end UTC | 2026-08-13T11:01:20.882540+00:00 |\n| Captured frames | 198689 |\n| Capture duration | 300.12 s |\n| Transport | udp |\n| Payload bytes | 1024 |\n| Frame bytes | 1038 |\n| Target FPS | unlimited |\n| Target throughput | n/a |\n| Mean FPS | 660.08 |\n| FPS range | 0.25 - 720.49 |\n| Mean throughput | 669.10 KiB/s |\n| Throughput range | 0.25 - 730.34 KiB/s |\n| Total missing frames by sequence | 2802 |\n| Missing frames by in-window gaps | 2802 |\n| Longest consecutive missing run | 96 |\n| Window missing-frame sum | 2802 |\n| Mean loss rate | 1.4606% |\n| Max loss rate | 21.2707% |\n| CRC/resync errors | 0 |\n| Old/duplicate frames | 0 |\n| Mean arrival jitter | 7.371 ms |\n| Max arrival jitter | 30.346 ms |\n| Mean bandwidth volatility | 47.879 KiB/s |\n| Max bandwidth volatility | 403.733 KiB/s |\n| Latency samples | 198689 |\n| Mean latency | 600.793 ms |\n| P50 latency | 576.238 ms |\n| P95 latency | 730.060 ms |\n| P99 latency | 771.737 ms |\n\n## Quality Gates\n\n| Gate | Status | Value | Criterion |\n| --- | --- | ---: | --- |\n| CRC / parser integrity | PASS | 0 | crc_errors == 0 |\n| Application loss | WARN | 21.2707% | max loss <= 0.1% |\n| Latency availability | PASS | 198689 | SNTP latency samples present |\n\n## Figures\n\n![Bandwidth Timeseries 20260813 190121](figures/bandwidth_timeseries_20260813_190121.png)\n\n![Latency Histogram 20260813 190121](figures/latency_histogram_20260813_190121.png)\n\n\n## Interpretation Notes\n\n- A healthy UDP run should keep loss rate and CRC/resync errors at zero for the current unlimited fps x 1024 byte workload.\n- Arrival jitter captures UDP datagram cadence variability; sequence gaps represent application-visible packet loss rather than TCP backpressure.\n- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.\n- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.\n- Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.\n\n## Experiment Manifest\n\n```json\n{\n  \"application_context\": {\n    \"workload\": \"spike_stream_surrogate\",\n    \"downstream_task\": \"UDP maximum-throughput search for neural stream transport\",\n    \"notes\": \"The ESP32-S3 sender disables FPS pacing and sends numbered 1 KiB UDP datagrams as fast as the socket path allows.\"\n  },\n  \"condition\": {\n    \"duration_min\": 2,\n    \"purpose\": \"unpaced UDP maximum-throughput measurement with per-packet sequence logging\"\n  },\n  \"condition_label\": \"udp-max-throughput\",\n  \"experiment_id\": \"udp-max-throughput-001\",\n  \"frame_bytes\": 1038,\n  \"network\": {\n    \"ssid\": \"Dennis\",\n    \"receiver_ip\": \"192.168.137.1\",\n    \"receiver_port\": 5001,\n    \"hotspot_device\": \"Windows laptop mobile hotspot\"\n  },\n  \"operator\": \"\",\n  \"operator_notes\": \"on head\",\n  \"payload_bytes\": 1024,\n  \"receiver_started_at_local\": \"2026-08-13T18:56:16\",\n  \"started_at_local\": \"\",\n  \"stream\": {\n    \"transport\": \"WiFi + UDP\",\n    \"target_fps\": \"unlimited\",\n    \"payload_bytes\": 1024,\n    \"frame_bytes\": 1038,\n    \"nominal_rate_kib_s\": null,\n    \"pacing\": \"disabled\"\n  },\n  \"target_fps\": \"unlimited\",\n  \"transport\": \"udp\",\n  \"udp_socket_rcvbuf\": 4194304\n}\n```\n",
+      "summary": {
+        "db_path": "G:\\ACADEMIC\\esp32s3-bandwidth-sender\\captures\\udp_battery-on-head_20260813_185615\\bandwidth_capture.sqlite3",
+        "generated_at": "2026-08-13T11:01:21.476275+00:00",
+        "capture_start_utc": "2026-08-13T10:56:20.766057+00:00",
+        "capture_end_utc": "2026-08-13T11:01:20.882540+00:00",
+        "time_filter": "all data",
+        "frame_count": "198689",
+        "duration_s": "300.1164833",
+        "seq_min": "0",
+        "seq_max": "201490",
+        "expected_frames": "201491",
+        "total_missing_by_seq": "2802",
+        "missing_frames_by_gaps": "2802",
+        "longest_missing_run": "96",
+        "missing_frames_window_sum": "2802",
+        "loss_rate_mean": "0.014606476550874674",
+        "loss_rate_max": "0.212707182320442",
+        "crc_errors_total": "0",
+        "old_frames_total": "0",
+        "fps_mean": "660.0771838765668",
+        "fps_min": "0.2482225589278437",
+        "fps_max": "720.490973127501",
+        "rate_kib_s_mean": "669.1016766248792",
+        "rate_kib_s_min": "0.2516162267256853",
+        "rate_kib_s_max": "730.3414356507285",
+        "interval_jitter_ms_mean": "7.370998770742494",
+        "interval_jitter_ms_max": "30.345877013421052",
+        "bandwidth_jitter_kib_s_mean": "47.878500247277934",
+        "bandwidth_jitter_kib_s_max": "403.73346464231764",
+        "latency_count": "198689",
+        "latency_avg_ms": "600.7934760268561",
+        "latency_p50_ms": "576.2384",
+        "latency_p95_ms": "730.05994",
+        "latency_p99_ms": "771.7366759999999",
+        "latency_window_p95_max_ms": "1179.983785",
+        "experiment_id": "udp-max-throughput-001",
+        "condition_label": "udp-max-throughput",
+        "transport": "udp",
+        "payload_bytes": "1024",
+        "frame_bytes": "1038",
+        "target_fps": "unlimited",
+        "target_rate_kib_s": "",
+        "read_limit_kib_s": "",
+        "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-WROOM-32E",
+        "power": "battery",
+        "placement": "on-head",
+        "distance": "near (<1 m)",
+        "note": "on head"
+      }
+    },
     {
       "stamp": "20260812_152841",
       "label": "udp-max-throughput",
@@ -55,6 +558,12 @@ window.REPORT_INDEX = {
         "target_rate_kib_s": "",
         "read_limit_kib_s": "",
         "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)"
       }
     },
     {
@@ -111,6 +620,12 @@ window.REPORT_INDEX = {
         "target_rate_kib_s": "",
         "read_limit_kib_s": "",
         "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)"
       }
     },
     {
@@ -167,6 +682,12 @@ window.REPORT_INDEX = {
         "target_rate_kib_s": "",
         "read_limit_kib_s": "",
         "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)"
       }
     },
     {
@@ -223,6 +744,12 @@ window.REPORT_INDEX = {
         "target_rate_kib_s": "",
         "read_limit_kib_s": "",
         "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)"
       }
     },
     {
@@ -279,6 +806,12 @@ window.REPORT_INDEX = {
         "target_rate_kib_s": "",
         "read_limit_kib_s": "",
         "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)"
       }
     },
     {
@@ -335,6 +868,12 @@ window.REPORT_INDEX = {
         "target_rate_kib_s": "",
         "read_limit_kib_s": "",
         "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)"
       }
     },
     {
@@ -391,6 +930,12 @@ window.REPORT_INDEX = {
         "target_rate_kib_s": "1216.40625",
         "read_limit_kib_s": "",
         "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)"
       }
     },
     {
@@ -446,6 +991,12 @@ window.REPORT_INDEX = {
         "target_rate_kib_s": "1013.671875",
         "read_limit_kib_s": "",
         "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)"
       }
     },
     {
@@ -501,6 +1052,12 @@ window.REPORT_INDEX = {
         "target_rate_kib_s": "810.9375",
         "read_limit_kib_s": "",
         "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)"
       }
     },
     {
@@ -556,6 +1113,12 @@ window.REPORT_INDEX = {
         "target_rate_kib_s": "810.9375",
         "read_limit_kib_s": "",
         "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)"
       }
     },
     {
@@ -612,6 +1175,12 @@ window.REPORT_INDEX = {
         "target_rate_kib_s": "506.8359375",
         "read_limit_kib_s": "",
         "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)"
       }
     },
     {
@@ -667,6 +1236,12 @@ window.REPORT_INDEX = {
         "target_rate_kib_s": "253.41796875",
         "read_limit_kib_s": "",
         "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)"
       }
     },
     {
@@ -723,6 +1298,12 @@ window.REPORT_INDEX = {
         "target_rate_kib_s": "101.3671875",
         "read_limit_kib_s": "",
         "distance_m": ""
+      },
+      "setup": {
+        "hardware": "ESP32-S3",
+        "power": "USB Type-C",
+        "placement": "in front of the device",
+        "distance": "near (<1 m)"
       }
     },
     {
@@ -774,7 +1355,8 @@ window.REPORT_INDEX = {
         "condition_label": "throttle-40kib",
         "read_limit_kib_s": "40.0",
         "distance_m": ""
-      }
+      },
+      "setup": {}
     },
     {
       "stamp": "20260801_110704",
@@ -825,7 +1407,8 @@ window.REPORT_INDEX = {
         "condition_label": "throttle-60kib",
         "read_limit_kib_s": "60.0",
         "distance_m": ""
-      }
+      },
+      "setup": {}
     },
     {
       "stamp": "20260801_110606",
@@ -876,7 +1459,8 @@ window.REPORT_INDEX = {
         "condition_label": "throttle-100kib",
         "read_limit_kib_s": "100.0",
         "distance_m": ""
-      }
+      },
+      "setup": {}
     },
     {
       "stamp": "20260801_110508",
@@ -927,7 +1511,8 @@ window.REPORT_INDEX = {
         "condition_label": "baseline-near",
         "read_limit_kib_s": "",
         "distance_m": "1"
-      }
+      },
+      "setup": {}
     },
     {
       "stamp": "20260801_110109",
@@ -978,7 +1563,8 @@ window.REPORT_INDEX = {
         "condition_label": "baseline-near",
         "read_limit_kib_s": "",
         "distance_m": "1"
-      }
+      },
+      "setup": {}
     },
     {
       "stamp": "20260801_110007",
@@ -1025,7 +1611,8 @@ window.REPORT_INDEX = {
         "latency_p95_ms": "1144.55512",
         "latency_p99_ms": "1188.1564400000002",
         "latency_window_p95_max_ms": "1369.7291"
-      }
+      },
+      "setup": {}
     },
     {
       "stamp": "20260801_104451",
@@ -1069,7 +1656,8 @@ window.REPORT_INDEX = {
         "latency_p95_ms": "1145.200925",
         "latency_p99_ms": "1188.349435",
         "latency_window_p95_max_ms": "1369.7291"
-      }
+      },
+      "setup": {}
     },
     {
       "stamp": "20260801_102141",
@@ -1113,7 +1701,8 @@ window.REPORT_INDEX = {
         "latency_p95_ms": "1166.08817",
         "latency_p99_ms": "1214.012503",
         "latency_window_p95_max_ms": "1372.1002"
-      }
+      },
+      "setup": {}
     },
     {
       "stamp": "20260801_060350",
@@ -1155,7 +1744,8 @@ window.REPORT_INDEX = {
         "latency_p95_ms": "1208.032575",
         "latency_p99_ms": "1292.443875",
         "latency_window_p95_max_ms": "3296.3407749999997"
-      }
+      },
+      "setup": {}
     },
     {
       "stamp": "20260801_060314",
@@ -1195,7 +1785,8 @@ window.REPORT_INDEX = {
         "latency_p95_ms": "1210.13346",
         "latency_p99_ms": "1295.0452080000005",
         "latency_window_p95_max_ms": "3296.3407749999997"
-      }
+      },
+      "setup": {}
     }
   ],
   "comparisons": [

@@ -214,6 +214,25 @@ This writes a Markdown report and CSV summary under `reports/`.
 
 The report also writes PNG figures under `reports/figures/`.
 
+For UDP field tests, the simplest way to generate or repair the complete report package for the newest run is:
+
+```powershell
+python tools\generate_latest_udp_report.py
+```
+
+This processes the newest `captures\udp_*` folder and writes:
+
+- Markdown report and CSV summary under `reports\`
+- Standard report figures under `reports\figures\`
+- Packet-log figures under the capture folder's `figures\`
+- A refreshed local report browser index at `reports\report_index.js`
+
+To process a specific capture folder:
+
+```powershell
+python tools\generate_latest_udp_report.py --capture-dir captures\udp_wroom-battery-on-head-near-with-head-rotation_20260813_225240
+```
+
 ## Multi-Condition Experiments
 
 For receiver-side bottleneck emulation:
@@ -261,6 +280,12 @@ idf.py -B build_udp_1k_250fps -DSDKCONFIG_DEFAULTS=sdkconfig.defaults.udp_1k_250
 ```
 
 See `STAGE6_EXPERIMENTS_AND_REPORTING.md` for the full UDP sweep matrix and reporting commands.
+
+After any UDP receiver run, generate the corresponding report and figures with:
+
+```powershell
+python tools\generate_latest_udp_report.py
+```
 
 ## Visualize UDP Packet Logs
 

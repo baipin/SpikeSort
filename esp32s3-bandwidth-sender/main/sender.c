@@ -88,6 +88,13 @@ static uint64_t current_send_timestamp_us(void)
     return (uint64_t)esp_timer_get_time();
 }
 
+static void fill_frame_payload(uint8_t *frame)
+{
+    for (size_t i = 0; i < CONFIG_BANDWIDTH_PAYLOAD_BYTES; ++i) {
+        frame[FRAME_HEADER_BYTES + i] = (uint8_t)(i & 0xff);
+    }
+}
+
 static void fill_frame(uint8_t *frame, uint32_t seq)
 {
     const uint64_t timestamp_us = current_send_timestamp_us();
@@ -95,11 +102,17 @@ static void fill_frame(uint8_t *frame, uint32_t seq)
     write_u32_le(frame, seq);
     write_u64_le(frame + 4, timestamp_us);
 
+#if !CONFIG_BANDWIDTH_DIAG_STATIC_PAYLOAD
     for (size_t i = 0; i < CONFIG_BANDWIDTH_PAYLOAD_BYTES; ++i) {
         frame[FRAME_HEADER_BYTES + i] = (uint8_t)((seq + i) & 0xff);
     }
+#endif
 
+#if CONFIG_BANDWIDTH_DIAG_DISABLE_CRC
+    const uint16_t crc = 0;
+#else
     const uint16_t crc = crc16_ccitt_false(frame, FRAME_HEADER_BYTES + CONFIG_BANDWIDTH_PAYLOAD_BYTES);
+#endif
     frame[FRAME_HEADER_BYTES + CONFIG_BANDWIDTH_PAYLOAD_BYTES] = (uint8_t)(crc & 0xff);
     frame[FRAME_HEADER_BYTES + CONFIG_BANDWIDTH_PAYLOAD_BYTES + 1] = (uint8_t)((crc >> 8) & 0xff);
 }
@@ -124,8 +137,38 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
     }
 }
 
+static void log_ap_info(void)
+{
+    wifi_ap_record_t ap_info = {0};
+    const esp_err_t ret = esp_wifi_sta_get_ap_info(&ap_info);
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "Unable to read AP info: %s", esp_err_to_name(ret));
+        return;
+    }
+
+    uint8_t primary = 0;
+    wifi_second_chan_t second = WIFI_SECOND_CHAN_NONE;
+    if (esp_wifi_get_channel(&primary, &second) != ESP_OK) {
+        primary = ap_info.primary;
+        second = WIFI_SECOND_CHAN_NONE;
+    }
+
+    ESP_LOGI(TAG,
+             "AP info: ssid=%s, rssi=%d dBm, channel=%u, second=%d, authmode=%d, phy_11b=%d, phy_11g=%d, phy_11n=%d",
+             (const char *)ap_info.ssid,
+             ap_info.rssi,
+             primary,
+             second,
+             ap_info.authmode,
+             ap_info.phy_11b,
+             ap_info.phy_11g,
+             ap_info.phy_11n);
+}
+
 static esp_err_t wifi_init_sta(void)
 {
+    esp_err_t ret;
+
     wifi_event_group = xEventGroupCreate();
     if (wifi_event_group == NULL) {
         return ESP_ERR_NO_MEM;
@@ -150,7 +193,40 @@ static esp_err_t wifi_init_sta(void)
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+
+#if CONFIG_BANDWIDTH_WIFI_11N_ONLY
+    ret = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11N);
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "WiFi protocol forced to 802.11n only");
+    } else {
+        ESP_LOGW(TAG, "Unable to force WiFi protocol to 802.11n only: %s", esp_err_to_name(ret));
+    }
+#elif CONFIG_BANDWIDTH_WIFI_11GN_ONLY
+    ret = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "WiFi protocol forced to 802.11g/n; 802.11b disabled");
+    } else {
+        ESP_LOGW(TAG, "Unable to force WiFi protocol to 802.11g/n: %s", esp_err_to_name(ret));
+    }
+#endif
+
+#if CONFIG_BANDWIDTH_WIFI_HT40
+    ret = esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW40);
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "WiFi bandwidth requested: HT40");
+    } else {
+        ESP_LOGW(TAG, "Unable to request WiFi HT40 bandwidth: %s", esp_err_to_name(ret));
+    }
+#endif
+
     ESP_ERROR_CHECK(esp_wifi_start());
+
+#if CONFIG_BANDWIDTH_WIFI_PS_NONE
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+    ESP_LOGI(TAG, "WiFi power save disabled for throughput diagnostics");
+#else
+    ESP_LOGI(TAG, "WiFi power save uses ESP-IDF default");
+#endif
 
     ESP_LOGI(TAG, "Connecting to WiFi SSID: %s", CONFIG_BANDWIDTH_WIFI_SSID);
 
@@ -162,6 +238,7 @@ static esp_err_t wifi_init_sta(void)
         portMAX_DELAY);
 
     if (bits & WIFI_CONNECTED_BIT) {
+        log_ap_info();
         return ESP_OK;
     }
 
@@ -374,6 +451,7 @@ static void sender_task(void *arg)
         vTaskDelete(NULL);
         return;
     }
+    fill_frame_payload(frame);
 
     uint32_t seq = 0;
     uint32_t sent_frames = 0;
@@ -398,6 +476,13 @@ static void sender_task(void *arg)
              CONFIG_BANDWIDTH_FPS,
              CONFIG_BANDWIDTH_SEND_TIMEOUT_MS,
              wall_clock_time_valid ? "epoch_us" : "monotonic_us");
+
+#if CONFIG_BANDWIDTH_DIAG_STATIC_PAYLOAD || CONFIG_BANDWIDTH_DIAG_DISABLE_CRC
+    ESP_LOGW(TAG,
+             "Diagnostic sender shortcuts enabled: static_payload=%d, crc_disabled=%d",
+             CONFIG_BANDWIDTH_DIAG_STATIC_PAYLOAD,
+             CONFIG_BANDWIDTH_DIAG_DISABLE_CRC);
+#endif
 
     while (true) {
 #if CONFIG_BANDWIDTH_TRANSPORT_UDP
@@ -427,10 +512,14 @@ static void sender_task(void *arg)
                 sent_frames++;
             } else if (send_result == SEND_FRAME_DROPPED) {
                 dropped_frames++;
+#if CONFIG_BANDWIDTH_LOG_DROPPED_FRAMES
                 ESP_LOGW(TAG, "Dropped frame seq=%" PRIu32 " after timeout", seq);
+#endif
             } else {
                 dropped_frames++;
+#if CONFIG_BANDWIDTH_LOG_DROPPED_FRAMES
                 ESP_LOGW(TAG, "Dropped frame seq=%" PRIu32 " because socket failed", seq);
+#endif
                 seq++;
                 break;
             }

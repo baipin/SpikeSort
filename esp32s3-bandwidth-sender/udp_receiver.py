@@ -22,6 +22,7 @@ def parse_args():
     parser.add_argument("--output-dir", default=os.environ.get("BANDWIDTH_OUTPUT_DIR", "captures"))
     parser.add_argument("--payload-bytes", type=int, default=int(os.environ.get("BANDWIDTH_PAYLOAD_BYTES", DEFAULT_PAYLOAD_BYTES)))
     parser.add_argument("--target-fps", type=int, default=int(os.environ.get("BANDWIDTH_TARGET_FPS", DEFAULT_TARGET_FPS)))
+    parser.add_argument("--skip-crc", action="store_true", help="Diagnostic mode: accept frames without CRC validation.")
     parser.add_argument("--socket-rcvbuf", type=int, default=int(os.environ.get("BANDWIDTH_UDP_RCVBUF", DEFAULT_SOCKET_RCVBUF)))
     parser.add_argument("--ws-host", default=os.environ.get("BANDWIDTH_WS_HOST", rx.WEBSOCKET_HOST))
     parser.add_argument("--ws-port", type=int, default=int(os.environ.get("BANDWIDTH_WS_PORT", rx.WEBSOCKET_PORT)))
@@ -82,6 +83,7 @@ def run_udp_receiver(args, store, broadcaster, influx_writer):
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         if args.socket_rcvbuf > 0:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, args.socket_rcvbuf)
+        sock.settimeout(0.25)
         sock.bind((args.host, args.port))
         actual_rcvbuf = sock.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
         print(
@@ -102,7 +104,14 @@ def run_udp_receiver(args, store, broadcaster, influx_writer):
         last_addr = None
         capture_start = None
         while True:
-            data, addr = sock.recvfrom(max(65535, rx.FRAME_BYTES + 64))
+            if args.duration_s is not None and capture_start is not None:
+                if time.monotonic() - capture_start >= args.duration_s:
+                    print(f"Reached requested UDP capture duration: {args.duration_s:.1f} s", flush=True)
+                    return
+            try:
+                data, addr = sock.recvfrom(max(65535, rx.FRAME_BYTES + 64))
+            except socket.timeout:
+                continue
             if capture_start is None:
                 capture_start = time.monotonic()
             if addr != last_addr:
@@ -113,9 +122,12 @@ def run_udp_receiver(args, store, broadcaster, influx_writer):
             if len(data) != rx.FRAME_BYTES:
                 stats.record_crc_error()
             else:
-                recv_crc = struct.unpack_from("<H", data, rx.HEADER_BYTES + rx.PAYLOAD_BYTES)[0]
-                calc_crc = rx.crc16_ccitt_false(data[: rx.HEADER_BYTES + rx.PAYLOAD_BYTES])
-                if calc_crc != recv_crc:
+                crc_ok = True
+                if not args.skip_crc:
+                    recv_crc = struct.unpack_from("<H", data, rx.HEADER_BYTES + rx.PAYLOAD_BYTES)[0]
+                    calc_crc = rx.crc16_ccitt_false(data[: rx.HEADER_BYTES + rx.PAYLOAD_BYTES])
+                    crc_ok = calc_crc == recv_crc
+                if not crc_ok:
                     stats.record_crc_error()
                 else:
                     seq, send_ts_us = struct.unpack_from("<IQ", data, 0)

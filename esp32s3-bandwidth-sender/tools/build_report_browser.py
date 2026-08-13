@@ -45,6 +45,45 @@ def figures_for_stamp(stamp):
     ]
 
 
+def setup_for_report(row, stamp, markdown):
+    setup = {}
+    db_path = row.get("db_path", "").replace("\\", "/").lower()
+    if "wroom-typec-front-near" in db_path:
+        setup.update(
+            {
+                "hardware": "ESP32-WROOM-32E",
+                "power": "Type-C",
+                "placement": "in front of the device",
+                "distance": "near (<1 m)",
+                "note": "N/A",
+            }
+        )
+    elif stamp == "20260813_190121":
+        setup.update(
+            {
+                "hardware": "ESP32-WROOM-32E",
+                "power": "battery",
+                "placement": "on-head",
+                "distance": "near (<1 m)",
+                "note": "on head",
+            }
+        )
+    elif row.get("transport") == "udp":
+        setup.update(
+            {
+                "hardware": "ESP32-S3",
+                "power": "USB Type-C",
+                "placement": "in front of the device",
+                "distance": "near (<1 m)",
+            }
+        )
+
+    note_match = re.search(r'"operator_notes":\s*"([^"]+)"', markdown)
+    if note_match and not setup.get("note"):
+        setup["note"] = note_match.group(1)
+    return setup
+
+
 def comparison_images_for_stamp(stamp, search_dir=None):
     comparison_dir = REPORTS_DIR / "comparisons"
     if not comparison_dir.exists():
@@ -62,6 +101,7 @@ def collect_reports():
         stamp = stamp_from_name(summary_path, "bandwidth_summary")
         md_path = REPORTS_DIR / f"bandwidth_report_{stamp}.md"
         row = read_csv_row(summary_path)
+        markdown = md_path.read_text(encoding="utf-8") if md_path.exists() else ""
         reports.append(
             {
                 "stamp": stamp,
@@ -69,8 +109,9 @@ def collect_reports():
                 "summaryPath": rel(summary_path),
                 "reportPath": rel(md_path) if md_path.exists() else "",
                 "figures": figures_for_stamp(stamp),
-                "markdown": md_path.read_text(encoding="utf-8") if md_path.exists() else "",
+                "markdown": markdown,
                 "summary": row,
+                "setup": setup_for_report(row, stamp, markdown),
             }
         )
     return reports

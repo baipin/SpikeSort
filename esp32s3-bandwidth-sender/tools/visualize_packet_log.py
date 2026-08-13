@@ -56,7 +56,14 @@ def percentile(values, pct):
 
 
 def write_plots(rows, out_dir, stem):
-    import matplotlib
+    try:
+        import matplotlib
+    except ModuleNotFoundError as exc:
+        raise SystemExit(
+            "matplotlib is required to write UDP packet-log figures. "
+            "Install it in this Python environment with: python -m pip install matplotlib "
+            "or rerun via tools/generate_latest_udp_report.py."
+        ) from exc
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt

@@ -73,6 +73,51 @@ menu "Bandwidth Sender"
         help
             Requested SO_SNDBUF size for the selected transport. Set 0 to keep the lwIP default.
 
+    config BANDWIDTH_WIFI_PS_NONE
+        bool "Disable WiFi power save"
+        default n
+        help
+            Disable station modem sleep for maximum-throughput diagnostics.
+
+    config BANDWIDTH_WIFI_11N_ONLY
+        bool "Force WiFi station protocol to 802.11n"
+        default n
+        help
+            Restrict the station protocol bitmap to 802.11n for HT throughput diagnostics. Use only with an AP/hotspot
+            that supports 802.11n.
+
+    config BANDWIDTH_WIFI_11GN_ONLY
+        bool "Disable 802.11b and keep 802.11g/n"
+        default n
+        help
+            Use 802.11g/n on 2.4 GHz while removing 802.11b rates. This keeps compatibility with APs that dislike an
+            802.11n-only association while still avoiding legacy 11b behavior.
+
+    config BANDWIDTH_WIFI_HT40
+        bool "Request 802.11n HT40 channel width"
+        default n
+        help
+            Request 40 MHz 802.11n channel width for throughput diagnostics. The AP/hotspot and local regulatory
+            conditions may still force HT20.
+
+    config BANDWIDTH_LOG_DROPPED_FRAMES
+        bool "Log each dropped frame"
+        default y
+        help
+            Print one warning per sender-side dropped frame. Disable for high-rate UDP diagnostics to reduce logging overhead.
+
+    config BANDWIDTH_DIAG_STATIC_PAYLOAD
+        bool "Diagnostic: keep payload bytes static"
+        default n
+        help
+            Fill payload bytes once and only update the frame header for each send. This isolates payload-generation cost.
+
+    config BANDWIDTH_DIAG_DISABLE_CRC
+        bool "Diagnostic: disable per-frame CRC calculation"
+        default n
+        help
+            Write a zero CRC field instead of calculating CRC16. Only use with a receiver that skips CRC validation.
+
     config BANDWIDTH_SNTP_ENABLE
         bool "Enable SNTP clock sync"
         default y

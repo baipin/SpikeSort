@@ -225,4 +225,4 @@ CONFIG_ESP_CONSOLE_USB_CDC=y
 - [x] 传输方式：**WiFi + TCP**（已确定）
 - [ ] 目标 payload 大小（1KB / 4KB / 16KB …）
 - [ ] 监控档位选择（轻量 / 中档 / 专业）
-- [ ] 是否需要记录 TCP 重传统计（需开启 lwip 统计选项）
+- [ ] 请直接接管终端

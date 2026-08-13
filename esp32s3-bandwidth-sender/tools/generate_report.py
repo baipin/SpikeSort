@@ -291,7 +291,14 @@ def load_latency_samples(db_path, last_minutes=None):
 
 
 def write_plots(summary, db_path, out_dir, stamp, last_minutes=None):
-    import matplotlib
+    try:
+        import matplotlib
+    except ModuleNotFoundError as exc:
+        raise SystemExit(
+            "matplotlib is required to write PNG report figures. "
+            "Install it in this Python environment with: python -m pip install matplotlib "
+            "or rerun via tools/run_udp_field_test.py / tools/generate_latest_udp_report.py."
+        ) from exc
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
