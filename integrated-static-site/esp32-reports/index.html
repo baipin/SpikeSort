@@ -2929,6 +2929,12 @@ window.REPORT_INDEX = {
         .replaceAll('"', "&quot;");
     }
 
+    function assetUrl(src) {
+      const value = String(src ?? "");
+      if (!value || /^(https?:|data:|\/|#)/.test(value)) return value;
+      return value.replace(/^\.?\//, "");
+    }
+
     function reportTitle(report) {
       return report.label || report.summary?.experiment_id || report.stamp;
     }
