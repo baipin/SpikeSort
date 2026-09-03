@@ -55,15 +55,23 @@ outputs/caches/
 # Build/runtime output from the ESP32 monitoring project.
 esp32s3-bandwidth-sender/build/
 esp32s3-bandwidth-sender/build_*/
+esp32s3-bandwidth-sender/build_artifacts/
 esp32s3-bandwidth-sender/captures/
 esp32s3-bandwidth-sender/reports/udp_latex_report/
 esp32s3-bandwidth-sender/managed_components/
+esp32s3-bandwidth-sender/sdkconfig.exp.*
+esp32s3-bandwidth-sender/sdkconfig.auto_local_ip
+esp32s3-bandwidth-sender/sdkconfig.generated.*
+esp32s3-bandwidth-sender/sdkconfig.*.old
 esp32s3-bandwidth-sender/sdkconfig.old
 esp32s3-bandwidth-sender/dependencies.lock
 esp32s3-bandwidth-sender/*.log
 esp32s3-bandwidth-sender/*.err.log
 esp32s3-bandwidth-sender/__pycache__/
 esp32s3-bandwidth-sender/**/__pycache__/
+esp32s3-bandwidth-sender/tmp/
+esp32s3-bandwidth-sender/tmp_*.err
+esp32s3-bandwidth-sender/field_terminal/markers.json
 
 # Python caches and local logs.
 __pycache__/
