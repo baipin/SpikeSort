@@ -22,6 +22,8 @@ def load_packet_log(path):
                     "recv_time_ns": int(row["recv_time_ns"]),
                     "recv_epoch_ms": int(row["recv_epoch_ms"]),
                     "latency_ms": parse_float(row.get("latency_ms")),
+                    "relative_latency_ms": parse_float(row.get("relative_latency_ms")),
+                    "send_ts_us": int(row["send_ts_us"]),
                 }
             )
     if not rows:
@@ -74,6 +76,14 @@ def write_plots(rows, out_dir, stem):
     t_s = [(row["recv_time_ns"] - first_ns) / 1_000_000_000.0 for row in rows]
     seq = [row["seq"] for row in rows]
     latencies = [row["latency_ms"] for row in rows if row["latency_ms"] is not None]
+    relative_latencies = [row["relative_latency_ms"] for row in rows if row["relative_latency_ms"] is not None]
+    if not relative_latencies and rows:
+        first_recv_ns = rows[0]["recv_time_ns"]
+        first_send_ts_us = rows[0]["send_ts_us"]
+        relative_latencies = [
+            (row["recv_time_ns"] - first_recv_ns) / 1_000_000.0 - (row["send_ts_us"] - first_send_ts_us) / 1_000.0
+            for row in rows
+        ]
     intervals_ms = [
         (rows[i]["recv_time_ns"] - rows[i - 1]["recv_time_ns"]) / 1_000_000.0
         for i in range(1, len(rows))
@@ -140,23 +150,41 @@ def write_plots(rows, out_dir, stem):
     fig.savefig(timing_path, dpi=170)
     plt.close(fig)
 
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5), constrained_layout=True)
     if latencies:
-        fig, ax = plt.subplots(figsize=(8, 5), constrained_layout=True)
-        ax.hist(latencies, bins=120, color="#17becf", alpha=0.85)
-        ax.axvline(percentile(latencies, 50), color="#2ca02c", linestyle="--", label="P50")
-        ax.axvline(percentile(latencies, 95), color="#ff7f0e", linestyle="--", label="P95")
-        ax.axvline(percentile(latencies, 99), color="#d62728", linestyle="--", label="P99")
-        ax.set_title("End-to-end latency distribution")
-        ax.set_xlabel("latency (ms)")
-        ax.set_ylabel("count")
-        ax.legend()
-        ax.grid(True, alpha=0.2)
-        latency_path = out_dir / f"{stem}_latency.png"
-        fig.savefig(latency_path, dpi=170)
-        plt.close(fig)
-        return [overview_path, timing_path, latency_path]
+        axes[0].hist(latencies, bins=120, color="#17becf", alpha=0.85)
+        axes[0].axvline(percentile(latencies, 50), color="#2ca02c", linestyle="--", label="P50")
+        axes[0].axvline(percentile(latencies, 95), color="#ff7f0e", linestyle="--", label="P95")
+        axes[0].axvline(percentile(latencies, 99), color="#d62728", linestyle="--", label="P99")
+        axes[0].set_title("Absolute latency")
+        axes[0].set_xlabel("latency (ms)")
+        axes[0].set_ylabel("count")
+        axes[0].legend()
+    else:
+        axes[0].text(0.5, 0.5, "Absolute latency unavailable", ha="center", va="center", fontsize=12)
+        axes[0].set_axis_off()
 
-    return [overview_path, timing_path]
+    if relative_latencies:
+        axes[1].hist(relative_latencies, bins=120, color="#6f42c1", alpha=0.85)
+        axes[1].axvline(percentile(relative_latencies, 50), color="#2ca02c", linestyle="--", label="P50")
+        axes[1].axvline(percentile(relative_latencies, 95), color="#ff7f0e", linestyle="--", label="P95")
+        axes[1].axvline(percentile(relative_latencies, 99), color="#d62728", linestyle="--", label="P99")
+        axes[1].set_title("Relative latency from first packet")
+        axes[1].set_xlabel("latency (ms)")
+        axes[1].set_ylabel("count")
+        axes[1].legend()
+    else:
+        axes[1].text(0.5, 0.5, "Relative latency unavailable", ha="center", va="center", fontsize=12)
+        axes[1].set_axis_off()
+
+    for ax in axes:
+        ax.grid(True, alpha=0.2)
+
+    latency_path = out_dir / f"{stem}_latency.png"
+    fig.savefig(latency_path, dpi=170)
+    plt.close(fig)
+
+    return [overview_path, timing_path, latency_path]
 
 
 def main():

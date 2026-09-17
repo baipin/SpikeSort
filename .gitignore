@@ -90,3 +90,20 @@ logs/
 *.out
 *.synctex.gz
 *.toc
+
+# Repository-level local build, QA, and TeX cache directories.
+/build/
+/report_qa_*/
+/tmp_*/
+/tmp/
+/.texmfcache/
+/.texmfvar/
+
+# Machine-local ESP-IDF configuration.
+/esp32s3-bandwidth-sender/sdkconfig
+
+# Large reproducible ESP32 report batches stay local by default. Selected
+# final reports can be force-added when they are intentionally published.
+/esp32s3-bandwidth-sender/reports/udp_battery_position_series_20260901/*/offline_cc/
+/esp32s3-bandwidth-sender/reports/udp_battery_position_series_20260901/*/figures/*_device_distribution.png
+/integrated-static-site/esp32-reports/udp_battery_position_series_20260901/

@@ -48,7 +48,7 @@ def report_python():
 def latest_capture(captures_root):
     candidates = [
         path
-        for path in captures_root.glob("udp_*")
+        for path in captures_root.rglob("udp_*")
         if path.is_dir() and (path / "bandwidth_capture.sqlite3").exists()
     ]
     if not candidates:
@@ -69,7 +69,7 @@ def parse_args():
     )
     parser.add_argument(
         "--capture-dir",
-        help="Capture directory to process. Defaults to the newest captures/udp_* directory.",
+        help="Capture directory to process. Defaults to the newest captures/**/udp_* directory.",
     )
     parser.add_argument(
         "--manifest",

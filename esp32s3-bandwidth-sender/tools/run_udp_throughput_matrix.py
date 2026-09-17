@@ -32,7 +32,7 @@ EXPERIMENTS = [
         "payload_bytes": 1472,
         "target_fps": "unlimited",
         "skip_crc": True,
-        "notes": "ESP32-S3 UDP max-throughput: iperf-like blocking UDP fast path, dynamic TX buffers, lwIP IRAM, 1472-byte payload, static payload, CRC disabled, 11g/n, HT20.",
+        "notes": "ESP32-S3 UDP saturated maximum-throughput profile: unlimited non-blocking send loop, dynamic TX/RX buffers, lwIP IRAM, 1472-byte payload, static payload, CRC disabled, 11g/n, HT20.",
     },
     {
         "name": "s3-dynamic-tx-1472-800fps",
@@ -311,14 +311,22 @@ def idf_command(*args):
     if idf_path:
         idf_py = Path(idf_path) / "tools" / "idf.py"
         if idf_py.exists():
-            return [sys.executable, str(idf_py), *args]
+            python_env = os.environ.get("IDF_PYTHON_ENV_PATH")
+            candidates = []
+            if python_env:
+                candidates.append(Path(python_env) / "Scripts" / "python.exe")
+            candidates.append(Path(r"E:\Espressif\tools\python\v6.0.2\venv\Scripts\python.exe"))
+            idf_python = next((str(path) for path in candidates if path.exists()), sys.executable)
+            return [idf_python, str(idf_py), *args]
     return [sys.executable, "-m", "idf_component_tools.sources.idf", *args]
 
 
 def idf_env(target, jobs=None):
     env = os.environ.copy()
     env.setdefault("IDF_TOOLS_PATH", r"E:\Espressif\tools")
+    env.setdefault("IDF_PYTHON_ENV_PATH", r"E:\Espressif\tools\python_env\idf6.0_py3.13_env")
     env.setdefault("ESP_ROM_ELF_DIR", r"E:\Espressif\tools\esp-rom-elfs\20241011")
+    env.setdefault("ESP_IDF_VERSION", "6.0.2")
     env["IDF_TARGET"] = target
     if jobs is not None:
         env["CMAKE_BUILD_PARALLEL_LEVEL"] = str(jobs)
@@ -464,19 +472,26 @@ def run_one(exp, args, log_handle):
     build_dir = str((PROJECT_ROOT / args.build_root / f"build_exp_{exp['name']}").resolve())
 
     effective_defaults = exp["defaults"]
-    if args.strict_send_success or args.receiver_ip:
+    if args.strict_send_success or args.receiver_ip or args.ssid or args.password:
         overrides = {}
         if args.strict_send_success:
             overrides.update(
                 {
                     "BANDWIDTH_UDP_BLOCKING_FAST_SEND": False,
                     "BANDWIDTH_RECORD_SEND_SUCCESSES": True,
+                    "BANDWIDTH_50MS_TELEMETRY": True,
                     "BANDWIDTH_TEST_DURATION_S": int(args.duration_s),
-                    "BANDWIDTH_SEND_RECORD_CAPACITY": 250000,
+                    # Saturated UDP can exceed 4,000 successful sends/s; keep the
+                    # strict-loss record complete for a normal short experiment.
+                    "BANDWIDTH_SEND_RECORD_CAPACITY": max(1000000, int(args.duration_s * 10000)),
                 }
             )
         if args.receiver_ip:
             overrides["BANDWIDTH_SERVER_IP"] = f'"{args.receiver_ip}"'
+        if args.ssid:
+            overrides["BANDWIDTH_WIFI_SSID"] = f'"{args.ssid}"'
+        if args.password:
+            overrides["BANDWIDTH_WIFI_PASSWORD"] = f'"{args.password}"'
         effective_defaults = make_defaults_override(exp["defaults"], exp["name"], overrides)
 
     common_idf_args = [
@@ -668,6 +683,8 @@ def parse_args():
         "--receiver-ip",
         help="Override CONFIG_BANDWIDTH_SERVER_IP in the generated sdkconfig for this run.",
     )
+    parser.add_argument("--ssid", help="Override the Wi-Fi SSID in the generated sdkconfig for this run.")
+    parser.add_argument("--password", help="Override the Wi-Fi password in the generated sdkconfig for this run.")
     parser.add_argument("--condition-suffix", default="near")
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--output-root", default="captures")

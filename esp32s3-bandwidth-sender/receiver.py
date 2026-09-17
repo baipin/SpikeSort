@@ -30,6 +30,9 @@ PAYLOAD_BYTES = 4096
 HEADER_BYTES = 12
 CRC_BYTES = 2
 FRAME_BYTES = HEADER_BYTES + PAYLOAD_BYTES + CRC_BYTES
+TELEMETRY_MAGIC = 0x314C4554
+TELEMETRY_VERSION = 2
+EXTENDED_TELEMETRY_BYTES = 52
 TARGET_FPS = 20
 TARGET_RATE_KIB_S = TARGET_FPS * FRAME_BYTES / 1024.0
 STALE_CONNECTION_TIMEOUT_S = 3.0
@@ -51,6 +54,35 @@ def crc16_ccitt_false(data: bytes) -> int:
             else:
                 crc = (crc << 1) & 0xFFFF
     return crc
+
+
+def parse_sender_telemetry(payload: bytes):
+    """Decode the versioned sender snapshot carried inside the fixed payload."""
+    if len(payload) < 20:
+        return None
+    values = struct.unpack_from("<IIIII", payload, 0)
+    if values[0] != TELEMETRY_MAGIC:
+        return None
+    result = {
+        "telemetry_window": values[1],
+        "telemetry_offered_frames": values[2],
+        "telemetry_sent_frames": values[3],
+        "telemetry_dropped_frames": values[4],
+    }
+    if len(payload) >= EXTENDED_TELEMETRY_BYTES:
+        extended = struct.unpack_from("<IIIIIIII", payload, 20)
+        if extended[0] == TELEMETRY_VERSION:
+            result.update({
+                "telemetry_version": extended[0],
+                "sender_backpressure_events": extended[1],
+                "sender_fatal_send_errors": extended[2],
+                "sender_eagain_events": extended[3],
+                "sender_enobufs_events": extended[4],
+                "sender_enomem_events": extended[5],
+                "sender_last_errno": extended[6],
+                "sender_uptime_ms": struct.unpack_from("<I", payload, 48)[0],
+            })
+    return result
 
 
 def stddev(values):
@@ -179,7 +211,7 @@ class WebSocketBroadcaster:
 
 
 class CaptureStore:
-    def __init__(self, output_dir: Path, run_metadata=None):
+    def __init__(self, output_dir: Path, run_metadata=None, defer_frame_storage=False, defer_metrics_storage=False):
         output_dir.mkdir(parents=True, exist_ok=True)
         started_at = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.run_metadata = run_metadata or {}
@@ -187,10 +219,17 @@ class CaptureStore:
         self.frame_csv_path = output_dir / f"frames_{started_at}.csv"
         self.metrics_csv_path = output_dir / f"metrics_{started_at}.csv"
         self.packet_log_path = output_dir / f"packet_log_{started_at}.csv"
+        self.telemetry_path = output_dir / f"sender_telemetry_{started_at}.csv"
         self.sqlite_path = output_dir / "bandwidth_capture.sqlite3"
         self.frame_csv_file = self.frame_csv_path.open("w", newline="", encoding="utf-8")
         self.metrics_csv_file = self.metrics_csv_path.open("w", newline="", encoding="utf-8")
         self.packet_log_file = self.packet_log_path.open("w", newline="", encoding="utf-8")
+        self.telemetry_file = self.telemetry_path.open("w", newline="", encoding="utf-8")
+        self.defer_frame_storage = defer_frame_storage
+        self.defer_metrics_storage = defer_metrics_storage
+        self.deferred_frames = []
+        self.deferred_metrics = []
+        self.sender_telemetry_rows = 0
         self.frame_writer = csv.DictWriter(
             self.frame_csv_file,
             fieldnames=[
@@ -199,9 +238,22 @@ class CaptureStore:
                 "send_ts_us",
                 "timestamp_mode",
                 "latency_ms",
+                "relative_latency_ms",
                 "payload_bytes",
                 "frame_bytes",
                 "arrival_interval_ms",
+                "telemetry_window",
+                "telemetry_offered_frames",
+                "telemetry_sent_frames",
+                "telemetry_dropped_frames",
+                "telemetry_version",
+                "sender_backpressure_events",
+                "sender_fatal_send_errors",
+                "sender_eagain_events",
+                "sender_enobufs_events",
+                "sender_enomem_events",
+                "sender_last_errno",
+                "sender_uptime_ms",
             ],
         )
         self.metrics_writer = csv.DictWriter(
@@ -223,6 +275,11 @@ class CaptureStore:
                 "latency_p50_ms",
                 "latency_p95_ms",
                 "latency_p99_ms",
+                "relative_latency_count",
+                "relative_latency_avg_ms",
+                "relative_latency_p50_ms",
+                "relative_latency_p95_ms",
+                "relative_latency_p99_ms",
             ],
             extrasaction="ignore",
         )
@@ -236,57 +293,192 @@ class CaptureStore:
                 "send_ts_us",
                 "timestamp_mode",
                 "latency_ms",
+                "relative_latency_ms",
+                "telemetry_window",
+                "telemetry_offered_frames",
+                "telemetry_sent_frames",
+                "telemetry_dropped_frames",
+                "telemetry_version",
+                "sender_backpressure_events",
+                "sender_fatal_send_errors",
+                "sender_eagain_events",
+                "sender_enobufs_events",
+                "sender_enomem_events",
+                "sender_last_errno",
+                "sender_uptime_ms",
+            ],
+            extrasaction="ignore",
+        )
+        self.telemetry_writer = csv.DictWriter(
+            self.telemetry_file,
+            fieldnames=[
+                "recv_time_ns", "recv_epoch_ms", "telemetry_window", "offered_frames", "sent_frames", "dropped_frames",
+                "telemetry_version", "sender_backpressure_events", "sender_fatal_send_errors",
+                "sender_eagain_events", "sender_enobufs_events", "sender_enomem_events",
+                "sender_last_errno", "sender_uptime_ms",
             ],
             extrasaction="ignore",
         )
         self.frame_writer.writeheader()
         self.metrics_writer.writeheader()
         self.packet_log_writer.writeheader()
+        self.telemetry_writer.writeheader()
         self.db = sqlite3.connect(self.sqlite_path)
         self._init_db()
 
     def close(self):
+        self.flush_deferred_frames()
+        self.flush_deferred_metrics()
+        quality = {
+            "schema_version": 1,
+            "sender_telemetry_rows": self.sender_telemetry_rows,
+            "sender_telemetry_available": self.sender_telemetry_rows > 0,
+            "interpretation": (
+                "Sender 50 ms counters were observed in received UDP payloads."
+                if self.sender_telemetry_rows > 0
+                else "No sender 50 ms counters were observed; rebuild and flash firmware with CONFIG_BANDWIDTH_50MS_TELEMETRY=y."
+            ),
+        }
+        (self.sqlite_path.parent / "capture_quality.json").write_text(
+            json.dumps(quality, indent=2), encoding="utf-8"
+        )
         self.frame_csv_file.close()
         self.metrics_csv_file.close()
         self.packet_log_file.close()
+        self.telemetry_file.close()
         self.db.close()
 
     def record_frame(self, row):
-        self.frame_writer.writerow(row)
-        recv_epoch_ms = row["recv_time_ns"] // 1_000_000
-        self.packet_log_writer.writerow(
-            {
-                "seq": row["seq"],
-                "recv_time_utc_ms": datetime.fromtimestamp(
-                    recv_epoch_ms / 1000.0,
-                    tz=timezone.utc,
-                ).isoformat(timespec="milliseconds"),
-                "recv_epoch_ms": recv_epoch_ms,
-                "recv_time_ns": row["recv_time_ns"],
-                "send_ts_us": row["send_ts_us"],
-                "timestamp_mode": row["timestamp_mode"],
-                "latency_ms": row["latency_ms"],
-            }
-        )
-        self.db.execute(
-            """
-            INSERT INTO frames
-            (recv_time_ns, seq, send_ts_us, timestamp_mode, latency_ms, payload_bytes, frame_bytes, arrival_interval_ms)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """,
+        if self.defer_frame_storage:
+            self.deferred_frames.append(
+                (
+                    row["recv_time_ns"],
+                    row["seq"],
+                    row["send_ts_us"],
+                    row["timestamp_mode"],
+                    row["latency_ms"],
+                    row["relative_latency_ms"],
+                    row["payload_bytes"],
+                    row["frame_bytes"],
+                    row["arrival_interval_ms"],
+                    row.get("sender_diagnostics", {}),
+                )
+            )
+            return
+
+        self._write_frame_row(
             (
                 row["recv_time_ns"],
                 row["seq"],
                 row["send_ts_us"],
                 row["timestamp_mode"],
                 row["latency_ms"],
+                row["relative_latency_ms"],
                 row["payload_bytes"],
                 row["frame_bytes"],
                 row["arrival_interval_ms"],
-            ),
+                row.get("sender_diagnostics", {}),
+            )
         )
 
+    def _write_frame_row(self, row):
+        (
+            recv_time_ns,
+            seq,
+            send_ts_us,
+            timestamp_mode,
+            latency_ms,
+            relative_latency_ms,
+            payload_bytes,
+            frame_bytes,
+            arrival_interval_ms,
+            sender_diagnostics,
+        ) = row
+        self.frame_writer.writerow(
+            {
+                "recv_time_ns": recv_time_ns,
+                "seq": seq,
+                "send_ts_us": send_ts_us,
+                "timestamp_mode": timestamp_mode,
+                "latency_ms": latency_ms,
+                "relative_latency_ms": relative_latency_ms,
+                "payload_bytes": payload_bytes,
+                "frame_bytes": frame_bytes,
+                "arrival_interval_ms": arrival_interval_ms,
+                **(sender_diagnostics if isinstance(sender_diagnostics, dict) else {}),
+            }
+        )
+        recv_epoch_ms = recv_time_ns // 1_000_000
+        self.packet_log_writer.writerow(
+            {
+                "seq": seq,
+                "recv_time_utc_ms": datetime.fromtimestamp(
+                    recv_epoch_ms / 1000.0,
+                    tz=timezone.utc,
+                ).isoformat(timespec="milliseconds"),
+                "recv_epoch_ms": recv_epoch_ms,
+                "recv_time_ns": recv_time_ns,
+                "send_ts_us": send_ts_us,
+                "timestamp_mode": timestamp_mode,
+                "latency_ms": latency_ms,
+                "relative_latency_ms": relative_latency_ms,
+                **(sender_diagnostics if isinstance(sender_diagnostics, dict) else {}),
+            }
+        )
+        self.db.execute(
+            """
+            INSERT INTO frames
+            (recv_time_ns, seq, send_ts_us, timestamp_mode, latency_ms, relative_latency_ms, payload_bytes, frame_bytes, arrival_interval_ms)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            row[:9],
+        )
+
+    def record_sender_telemetry(self, recv_time_ns, window_id, offered, sent, dropped, diagnostics=None):
+        self.sender_telemetry_rows += 1
+        recv_epoch_ms = recv_time_ns // 1_000_000
+        self.telemetry_writer.writerow({
+            "recv_time_ns": recv_time_ns,
+            "recv_epoch_ms": recv_epoch_ms,
+            "telemetry_window": window_id,
+            "offered_frames": offered,
+            "sent_frames": sent,
+            "dropped_frames": dropped,
+            **(diagnostics or {}),
+        })
+        self.telemetry_file.flush()
+
+    def flush_deferred_frames(self):
+        if not self.deferred_frames:
+            return
+        print(f"Writing {len(self.deferred_frames)} deferred frame records to CSV and SQLite...", flush=True)
+        for row in self.deferred_frames:
+            self._write_frame_row(row)
+        self.deferred_frames.clear()
+        self.frame_csv_file.flush()
+        self.packet_log_file.flush()
+        self.db.commit()
+
     def record_metrics(self, row):
+        if self.defer_metrics_storage:
+            self.deferred_metrics.append(dict(row))
+            return
+
+        self._write_metrics(row)
+
+    def flush_deferred_metrics(self):
+        if not self.deferred_metrics:
+            return
+        print(f"Writing {len(self.deferred_metrics)} deferred metric records to CSV and SQLite...", flush=True)
+        for row in self.deferred_metrics:
+            self._write_metrics(row, commit=False)
+        self.deferred_metrics.clear()
+        self.frame_csv_file.flush()
+        self.metrics_csv_file.flush()
+        self.packet_log_file.flush()
+        self.db.commit()
+
+    def _write_metrics(self, row, commit=True):
         self.metrics_writer.writerow(row)
         self.frame_csv_file.flush()
         self.metrics_csv_file.flush()
@@ -318,7 +510,8 @@ class CaptureStore:
                 row["latency_p99_ms"],
             ),
         )
-        self.db.commit()
+        if commit:
+            self.db.commit()
 
     def _init_db(self):
         self.db.execute(
@@ -339,6 +532,7 @@ class CaptureStore:
                 send_ts_us INTEGER NOT NULL,
                 timestamp_mode TEXT NOT NULL DEFAULT 'monotonic_us',
                 latency_ms REAL,
+                relative_latency_ms REAL,
                 payload_bytes INTEGER NOT NULL,
                 frame_bytes INTEGER NOT NULL,
                 arrival_interval_ms REAL
@@ -364,17 +558,28 @@ class CaptureStore:
                 latency_avg_ms REAL,
                 latency_p50_ms REAL,
                 latency_p95_ms REAL,
-                latency_p99_ms REAL
+                latency_p99_ms REAL,
+                relative_latency_count INTEGER NOT NULL DEFAULT 0,
+                relative_latency_avg_ms REAL,
+                relative_latency_p50_ms REAL,
+                relative_latency_p95_ms REAL,
+                relative_latency_p99_ms REAL
             )
             """
         )
         self._ensure_column("frames", "timestamp_mode", "TEXT NOT NULL DEFAULT 'monotonic_us'")
         self._ensure_column("frames", "latency_ms", "REAL")
+        self._ensure_column("frames", "relative_latency_ms", "REAL")
         self._ensure_column("metrics", "latency_count", "INTEGER NOT NULL DEFAULT 0")
         self._ensure_column("metrics", "latency_avg_ms", "REAL")
         self._ensure_column("metrics", "latency_p50_ms", "REAL")
         self._ensure_column("metrics", "latency_p95_ms", "REAL")
         self._ensure_column("metrics", "latency_p99_ms", "REAL")
+        self._ensure_column("metrics", "relative_latency_count", "INTEGER NOT NULL DEFAULT 0")
+        self._ensure_column("metrics", "relative_latency_avg_ms", "REAL")
+        self._ensure_column("metrics", "relative_latency_p50_ms", "REAL")
+        self._ensure_column("metrics", "relative_latency_p95_ms", "REAL")
+        self._ensure_column("metrics", "relative_latency_p99_ms", "REAL")
         self.db.execute(
             """
             INSERT OR REPLACE INTO experiment_runs
@@ -497,6 +702,10 @@ class InfluxWriter:
 class WindowStats:
     def __init__(self):
         self.expected_seq = None
+        # Keep sequence identity separate from packet arrival count. UDP can
+        # deliver duplicates or reordered packets; neither should inflate
+        # received-frame statistics.
+        self.seen_sequences = set()
         self.frames = 0
         self.window_bytes = 0
         self.missing_frames = 0
@@ -505,11 +714,22 @@ class WindowStats:
         self.last_recv_time_ns = None
         self.intervals_ms = []
         self.latencies_ms = []
+        self.relative_latencies_ms = []
+        self.first_recv_time_ns = None
+        self.first_send_ts_us = None
         self.window_start = time.monotonic()
         self.recent_rates = deque(maxlen=RECENT_WINDOW_COUNT)
 
     def record_crc_error(self):
         self.crc_errors += 1
+
+    def reset_sequence_tracking(self):
+        """Start a new UDP source stream without carrying old sequence state across it."""
+        self.expected_seq = None
+        self.seen_sequences.clear()
+        self.last_recv_time_ns = None
+        self.first_recv_time_ns = None
+        self.first_send_ts_us = None
 
     def looks_plausible(self, seq: int, send_ts_us: int):
         if send_ts_us < 0:
@@ -522,15 +742,31 @@ class WindowStats:
             return False
         return True
 
-    def record_frame(self, seq: int, recv_time_ns: int, latency_ms):
+    def record_frame(self, seq: int, recv_time_ns: int, send_ts_us: int, latency_ms):
         interval_ms = None
         if self.last_recv_time_ns is not None:
             interval_ms = (recv_time_ns - self.last_recv_time_ns) / 1_000_000.0
             self.intervals_ms.append(interval_ms)
         self.last_recv_time_ns = recv_time_ns
+        if self.first_recv_time_ns is None:
+            self.first_recv_time_ns = recv_time_ns
+        if self.first_send_ts_us is None:
+            self.first_send_ts_us = send_ts_us
         if latency_ms is not None:
             self.latencies_ms.append(latency_ms)
+        relative_latency_ms = None
+        if self.first_recv_time_ns is not None and self.first_send_ts_us is not None:
+            relative_latency_ms = (
+                (recv_time_ns - self.first_recv_time_ns) / 1_000_000.0
+                - (send_ts_us - self.first_send_ts_us) / 1_000.0
+            )
+            self.relative_latencies_ms.append(relative_latency_ms)
 
+        if seq in self.seen_sequences:
+            self.old_frames += 1
+            return interval_ms, relative_latency_ms
+
+        self.seen_sequences.add(seq)
         if self.expected_seq is None:
             self.expected_seq = seq + 1
         elif seq == self.expected_seq:
@@ -538,12 +774,13 @@ class WindowStats:
         elif seq > self.expected_seq:
             self.missing_frames += seq - self.expected_seq
             self.expected_seq = seq + 1
-        else:
-            self.old_frames += 1
+        # A unique packet arriving out of order is still one received packet.
+        # Any gap already counted above is intentionally left as a sequence-gap
+        # estimate; the strict sender-success comparison is done offline.
 
         self.frames += 1
         self.window_bytes += FRAME_BYTES
-        return interval_ms
+        return interval_ms, relative_latency_ms
 
     def maybe_emit_metrics(self):
         now = time.monotonic()
@@ -555,6 +792,7 @@ class WindowStats:
         rate_kib_s = self.window_bytes / elapsed / 1024.0
         self.recent_rates.append(rate_kib_s)
         latency_count = len(self.latencies_ms)
+        relative_latency_count = len(self.relative_latencies_ms)
         metrics = {
             "type": "metrics",
             "window_end_ns": time.time_ns(),
@@ -573,6 +811,11 @@ class WindowStats:
             "latency_p50_ms": percentile(self.latencies_ms, 50) if latency_count else None,
             "latency_p95_ms": percentile(self.latencies_ms, 95) if latency_count else None,
             "latency_p99_ms": percentile(self.latencies_ms, 99) if latency_count else None,
+            "relative_latency_count": relative_latency_count,
+            "relative_latency_avg_ms": sum(self.relative_latencies_ms) / relative_latency_count if relative_latency_count else None,
+            "relative_latency_p50_ms": percentile(self.relative_latencies_ms, 50) if relative_latency_count else None,
+            "relative_latency_p95_ms": percentile(self.relative_latencies_ms, 95) if relative_latency_count else None,
+            "relative_latency_p99_ms": percentile(self.relative_latencies_ms, 99) if relative_latency_count else None,
         }
 
         self.frames = 0
@@ -582,6 +825,7 @@ class WindowStats:
         self.old_frames = 0
         self.intervals_ms = []
         self.latencies_ms = []
+        self.relative_latencies_ms = []
         self.window_start = now
         return metrics
 
@@ -605,10 +849,50 @@ def parse_args():
     parser.add_argument("--notes", default=os.environ.get("BANDWIDTH_NOTES"))
     parser.add_argument("--manifest", help="Optional experiment JSON manifest to bind to this capture run")
     parser.add_argument(
+        "--payload-bytes",
+        type=int,
+        default=int(os.environ.get("BANDWIDTH_PAYLOAD_BYTES", PAYLOAD_BYTES)),
+        help="Expected sender payload size in bytes.",
+    )
+    parser.add_argument(
+        "--target-fps",
+        type=float,
+        default=float(os.environ.get("BANDWIDTH_TARGET_FPS", TARGET_FPS)),
+        help="Expected sender frame rate, used for metadata and target-rate reporting.",
+    )
+    parser.add_argument(
         "--read-limit-kib-s",
         type=float,
         default=float(os.environ.get("BANDWIDTH_READ_LIMIT_KIB_S", "0")),
         help="Throttle receiver socket reads to this KiB/s. Use 0 for no artificial limit.",
+    )
+    parser.add_argument(
+        "--recv-bytes",
+        type=int,
+        default=int(os.environ.get("BANDWIDTH_RECV_BYTES", "65536")),
+        help="Maximum bytes per TCP recv() call. Use FRAME_BYTES to reduce application-side batching.",
+    )
+    parser.add_argument(
+        "--socket-rcvbuf",
+        type=int,
+        default=int(os.environ.get("BANDWIDTH_SOCKET_RCVBUF", "0")),
+        help="Requested TCP SO_RCVBUF size on accepted connections. Use 0 to keep the OS default.",
+    )
+    parser.add_argument("--duration-s", type=float, help="Stop after this many seconds of valid frame capture.")
+    parser.add_argument(
+        "--defer-frame-storage",
+        action="store_true",
+        help="Keep per-frame records in memory during capture and write CSV/SQLite after capture stops.",
+    )
+    parser.add_argument(
+        "--defer-metrics-storage",
+        action="store_true",
+        help="Keep one-second metric records in memory and write them after capture stops.",
+    )
+    parser.add_argument(
+        "--quiet-metrics",
+        action="store_true",
+        help="Do not print one-second metric summaries while capturing.",
     )
     return parser.parse_args()
 
@@ -653,17 +937,25 @@ def run_receiver(args, store: CaptureStore, broadcaster, influx_writer: InfluxWr
         while True:
             conn, addr = server.accept()
             with conn:
+                if args.socket_rcvbuf > 0:
+                    conn.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, args.socket_rcvbuf)
                 conn.settimeout(STALE_CONNECTION_TIMEOUT_S)
                 print(f"Connected by {addr}", flush=True)
                 buffer = bytearray()
                 stats = WindowStats()
                 invalid_scan_bytes = 0
                 close_connection = False
+                capture_start = None
                 read_deadline = time.monotonic()
 
                 while True:
+                    if args.duration_s is not None and capture_start is not None:
+                        if time.monotonic() - capture_start >= args.duration_s:
+                            print(f"Reached requested TCP capture duration: {args.duration_s:.1f} s", flush=True)
+                            return
+
                     try:
-                        data = conn.recv(65536)
+                        data = conn.recv(args.recv_bytes)
                     except socket.timeout:
                         print("No data for 3 seconds; closing stale connection", flush=True)
                         break
@@ -706,9 +998,16 @@ def run_receiver(args, store: CaptureStore, broadcaster, influx_writer: InfluxWr
 
                         del buffer[:FRAME_BYTES]
                         invalid_scan_bytes = 0
+                        if capture_start is None:
+                            capture_start = time.monotonic()
                         recv_time_ns = time.time_ns()
                         timestamp_mode, latency_ms = classify_timestamp(send_ts_us, recv_time_ns)
-                        arrival_interval_ms = stats.record_frame(seq, recv_time_ns, latency_ms)
+                        arrival_interval_ms, relative_latency_ms = stats.record_frame(
+                            seq,
+                            recv_time_ns,
+                            send_ts_us,
+                            latency_ms,
+                        )
                         store.record_frame(
                             {
                                 "recv_time_ns": recv_time_ns,
@@ -716,6 +1015,7 @@ def run_receiver(args, store: CaptureStore, broadcaster, influx_writer: InfluxWr
                                 "send_ts_us": send_ts_us,
                                 "timestamp_mode": timestamp_mode,
                                 "latency_ms": latency_ms,
+                                "relative_latency_ms": relative_latency_ms,
                                 "payload_bytes": PAYLOAD_BYTES,
                                 "frame_bytes": FRAME_BYTES,
                                 "arrival_interval_ms": arrival_interval_ms,
@@ -728,37 +1028,51 @@ def run_receiver(args, store: CaptureStore, broadcaster, influx_writer: InfluxWr
                         influx_writer.write_metrics(metrics)
                         if broadcaster is not None:
                             broadcaster.broadcast_json(metrics)
-                        print(
-                            "fps={fps:.1f} rate={rate:.1f} KiB/s missing={missing} "
-                            "loss={loss:.3%} crc_errors={crc} old={old} "
-                            "avg_interval={avg:.2f} ms jitter={jitter:.2f} ms "
-                            "bw_jitter={bw_jitter:.2f} KiB/s latency_p95={latency_p95}".format(
-                                fps=metrics["fps"],
-                                rate=metrics["rate_kib_s"],
-                                missing=metrics["missing_frames"],
-                                loss=metrics["loss_rate"],
-                                crc=metrics["crc_errors"],
-                                old=metrics["old_frames"],
-                                avg=metrics["avg_interval_ms"],
-                                jitter=metrics["interval_jitter_ms"],
-                                bw_jitter=metrics["bandwidth_jitter_kib_s"],
-                                latency_p95=(
-                                    f"{metrics['latency_p95_ms']:.2f} ms"
-                                    if metrics["latency_p95_ms"] is not None
-                                    else "unavailable"
+                        if not args.quiet_metrics:
+                            print(
+                                "fps={fps:.1f} rate={rate:.1f} KiB/s missing={missing} "
+                                "loss={loss:.3%} crc_errors={crc} old={old} "
+                                "avg_interval={avg:.2f} ms jitter={jitter:.2f} ms "
+                                "bw_jitter={bw_jitter:.2f} KiB/s latency_p95={latency_p95}".format(
+                                    fps=metrics["fps"],
+                                    rate=metrics["rate_kib_s"],
+                                    missing=metrics["missing_frames"],
+                                    loss=metrics["loss_rate"],
+                                    crc=metrics["crc_errors"],
+                                    old=metrics["old_frames"],
+                                    avg=metrics["avg_interval_ms"],
+                                    jitter=metrics["interval_jitter_ms"],
+                                    bw_jitter=metrics["bandwidth_jitter_kib_s"],
+                                    latency_p95=(
+                                        f"{metrics['latency_p95_ms']:.2f} ms"
+                                        if metrics["latency_p95_ms"] is not None
+                                        else "unavailable"
+                                    ),
                                 ),
-                            ),
-                            flush=True,
-                        )
+                                flush=True,
+                            )
 
                     if close_connection:
                         break
 
 
 def main():
+    global PAYLOAD_BYTES, FRAME_BYTES, TARGET_FPS, TARGET_RATE_KIB_S, MAX_RESYNC_BYTES
+
     args = parse_args()
+    PAYLOAD_BYTES = args.payload_bytes
+    FRAME_BYTES = HEADER_BYTES + PAYLOAD_BYTES + CRC_BYTES
+    TARGET_FPS = args.target_fps
+    TARGET_RATE_KIB_S = TARGET_FPS * FRAME_BYTES / 1024.0
+    MAX_RESYNC_BYTES = FRAME_BYTES * 3
+
     run_metadata = load_run_metadata(args)
-    store = CaptureStore(Path(args.output_dir), run_metadata)
+    store = CaptureStore(
+        Path(args.output_dir),
+        run_metadata,
+        defer_frame_storage=args.defer_frame_storage,
+        defer_metrics_storage=args.defer_metrics_storage,
+    )
     broadcaster = None
     if not args.no_websocket:
         broadcaster = WebSocketBroadcaster(args.ws_host, args.ws_port)

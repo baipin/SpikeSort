@@ -59,6 +59,29 @@ menu "Bandwidth Sender"
             Disable frame pacing and send the next frame immediately after the previous send call returns. Use this for
             UDP maximum-throughput experiments instead of controlled-FPS sweeps.
 
+    config BANDWIDTH_PRECISE_PACING
+        bool "Use microsecond-level pacing for high FPS streams"
+        default n
+        help
+            Use esp_timer/ROM microsecond waits for sub-tick frame intervals. This is useful when the target frame
+            interval is below the FreeRTOS tick period, for example 1500 fps is about 667 us between frames.
+
+    config BANDWIDTH_DROP_LATE_FRAMES
+        bool "Drop overdue paced frames instead of catching up in a burst"
+        default n
+        depends on !BANDWIDTH_UNLIMITED_SEND
+        help
+            When a paced sender is late because the WiFi/lwIP path blocked a send, skip stale frame slots rather
+            than immediately sending the accumulated backlog. This preserves data freshness for real-time streams.
+
+    config BANDWIDTH_MAX_LATE_FRAMES
+        int "Allowed paced-frame lateness before dropping"
+        default 1
+        range 0 1000
+        depends on BANDWIDTH_DROP_LATE_FRAMES
+        help
+            Number of frame intervals that may be late before stale scheduled frames are skipped.
+
     config BANDWIDTH_SEND_TIMEOUT_MS
         int "Per-frame send timeout in milliseconds"
         default 100
@@ -66,12 +89,89 @@ menu "Bandwidth Sender"
         help
             Drop the current application frame if non-blocking send cannot finish in this time.
 
+    config BANDWIDTH_TEST_DURATION_S
+        int "Finite sender test duration in seconds"
+        default 0
+        range 0 86400
+        help
+            Stop the sender after this many seconds and export successful-send records. Zero keeps the sender running
+            indefinitely. Use a finite value when an exact sender success sequence set is required.
+
+    config BANDWIDTH_RECORD_SEND_SUCCESSES
+        bool "Record successful UDP sends in RAM"
+        default n
+        depends on BANDWIDTH_TRANSPORT_UDP
+        help
+            Keep send_ok_ts_us and seq for every successful UDP send until the finite test ends. This requires enough
+            RAM/PSRAM and is intended for controlled offline loss validation.
+
+    config BANDWIDTH_SEND_RECORD_CAPACITY
+        int "Maximum successful-send records"
+        default 1000000
+        range 1 4000000
+        depends on BANDWIDTH_RECORD_SEND_SUCCESSES
+        help
+            Maximum number of send-success records retained before an overflow counter is raised.
+
     config BANDWIDTH_SOCKET_SNDBUF
         int "Socket send buffer bytes"
         default 16384
         range 0 1048576
         help
             Requested SO_SNDBUF size for the selected transport. Set 0 to keep the lwIP default.
+
+    config BANDWIDTH_TCP_BLOCKING_SEND
+        bool "Use blocking TCP send"
+        default n
+        depends on BANDWIDTH_TRANSPORT_TCP
+        help
+            Keep the TCP socket in blocking mode and let lwIP apply backpressure directly. This can reduce explicit
+            1 ms retry sleeps in high-rate TCP tests, at the cost of making each send call potentially block.
+
+    config BANDWIDTH_TCP_NODELAY
+        bool "Disable TCP Nagle algorithm"
+        default n
+        depends on BANDWIDTH_TRANSPORT_TCP
+        help
+            Set TCP_NODELAY on the TCP socket. This is mainly useful for small frames; for near-MTU frames it is a
+            diagnostic switch to verify whether sender-side coalescing contributes to burstiness.
+
+    config BANDWIDTH_TCP_BATCH_FRAMES
+        int "TCP application frames per send call"
+        default 1
+        range 1 32
+        depends on BANDWIDTH_TRANSPORT_TCP
+        help
+            Pack multiple application frames into one TCP write while keeping the receiver frame format unchanged.
+            This reduces socket-call pressure for high-frame-rate TCP diagnostics.
+
+    config BANDWIDTH_UDP_BLOCKING_FAST_SEND
+        bool "Use blocking UDP send"
+        default y
+        depends on BANDWIDTH_TRANSPORT_UDP
+        help
+            Keep the UDP socket in blocking mode for throughput-oriented tests. When lwIP temporarily reports
+            EAGAIN/ENOBUFS, the sender waits for the socket to become writable again instead of forcing the frame
+            into a full local buffer. This follows the official ESP-IDF iperf transmit pattern more closely than the
+            diagnostic non-blocking send-with-timeout loop and can reduce sender-side burstiness and drops.
+
+    config BANDWIDTH_UNLIMITED_YIELD_EVERY_N_FRAMES
+        int "Yield interval for unlimited-send mode"
+        default 0
+        range 0 1000000
+        help
+            In unlimited-send experiments, yield once after this many successfully scheduled application frames.
+            Set 0 to disable. A small periodic yield keeps WiFi, lwIP, idle, and watchdog housekeeping responsive
+            during long detached saturated UDP traces.
+
+    config BANDWIDTH_UNLIMITED_DELAY_EVERY_N_FRAMES
+        int "Delay interval for unlimited-send mode"
+        default 0
+        range 0 1000000
+        help
+            In unlimited-send experiments, delay for one FreeRTOS tick after this many successfully scheduled
+            application frames. Set 0 to disable. This is stronger than a task yield and is useful for long
+            battery/power-bank field traces where a pure tight loop may starve housekeeping tasks.
 
     config BANDWIDTH_WIFI_PS_NONE
         bool "Disable WiFi power save"
@@ -106,6 +206,13 @@ menu "Bandwidth Sender"
         help
             Print one warning per sender-side dropped frame. Disable for high-rate UDP diagnostics to reduce logging overhead.
 
+    config BANDWIDTH_LOG_STATS
+        bool "Log sender stats once per second"
+        default y
+        help
+            Print one per-second sender stats line. Disable during short-window throughput experiments to avoid
+            periodic serial logging work from appearing as a one-second cadence artifact.
+
     config BANDWIDTH_DIAG_STATIC_PAYLOAD
         bool "Diagnostic: keep payload bytes static"
         default n
@@ -117,6 +224,21 @@ menu "Bandwidth Sender"
         default n
         help
             Write a zero CRC field instead of calculating CRC16. Only use with a receiver that skips CRC validation.
+
+    config BANDWIDTH_50MS_TELEMETRY
+        bool "Embed sender 50 ms telemetry in UDP frames"
+        default y
+        help
+            Embed sender offered, successful-send, and dropped counters in each UDP payload.
+
+    config BANDWIDTH_EXTENDED_TELEMETRY
+        bool "Embed extended sender diagnostics in UDP frames"
+        default y
+        help
+            Reuse the first 52 payload bytes to carry a versioned sender diagnostic snapshot: 50 ms counters,
+            backpressure counters, fatal-send count, last errno, free heap, and sender uptime. This does not change
+            the configured datagram size or add serial output per packet. Disable only when preserving the old payload
+            contents is required.
 
     config BANDWIDTH_SNTP_ENABLE
         bool "Enable SNTP clock sync"
@@ -133,11 +255,12 @@ menu "Bandwidth Sender"
 
     config BANDWIDTH_SNTP_SYNC_TIMEOUT_MS
         int "SNTP sync timeout in milliseconds"
-        default 15000
+        default 60000
         range 1000 120000
         depends on BANDWIDTH_SNTP_ENABLE
         help
-            Maximum time to wait for SNTP synchronization before falling back to monotonic uptime timestamps.
+            Maximum time to wait for SNTP synchronization before retrying or, when SNTP is not required, falling
+            back to monotonic uptime timestamps.
 
     config BANDWIDTH_REQUIRE_SNTP
         bool "Require SNTP before streaming"

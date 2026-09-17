@@ -98,9 +98,20 @@ def parse_args():
     parser.add_argument("--duration-s", type=float, default=300.0, help="Receiver duration in seconds.")
     parser.add_argument("--payload-bytes", type=int, default=1024)
     parser.add_argument("--target-fps", type=int, default=1000)
+    parser.add_argument("--skip-crc", action="store_true", help="Accept frames from firmware built with CRC disabled.")
+    parser.add_argument(
+        "--defer-frame-storage",
+        action="store_true",
+        help="Reduce receiver-side drops by writing per-frame CSV/SQLite records after capture stops.",
+    )
+    parser.add_argument(
+        "--require-epoch-timestamps",
+        action="store_true",
+        help="Abort the capture if received frames are not epoch-aligned for latency analysis.",
+    )
     parser.add_argument("--notes", default=None, help="Optional English note stored in the capture metadata.")
     parser.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
-    parser.add_argument("--output-root", default="captures")
+    parser.add_argument("--output-root", default="captures/udp_experiments")
     parser.add_argument("--websocket", action="store_true", help="Enable receiver WebSocket output.")
     parser.add_argument("--influx", action="store_true", help="Enable receiver InfluxDB output.")
     parser.add_argument(
@@ -150,6 +161,12 @@ def main():
     ]
     if args.notes:
         receiver_command.extend(["--notes", args.notes])
+    if args.skip_crc:
+        receiver_command.append("--skip-crc")
+    if args.defer_frame_storage:
+        receiver_command.append("--defer-frame-storage")
+    if args.require_epoch_timestamps:
+        receiver_command.append("--require-epoch-timestamps")
     if not args.websocket:
         receiver_command.append("--no-websocket")
     if not args.influx:
@@ -194,9 +211,9 @@ def main():
     print(f"Capture directory: {capture_dir}")
     print(f"SQLite capture: {sqlite_path}")
     print(f"Packet log: {packet_log}")
-    print("Markdown reports: reports/bandwidth_report_*.md")
-    print("CSV summaries: reports/bandwidth_summary_*.csv")
-    print("Report figures: reports/figures/")
+    print("Markdown reports: reports/runs/bandwidth_report_*.md")
+    print("CSV summaries: reports/runs/bandwidth_summary_*.csv")
+    print("Report figures: reports/runs/figures/")
     print(f"Packet-log figures: {capture_dir / 'figures'}")
     print("Open local report browser: reports/index.html")
 

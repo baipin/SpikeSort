@@ -2,6 +2,8 @@ import argparse
 import csv
 import json
 import math
+import re
+import shutil
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -105,7 +107,8 @@ def quality_gates(summary):
         add("Mean frame rate", summary["fps_mean"] is not None and summary["fps_mean"] >= target_fps * 0.95, fmt(summary["fps_mean"], 2), "mean fps >= 95% target")
     if target_rate_kib_s is not None:
         add("Mean throughput", summary["rate_kib_s_mean"] is not None and summary["rate_kib_s_mean"] >= target_rate_kib_s * 0.95, fmt(summary["rate_kib_s_mean"], 2, " KiB/s"), "mean throughput >= 95% target")
-    add("Latency availability", summary["latency_count"] > 0, summary["latency_count"], "SNTP latency samples present")
+    latency_available = (summary["latency_count"] > 0) or (summary.get("relative_latency_count") or 0) > 0
+    add("Latency availability", latency_available, summary.get("latency_count", 0) or summary.get("relative_latency_count", 0), "Latency samples present")
     return gates
 
 
@@ -173,6 +176,7 @@ def summarize(db_path, last_minutes=None):
         bandwidth_jitter = [row[8] for row in metric_rows]
 
         latencies = []
+        relative_latencies = []
         if "latency_ms" in frame_cols:
             latency_where = "WHERE latency_ms IS NOT NULL"
             latency_params = ()
@@ -183,6 +187,32 @@ def summarize(db_path, last_minutes=None):
                 row[0]
                 for row in db.execute(f"SELECT latency_ms FROM frames {latency_where}", latency_params)
             ]
+        if "relative_latency_ms" in frame_cols:
+            relative_latency_where = "WHERE relative_latency_ms IS NOT NULL"
+            relative_latency_params = ()
+            if cutoff_ns is not None:
+                relative_latency_where += " AND recv_time_ns >= ?"
+                relative_latency_params = (cutoff_ns,)
+            relative_latencies = [
+                row[0]
+                for row in db.execute(f"SELECT relative_latency_ms FROM frames {relative_latency_where}", relative_latency_params)
+            ]
+        else:
+            relative_rows = db.execute(
+                f"""
+                SELECT recv_time_ns, send_ts_us
+                FROM frames
+                {frame_where}
+                ORDER BY recv_time_ns
+                """,
+                params,
+            ).fetchall()
+            if relative_rows:
+                first_recv_ns, first_send_ts_us = relative_rows[0]
+                relative_latencies = [
+                    (recv_time_ns - first_recv_ns) / 1_000_000.0 - (send_ts_us - first_send_ts_us) / 1_000.0
+                    for recv_time_ns, send_ts_us in relative_rows
+                ]
 
         latency_metrics = []
         if "latency_p95_ms" in metric_cols:
@@ -234,6 +264,11 @@ def summarize(db_path, last_minutes=None):
         "latency_p50_ms": percentile(latencies, 50),
         "latency_p95_ms": percentile(latencies, 95),
         "latency_p99_ms": percentile(latencies, 99),
+        "relative_latency_count": len(relative_latencies),
+        "relative_latency_avg_ms": mean(relative_latencies),
+        "relative_latency_p50_ms": percentile(relative_latencies, 50),
+        "relative_latency_p95_ms": percentile(relative_latencies, 95),
+        "relative_latency_p99_ms": percentile(relative_latencies, 99),
         "latency_window_p95_max_ms": max(latency_metrics) if latency_metrics else None,
     }
 
@@ -288,6 +323,45 @@ def load_latency_samples(db_path, last_minutes=None):
             (*params, MAX_LATENCY_HIST_SAMPLES),
         ).fetchall()
         return [row[0] for row in rows]
+
+
+def load_relative_latency_samples(db_path, last_minutes=None):
+    with sqlite3.connect(db_path) as db:
+        if "relative_latency_ms" in column_names(db, "frames"):
+            cutoff_ns = cutoff_from_db(db, last_minutes)
+            where = "WHERE relative_latency_ms IS NOT NULL"
+            params = []
+            if cutoff_ns is not None:
+                where += " AND recv_time_ns >= ?"
+                params.append(cutoff_ns)
+            rows = db.execute(
+                f"""
+                SELECT relative_latency_ms
+                FROM frames
+                {where}
+                ORDER BY recv_time_ns DESC
+                LIMIT ?
+                """,
+                (*params, MAX_LATENCY_HIST_SAMPLES),
+            ).fetchall()
+            return [row[0] for row in rows]
+
+        rows = db.execute(
+            """
+            SELECT recv_time_ns, send_ts_us
+            FROM frames
+            ORDER BY recv_time_ns
+            """,
+        ).fetchall()
+        if not rows:
+            return []
+        first_recv_ns, first_send_ts_us = rows[0]
+        samples = []
+        for recv_time_ns, send_ts_us in rows:
+            samples.append(
+                (recv_time_ns - first_recv_ns) / 1_000_000.0 - (send_ts_us - first_send_ts_us) / 1_000.0
+            )
+        return samples[-MAX_LATENCY_HIST_SAMPLES:]
 
 
 def write_plots(summary, db_path, out_dir, stamp, last_minutes=None):
@@ -351,18 +425,71 @@ def write_plots(summary, db_path, out_dir, stamp, last_minutes=None):
     plt.close(fig)
 
     written = [timeseries_path]
-    latencies = load_latency_samples(db_path, last_minutes)
-    if latencies:
+    abs_latencies = load_latency_samples(db_path, last_minutes)
+    rel_latencies = load_relative_latency_samples(db_path, last_minutes)
+    if abs_latencies or rel_latencies:
+        fig, axes = plt.subplots(1, 2, figsize=(12, 4.5), constrained_layout=True)
+        if abs_latencies:
+            axes[0].hist(abs_latencies, bins=60, color="#1f77b4", alpha=0.85)
+            if summary.get("latency_p50_ms") is not None:
+                axes[0].axvline(summary["latency_p50_ms"], color="#2ca02c", linestyle="--", linewidth=1.5, label="P50")
+            if summary.get("latency_p95_ms") is not None:
+                axes[0].axvline(summary["latency_p95_ms"], color="#ff7f0e", linestyle="--", linewidth=1.5, label="P95")
+            if summary.get("latency_p99_ms") is not None:
+                axes[0].axvline(summary["latency_p99_ms"], color="#d62728", linestyle="--", linewidth=1.5, label="P99")
+            axes[0].set_title("Absolute latency")
+            axes[0].set_xlabel("latency (ms)")
+            axes[0].set_ylabel("frames")
+            axes[0].legend(loc="best")
+        else:
+            axes[0].text(0.5, 0.5, "Absolute latency unavailable", ha="center", va="center")
+            axes[0].set_axis_off()
+
+        if rel_latencies:
+            axes[1].hist(rel_latencies, bins=60, color="#6f42c1", alpha=0.85)
+            rel_p50 = summary.get("relative_latency_p50_ms")
+            rel_p95 = summary.get("relative_latency_p95_ms")
+            rel_p99 = summary.get("relative_latency_p99_ms")
+            if rel_p50 is not None:
+                axes[1].axvline(rel_p50, color="#2ca02c", linestyle="--", linewidth=1.5, label="P50")
+            if rel_p95 is not None:
+                axes[1].axvline(rel_p95, color="#ff7f0e", linestyle="--", linewidth=1.5, label="P95")
+            if rel_p99 is not None:
+                axes[1].axvline(rel_p99, color="#d62728", linestyle="--", linewidth=1.5, label="P99")
+            axes[1].set_title("Relative latency from first packet")
+            axes[1].set_xlabel("latency (ms)")
+            axes[1].set_ylabel("frames")
+            axes[1].legend(loc="best")
+        else:
+            axes[1].text(0.5, 0.5, "Relative latency unavailable", ha="center", va="center")
+            axes[1].set_axis_off()
+
+        for ax in axes:
+            ax.grid(True, alpha=0.25)
+        latency_path = figure_dir / f"latency_histogram_{stamp}.png"
+        fig.savefig(latency_path, dpi=160)
+        plt.close(fig)
+        written.append(latency_path)
+    else:
         fig, ax = plt.subplots(figsize=(8, 4.5), constrained_layout=True)
-        ax.hist(latencies, bins=60, color="#1f77b4", alpha=0.85)
-        ax.axvline(summary["latency_p50_ms"], color="#2ca02c", linestyle="--", linewidth=1.5, label="P50")
-        ax.axvline(summary["latency_p95_ms"], color="#ff7f0e", linestyle="--", linewidth=1.5, label="P95")
-        ax.axvline(summary["latency_p99_ms"], color="#d62728", linestyle="--", linewidth=1.5, label="P99")
-        ax.set_title("End-to-End Latency Distribution")
-        ax.set_xlabel("latency (ms)")
-        ax.set_ylabel("frames")
-        ax.grid(True, alpha=0.25)
-        ax.legend(loc="best")
+        ax.text(
+            0.5,
+            0.56,
+            "Latency unavailable",
+            ha="center",
+            va="center",
+            fontsize=18,
+            fontweight="bold",
+        )
+        ax.text(
+            0.5,
+            0.42,
+            "No packet timestamps were captured for this run.",
+            ha="center",
+            va="center",
+            fontsize=11,
+        )
+        ax.set_axis_off()
         latency_path = figure_dir / f"latency_histogram_{stamp}.png"
         fig.savefig(latency_path, dpi=160)
         plt.close(fig)
@@ -380,17 +507,46 @@ def write_summary_csv(summary, path):
         writer.writerow(csv_summary)
 
 
+def copy_report_figures_to_capture(db_path, figure_paths):
+    capture_dir = Path(db_path).resolve().parent
+    if not figure_paths or not capture_dir.exists():
+        return []
+    capture_figure_dir = capture_dir / "figures"
+    capture_figure_dir.mkdir(parents=True, exist_ok=True)
+    copied = []
+    for figure_path in figure_paths:
+        figure_path = Path(figure_path)
+        destination = capture_figure_dir / figure_path.name
+        if figure_path.resolve() != destination.resolve():
+            shutil.copy2(figure_path, destination)
+        copied.append(destination)
+    return copied
+
+
 def attach_manifest_fields(summary, manifest):
     metadata = {}
-    metadata.update(summary.get("db_metadata") or {})
     metadata.update(manifest or {})
+    metadata.update(summary.get("db_metadata") or {})
+    if isinstance(manifest, dict) and isinstance(manifest.get("network"), dict):
+        network = dict(metadata.get("network") or {})
+        network.update(manifest["network"])
+        metadata["network"] = network
     condition = metadata.get("condition") if isinstance(metadata.get("condition"), dict) else {}
     summary["experiment_id"] = metadata.get("experiment_id", "")
     summary["condition_label"] = metadata.get("condition_label", "")
     summary["transport"] = metadata.get("transport", metadata.get("stream", {}).get("transport", ""))
     summary["payload_bytes"] = metadata.get("payload_bytes", metadata.get("stream", {}).get("payload_bytes", ""))
     summary["frame_bytes"] = metadata.get("frame_bytes", metadata.get("stream", {}).get("frame_bytes", ""))
-    summary["target_fps"] = metadata.get("target_fps", metadata.get("stream", {}).get("target_fps", ""))
+    target_fps = metadata.get("target_fps", metadata.get("stream", {}).get("target_fps", ""))
+    if str(target_fps).lower() == "unlimited":
+        search_text = " ".join(
+            str(metadata.get(key, ""))
+            for key in ("condition_label", "operator_notes", "experiment_id")
+        )
+        match = re.search(r"\b(\d+(?:\.\d+)?)\s*fps\b", search_text, flags=re.IGNORECASE)
+        if match:
+            target_fps = match.group(1)
+    summary["target_fps"] = target_fps
     target_fps = parse_optional_float(summary["target_fps"])
     if summary["frame_bytes"] not in ("", None) and target_fps is not None:
         summary["target_rate_kib_s"] = float(summary["frame_bytes"]) * target_fps / 1024.0
@@ -403,8 +559,12 @@ def attach_manifest_fields(summary, manifest):
 
 def write_markdown(summary, manifest, path, figure_paths=None):
     metadata = {}
-    metadata.update(summary.get("db_metadata") or {})
     metadata.update(manifest or {})
+    metadata.update(summary.get("db_metadata") or {})
+    if isinstance(manifest, dict) and isinstance(manifest.get("network"), dict):
+        network = dict(metadata.get("network") or {})
+        network.update(manifest["network"])
+        metadata["network"] = network
     transport_value = str(summary.get("transport") or metadata.get("transport") or "").lower()
     is_udp = "udp" in transport_value
     transport_name = "UDP" if is_udp else "TCP"
@@ -485,6 +645,11 @@ Generated at: `{summary['generated_at']}`
 | P50 latency | {fmt(summary['latency_p50_ms'], 3, ' ms')} |
 | P95 latency | {fmt(summary['latency_p95_ms'], 3, ' ms')} |
 | P99 latency | {fmt(summary['latency_p99_ms'], 3, ' ms')} |
+| Relative latency samples | {summary.get('relative_latency_count', 0)} |
+| Mean relative latency | {fmt(summary.get('relative_latency_avg_ms'), 3, ' ms')} |
+| P50 relative latency | {fmt(summary.get('relative_latency_p50_ms'), 3, ' ms')} |
+| P95 relative latency | {fmt(summary.get('relative_latency_p95_ms'), 3, ' ms')} |
+| P99 relative latency | {fmt(summary.get('relative_latency_p99_ms'), 3, ' ms')} |
 
 ## Quality Gates
 
@@ -498,8 +663,9 @@ Generated at: `{summary['generated_at']}`
 
 - A healthy {transport_name} run should keep loss rate and CRC/resync errors at zero for the current {payload_label} workload.
 - {jitter_note}
-- Latency is available only when the ESP32-S3 SNTP clock sync succeeds and the laptop clock is also synchronized.
-- If latency is unavailable, use throughput, frame cadence, and jitter for link stability, then repeat the run with working NTP before drawing latency conclusions.
+- Absolute latency is only trustworthy when both the ESP32-S3 clock and the laptop clock are synchronized.
+- Relative latency from the first packet is useful even when the laptop clock is not synchronized, because it removes the fixed clock offset and still shows queue buildup.
+- If absolute latency looks suspiciously large, prefer the relative-latency panel and repeat the run with working NTP before drawing one-way latency conclusions.
 - Treat the quality gates as screening checks. A WARN does not automatically invalidate the run, but it should be explained in the experiment notes.
 
 ## Experiment Manifest
@@ -540,7 +706,8 @@ def parse_args():
 def main():
     args = parse_args()
     db_path = Path(args.db)
-    out_dir = Path(args.out)
+    requested_out_dir = Path(args.out)
+    out_dir = requested_out_dir / "runs" if requested_out_dir.name == "reports" else requested_out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
     summary = summarize(db_path, args.last_minutes)
@@ -550,12 +717,15 @@ def main():
     md_path = out_dir / f"bandwidth_report_{stamp}.md"
     csv_path = out_dir / f"bandwidth_summary_{stamp}.csv"
     figure_paths = [] if args.no_plots else write_plots(summary, db_path, out_dir, stamp, args.last_minutes)
+    capture_figure_paths = copy_report_figures_to_capture(db_path, figure_paths)
 
     write_markdown(summary, manifest, md_path, figure_paths)
     write_summary_csv(summary, csv_path)
     print(f"Wrote {md_path}")
     print(f"Wrote {csv_path}")
-    refresh_report_browser(out_dir)
+    for figure_path in capture_figure_paths:
+        print(f"Wrote {figure_path}")
+    refresh_report_browser(requested_out_dir)
 
 
 if __name__ == "__main__":

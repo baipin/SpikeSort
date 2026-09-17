@@ -1,5 +1,81 @@
-# SpikeSort
-Spike Sorting Research.
+# ACADEMIC Research Workspace
+
+This repository contains two related research tracks:
+
+- Spike-sorting and neural-data compression experiments, developed through the
+  numbered notebooks and the supporting `data/`, `outputs/`, and `reports/`
+  directories.
+- ESP32-S3 wireless bandwidth experiments, including firmware, receiver-side
+  capture tooling, field-terminal controls, offline analysis, and the static
+  report portal under `esp32s3-bandwidth-sender/` and
+  `integrated-static-site/`.
+
+## Repository Map
+
+| Path | Purpose | Version-control policy |
+| --- | --- | --- |
+| `1.ipynb` ... `9.ipynb` | Notebook-based spike-sorting workflow | Tracked source notebooks |
+| `data/`, `ONE/`, `kilosort4/`, `week8_*`, `week9_*` | Large raw data and local Kilosort outputs | Ignored local artifacts |
+| `esp32s3-bandwidth-sender/main/` | ESP32-S3 firmware | Tracked source |
+| `esp32s3-bandwidth-sender/receiver.py` and `udp_receiver.py` | Receiver and capture pipeline | Tracked source |
+| `esp32s3-bandwidth-sender/field_terminal/` | LAN operator terminal and metadata workflow | Tracked source and documentation |
+| `esp32s3-bandwidth-sender/tools/` | Flashing, capture, analysis, and report builders | Tracked source |
+| `esp32s3-bandwidth-sender/captures/` | Raw field captures | Local, ignored data; do not delete during source cleanup |
+| `esp32s3-bandwidth-sender/reports/` | Reproducible summaries and selected report artifacts | Curated outputs; LaTeX intermediates are ignored |
+| `integrated-static-site/` | Static browser for IBL and ESP32 reports | Deployable site |
+
+## ESP32 Field Reports
+
+The current battery-position report covers the three directories under
+`esp32s3-bandwidth-sender/captures/udp_battery_position_series_20260901/new/`:
+`new_chair`, `new_control`, and `new_rec`. The report includes 50 ms
+ESP32-send-timestamp-aligned throughput, empty-window rate, within-run window
+variance, run-to-run variance, standard deviation, coefficient of variation,
+and descriptive 95% confidence intervals.
+
+Two operator-reviewed interrupted runs are marked
+`DISCONNECTED/EXCLUDED` in the report. Both all-run and cleaned statistics are
+retained. The generated report source, PDF, index CSV, figures, and offline
+replay outputs are in:
+
+```text
+esp32s3-bandwidth-sender/reports/udp_battery_position_series_20260901/new/
+```
+
+To regenerate the report from the captures:
+
+```powershell
+cd G:\ACADEMIC\esp32s3-bandwidth-sender
+python tools\build_battery_position_series_report.py `
+  --capture-root captures\udp_battery_position_series_20260901\new `
+  --report-root reports\udp_battery_position_series_20260901\new `
+  --include-groups new_chair,new_control,new_rec `
+  --report-date 2026-09-10 `
+  --report-basename new_battery_position_series_report
+```
+
+The LAN field terminal is started from the ESP32 project root with:
+
+```powershell
+python field_terminal\server.py
+```
+
+The terminal stores raw captures and metadata only. Image generation, report
+writing, and offline analysis are explicit post-processing steps.
+
+## Local Hygiene
+
+Python caches, notebook checkpoints, ESP-IDF builds, TeX caches, QA renders,
+temporary logs, and generated document intermediates are ignored and may be
+removed safely. Raw captures and curated report outputs are kept separate from
+these caches. Before committing, use:
+
+```powershell
+git status
+git diff --check
+```
+
+## Spike-Sorting Workflow
 
 ## Environment Dependence (Week 1- 5)
 Follow [this](https://kilosort.readthedocs.io/en/latest/README.html) instruction to install the environment.  

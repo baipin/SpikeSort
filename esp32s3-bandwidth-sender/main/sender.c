@@ -40,6 +40,8 @@ static const char *TAG = "sender";
 #define TELEMETRY_WINDOW_US 50000
 #define TELEMETRY_OFFSET (FRAME_HEADER_BYTES)
 #define TELEMETRY_MAGIC 0x314c4554U
+#define TELEMETRY_VERSION 2U
+#define EXTENDED_TELEMETRY_BYTES 52U
 
 #ifndef CONFIG_BANDWIDTH_DIAG_STATIC_PAYLOAD
 #define CONFIG_BANDWIDTH_DIAG_STATIC_PAYLOAD 0
@@ -85,6 +87,10 @@ static const char *TAG = "sender";
 #define CONFIG_BANDWIDTH_LOG_STATS 0
 #endif
 
+#ifndef CONFIG_BANDWIDTH_EXTENDED_TELEMETRY
+#define CONFIG_BANDWIDTH_EXTENDED_TELEMETRY 0
+#endif
+
 #ifndef CONFIG_BANDWIDTH_UNLIMITED_YIELD_EVERY_N_FRAMES
 #define CONFIG_BANDWIDTH_UNLIMITED_YIELD_EVERY_N_FRAMES 0
 #endif
@@ -96,6 +102,14 @@ static const char *TAG = "sender";
 static EventGroupHandle_t wifi_event_group;
 static int wifi_retry_count;
 static bool wall_clock_time_valid;
+static uint64_t diagnostic_backpressure_events;
+static uint64_t diagnostic_fatal_send_errors;
+static uint64_t diagnostic_eagain_events;
+static uint64_t diagnostic_enobufs_events;
+static uint64_t diagnostic_enomem_events;
+static uint64_t diagnostic_eintr_events;
+static uint64_t diagnostic_partial_send_events;
+static int32_t diagnostic_last_errno;
 
 typedef enum {
     SEND_FRAME_OK,
@@ -263,13 +277,34 @@ static void fill_frame(uint8_t *frame, uint32_t seq, uint32_t telemetry_window,
     }
 #endif
 
-#if CONFIG_BANDWIDTH_50MS_TELEMETRY
+#if CONFIG_BANDWIDTH_50MS_TELEMETRY || CONFIG_BANDWIDTH_EXTENDED_TELEMETRY
     if (CONFIG_BANDWIDTH_PAYLOAD_BYTES >= 20) {
         write_u32_le(frame + TELEMETRY_OFFSET, TELEMETRY_MAGIC);
+#if CONFIG_BANDWIDTH_50MS_TELEMETRY
         write_u32_le(frame + TELEMETRY_OFFSET + 4, telemetry_window);
         write_u32_le(frame + TELEMETRY_OFFSET + 8, telemetry_offered);
         write_u32_le(frame + TELEMETRY_OFFSET + 12, telemetry_sent);
         write_u32_le(frame + TELEMETRY_OFFSET + 16, telemetry_dropped);
+#else
+        write_u32_le(frame + TELEMETRY_OFFSET + 4, 0);
+        write_u32_le(frame + TELEMETRY_OFFSET + 8, 0);
+        write_u32_le(frame + TELEMETRY_OFFSET + 12, 0);
+        write_u32_le(frame + TELEMETRY_OFFSET + 16, 0);
+#endif
+#if CONFIG_BANDWIDTH_EXTENDED_TELEMETRY
+        if (CONFIG_BANDWIDTH_PAYLOAD_BYTES >= EXTENDED_TELEMETRY_BYTES) {
+            // Version 2 extends the original 20-byte snapshot without changing
+            // FRAME_BYTES: these bytes replace ordinary payload bytes.
+            write_u32_le(frame + TELEMETRY_OFFSET + 20, TELEMETRY_VERSION);
+            write_u32_le(frame + TELEMETRY_OFFSET + 24, (uint32_t)diagnostic_backpressure_events);
+            write_u32_le(frame + TELEMETRY_OFFSET + 28, (uint32_t)diagnostic_fatal_send_errors);
+            write_u32_le(frame + TELEMETRY_OFFSET + 32, (uint32_t)diagnostic_eagain_events);
+            write_u32_le(frame + TELEMETRY_OFFSET + 36, (uint32_t)diagnostic_enobufs_events);
+            write_u32_le(frame + TELEMETRY_OFFSET + 40, (uint32_t)diagnostic_enomem_events);
+            write_u32_le(frame + TELEMETRY_OFFSET + 44, (uint32_t)diagnostic_last_errno);
+            write_u32_le(frame + TELEMETRY_OFFSET + 48, (uint32_t)(esp_timer_get_time() / 1000));
+        }
+#endif
     }
 #endif
 
@@ -336,6 +371,23 @@ static void log_ap_info(void)
              ap_info.phy_11n);
 }
 
+static void log_link_diagnostics(void)
+{
+    wifi_ap_record_t ap_info = {0};
+    uint8_t primary = 0;
+    wifi_second_chan_t second = WIFI_SECOND_CHAN_NONE;
+    const esp_err_t ap_ret = esp_wifi_sta_get_ap_info(&ap_info);
+    const esp_err_t channel_ret = esp_wifi_get_channel(&primary, &second);
+    ESP_LOGI(TAG,
+             "link rssi=%d dBm channel=%u second=%d free_heap=%u min_heap=%u uptime_ms=%" PRIu32,
+             ap_ret == ESP_OK ? ap_info.rssi : 0,
+             channel_ret == ESP_OK ? primary : 0,
+             channel_ret == ESP_OK ? second : WIFI_SECOND_CHAN_NONE,
+             (unsigned)esp_get_free_heap_size(),
+             (unsigned)esp_get_minimum_free_heap_size(),
+             (uint32_t)(esp_timer_get_time() / 1000));
+}
+
 static esp_err_t wifi_init_sta(void)
 {
     esp_err_t ret;
@@ -365,19 +417,24 @@ static esp_err_t wifi_init_sta(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
 
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    // These settings require an initialized/running Wi-Fi driver. Applying
+    // them before esp_wifi_start() can return ESP_ERR_INVALID_ARG and leave
+    // the station on the default protocol or channel width.
 #if CONFIG_BANDWIDTH_WIFI_11N_ONLY
     ret = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11N);
     if (ret == ESP_OK) {
-        ESP_LOGI(TAG, "WiFi protocol forced to 802.11n only");
+        ESP_LOGI(TAG, "WiFi protocol requested: 802.11n only");
     } else {
-        ESP_LOGW(TAG, "Unable to force WiFi protocol to 802.11n only: %s", esp_err_to_name(ret));
+        ESP_LOGW(TAG, "Unable to set WiFi protocol to 802.11n only: %s", esp_err_to_name(ret));
     }
 #elif CONFIG_BANDWIDTH_WIFI_11GN_ONLY
     ret = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
     if (ret == ESP_OK) {
-        ESP_LOGI(TAG, "WiFi protocol forced to 802.11g/n; 802.11b disabled");
+        ESP_LOGI(TAG, "WiFi protocol requested: 802.11g/n; 802.11b disabled");
     } else {
-        ESP_LOGW(TAG, "Unable to force WiFi protocol to 802.11g/n: %s", esp_err_to_name(ret));
+        ESP_LOGW(TAG, "Unable to set WiFi protocol to 802.11g/n: %s", esp_err_to_name(ret));
     }
 #endif
 
@@ -386,11 +443,9 @@ static esp_err_t wifi_init_sta(void)
     if (ret == ESP_OK) {
         ESP_LOGI(TAG, "WiFi bandwidth requested: HT40");
     } else {
-        ESP_LOGW(TAG, "Unable to request WiFi HT40 bandwidth: %s", esp_err_to_name(ret));
+        ESP_LOGW(TAG, "Unable to set WiFi HT40 bandwidth: %s", esp_err_to_name(ret));
     }
 #endif
-
-    ESP_ERROR_CHECK(esp_wifi_start());
 
 #if CONFIG_BANDWIDTH_WIFI_PS_NONE
     ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
@@ -410,6 +465,18 @@ static esp_err_t wifi_init_sta(void)
 
     if (bits & WIFI_CONNECTED_BIT) {
         log_ap_info();
+#if CONFIG_BANDWIDTH_WIFI_11N_ONLY || CONFIG_BANDWIDTH_WIFI_11GN_ONLY
+        uint8_t actual_protocol = 0;
+        if (esp_wifi_get_protocol(WIFI_IF_STA, &actual_protocol) == ESP_OK) {
+            ESP_LOGI(TAG, "WiFi active protocol mask: 0x%02x", actual_protocol);
+        }
+#endif
+#if CONFIG_BANDWIDTH_WIFI_HT40
+        wifi_bandwidth_t actual_bandwidth = WIFI_BW20;
+        if (esp_wifi_get_bandwidth(WIFI_IF_STA, &actual_bandwidth) == ESP_OK) {
+            ESP_LOGI(TAG, "WiFi active bandwidth: %s", actual_bandwidth == WIFI_BW40 ? "HT40" : "HT20");
+        }
+#endif
         return ESP_OK;
     }
 
@@ -576,7 +643,8 @@ static int connect_udp_receiver(void)
     return sock;
 }
 
-static send_frame_result_t send_frame_blocking_udp(int sock, const uint8_t *frame, size_t frame_len)
+static send_frame_result_t send_frame_blocking_udp(int sock, const uint8_t *frame, size_t frame_len,
+                                                   uint64_t *send_fail_events)
 {
     while (true) {
         const ssize_t sent = send(sock, frame, frame_len, 0);
@@ -585,15 +653,27 @@ static send_frame_result_t send_frame_blocking_udp(int sock, const uint8_t *fram
         }
 
         if (sent < 0 && errno == EINTR) {
+            diagnostic_backpressure_events++;
+            (*send_fail_events)++;
+            diagnostic_eintr_events++;
+            diagnostic_last_errno = EINTR;
             continue;
         }
 
         if (sent < 0 && (errno == ENOBUFS || errno == ENOMEM || errno == EAGAIN || errno == EWOULDBLOCK)) {
+            diagnostic_backpressure_events++;
+            (*send_fail_events)++;
+            diagnostic_last_errno = errno;
+            if (errno == ENOBUFS) diagnostic_enobufs_events++;
+            if (errno == ENOMEM) diagnostic_enomem_events++;
+            if (errno == EAGAIN || errno == EWOULDBLOCK) diagnostic_eagain_events++;
             (void)wait_for_socket_writable(sock, 25);
             continue;
         }
 
         if (sent >= 0 && sent != (ssize_t)frame_len) {
+            diagnostic_partial_send_events++;
+            diagnostic_last_errno = 0;
             ESP_LOGE(TAG, "blocking UDP send returned partial datagram: %d/%u bytes", (int)sent, (unsigned)frame_len);
             return SEND_FRAME_FATAL;
         }
@@ -603,6 +683,7 @@ static send_frame_result_t send_frame_blocking_udp(int sock, const uint8_t *fram
                  sent > 0 ? (int)sent : 0,
                  (unsigned)frame_len,
                  errno);
+        diagnostic_last_errno = errno;
         return SEND_FRAME_FATAL;
     }
 }
@@ -616,17 +697,26 @@ static send_frame_result_t send_frame_nonblocking_udp(int sock, const uint8_t *f
             return SEND_FRAME_OK;
         }
         if (sent < 0 && errno == EINTR) {
+            diagnostic_eintr_events++;
+            diagnostic_last_errno = EINTR;
+            diagnostic_backpressure_events++;
             (*send_fail_events)++;
             taskYIELD();
             continue;
         }
         if (sent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == ENOBUFS || errno == ENOMEM)) {
+            diagnostic_backpressure_events++;
+            diagnostic_last_errno = errno;
+            if (errno == ENOBUFS) diagnostic_enobufs_events++;
+            if (errno == ENOMEM) diagnostic_enomem_events++;
+            if (errno == EAGAIN || errno == EWOULDBLOCK) diagnostic_eagain_events++;
             (*send_fail_events)++;
             taskYIELD();
             continue;
         }
         ESP_LOGE(TAG, "fatal nonblocking UDP send failure: sent=%d/%u errno=%d",
                  (int)sent, (unsigned)frame_len, errno);
+        diagnostic_last_errno = errno;
         return SEND_FRAME_FATAL;
     }
 }
@@ -848,7 +938,8 @@ static void sender_task(void *arg)
 
 #if CONFIG_BANDWIDTH_TRANSPORT_UDP && CONFIG_BANDWIDTH_UDP_BLOCKING_FAST_SEND
             fill_frame(frame, seq, telemetry_window, telemetry_offered, telemetry_sent, telemetry_dropped);
-            const send_frame_result_t send_result = send_frame_blocking_udp(sock, frame, FRAME_BYTES);
+            const send_frame_result_t send_result = send_frame_blocking_udp(sock, frame, FRAME_BYTES,
+                                                                            &send_fail_events);
 #elif CONFIG_BANDWIDTH_TRANSPORT_UDP
             fill_frame(frame, seq, telemetry_window, telemetry_offered, telemetry_sent, telemetry_dropped);
             const send_frame_result_t send_result = send_frame_nonblocking_udp(sock, frame, FRAME_BYTES,
@@ -868,11 +959,13 @@ static void sender_task(void *arg)
             const send_frame_result_t send_result = send_frame_with_timeout(sock, frame, FRAME_BYTES);
 #endif
             if (send_result == SEND_FRAME_OK) {
-                sent_frames += (uint32_t)tx_batch_frames;
-                send_success_count += (uint64_t)tx_batch_frames;
 #if CONFIG_BANDWIDTH_TRANSPORT_UDP
+                // Capture the socket-boundary success timestamp before any
+                // sender bookkeeping can run after send() returns.
                 record_send_success(seq);
 #endif
+                sent_frames += (uint32_t)tx_batch_frames;
+                send_success_count += (uint64_t)tx_batch_frames;
 #if CONFIG_BANDWIDTH_50MS_TELEMETRY
                 telemetry_sent += (uint32_t)tx_batch_frames;
 #endif
@@ -887,6 +980,7 @@ static void sender_task(void *arg)
             } else {
 #if CONFIG_BANDWIDTH_TRANSPORT_UDP
                 fatal_send_errors++;
+                diagnostic_fatal_send_errors++;
                 ESP_LOGE(TAG, "Fatal UDP send error; keeping seq=%" PRIu32 " and rebuilding socket", seq);
 #else
                 dropped_frames += (uint32_t)tx_batch_frames;
@@ -918,11 +1012,25 @@ static void sender_task(void *arg)
             if (stats_elapsed_us >= 1000000) {
 #if CONFIG_BANDWIDTH_LOG_STATS
                 ESP_LOGI(TAG,
-                         "stats sent=%" PRIu32 " dropped=%" PRIu32 " total_seq=%" PRIu32 " rate=%.1f KiB/s",
+                         "stats sent=%" PRIu32 " dropped=%" PRIu32 " total_seq=%" PRIu32 " rate=%.1f KiB/s "
+                         "bp=%" PRIu64 " eagain=%" PRIu64 " enobufs=%" PRIu64 " enomem=%" PRIu64
+                         " eintr=%" PRIu64 " fatal=%" PRIu64 " partial=%" PRIu64 " last_errno=%" PRId32
+                         " free_heap=%u uptime_ms=%" PRIu32,
                          sent_frames,
                          dropped_frames,
                          seq,
-                         (double)sent_frames * FRAME_BYTES * 1000000.0 / stats_elapsed_us / 1024.0);
+                         (double)sent_frames * FRAME_BYTES * 1000000.0 / stats_elapsed_us / 1024.0,
+                         diagnostic_backpressure_events,
+                         diagnostic_eagain_events,
+                         diagnostic_enobufs_events,
+                         diagnostic_enomem_events,
+                         diagnostic_eintr_events,
+                         diagnostic_fatal_send_errors,
+                         diagnostic_partial_send_events,
+                         diagnostic_last_errno,
+                         (unsigned)esp_get_free_heap_size(),
+                         (uint32_t)(esp_timer_get_time() / 1000));
+                log_link_diagnostics();
 #endif
                 sent_frames = 0;
                 dropped_frames = 0;
